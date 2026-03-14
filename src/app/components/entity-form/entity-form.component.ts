@@ -318,8 +318,8 @@ export class EntityFormComponent implements OnInit {
 
     const value = this.form.getRawValue();
 
-    type RawField = { apiName: string; displayName: string; fieldType: FieldType };
-    type RawEndpoint = { name: string; path: string; method: string };
+    interface RawField { apiName: string; displayName: string; fieldType: FieldType }
+    interface RawEndpoint { name: string; path: string; method: string }
 
     const fields: Omit<Field, 'id'>[] = ((value.fields ?? []) as RawField[]).map((f) => ({
       apiName: f.apiName,

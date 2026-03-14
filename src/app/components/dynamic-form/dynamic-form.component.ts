@@ -16,21 +16,20 @@ import { Field } from '../../models/field.model';
 import { FieldType } from '../../models/field-type.enum';
 
 @Component({
-  selector: 'app-dynamic-form',
-  standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    JsonPipe,
-    MatButtonModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
-    MatSelectModule,
-    MatSnackBarModule,
-  ],
-  template: `
+    selector: 'app-dynamic-form',
+    imports: [
+        ReactiveFormsModule,
+        JsonPipe,
+        MatButtonModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatIconModule,
+        MatInputModule,
+        MatProgressSpinnerModule,
+        MatSelectModule,
+        MatSnackBarModule,
+    ],
+    template: `
     @if (loadingEntity) {
       <div class="spinner-wrapper">
         <mat-spinner diameter="48"></mat-spinner>
@@ -155,7 +154,7 @@ import { FieldType } from '../../models/field-type.enum';
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     .container {
       max-width: 700px;
       margin: 24px auto;
@@ -212,7 +211,7 @@ import { FieldType } from '../../models/field-type.enum';
       overflow: auto;
       font-size: 12px;
     }
-  `],
+  `]
 })
 export class DynamicFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { EntityApiService } from './entity-config.service';
 import { FieldType } from '../models/field-type.enum';
 import { HttpMethod } from '../models/data-source.model';
 import { Entity } from '../models/entity.model';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 const BASE = '/api/entities';
 
@@ -21,8 +22,9 @@ describe('EntityApiService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-    });
+    imports: [],
+    providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+});
     service = TestBed.inject(EntityApiService);
     httpMock = TestBed.inject(HttpTestingController);
   });

@@ -12,19 +12,18 @@ import { EntityApiService } from '../../services/entity-config.service';
 import { Entity } from '../../models';
 
 @Component({
-  selector: 'app-entity-list',
-  standalone: true,
-  imports: [
-    MatButtonModule,
-    MatCardModule,
-    MatDialogModule,
-    MatIconModule,
-    MatListModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule,
-    MatTooltipModule,
-  ],
-  template: `
+    selector: 'app-entity-list',
+    imports: [
+        MatButtonModule,
+        MatCardModule,
+        MatDialogModule,
+        MatIconModule,
+        MatListModule,
+        MatProgressSpinnerModule,
+        MatSnackBarModule,
+        MatTooltipModule,
+    ],
+    template: `
     <div class="container">
       <div class="header">
         <h1>Entity Configuration</h1>
@@ -77,7 +76,7 @@ import { Entity } from '../../models';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .container {
       max-width: 900px;
       margin: 24px auto;
@@ -105,7 +104,7 @@ import { Entity } from '../../models';
       justify-content: center;
       padding: 48px 0;
     }
-  `],
+  `]
 })
 export class EntityListComponent implements OnInit {
   private readonly apiService = inject(EntityApiService);
@@ -167,10 +166,9 @@ export class EntityListComponent implements OnInit {
 }
 
 @Component({
-  selector: 'app-delete-confirm-dialog',
-  standalone: true,
-  imports: [MatButtonModule, MatDialogModule],
-  template: `
+    selector: 'app-delete-confirm-dialog',
+    imports: [MatButtonModule, MatDialogModule],
+    template: `
     <h2 mat-dialog-title>Delete Entity</h2>
     <mat-dialog-content>
       Are you sure you want to delete <strong>{{ data.name }}</strong>? This action cannot be undone.
@@ -179,7 +177,7 @@ export class EntityListComponent implements OnInit {
       <button mat-button [mat-dialog-close]="false">Cancel</button>
       <button mat-raised-button color="warn" [mat-dialog-close]="true">Delete</button>
     </mat-dialog-actions>
-  `,
+  `
 })
 export class DeleteConfirmDialogComponent {
   readonly data = inject<{ name: string }>(MAT_DIALOG_DATA);

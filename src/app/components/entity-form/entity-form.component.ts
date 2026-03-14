@@ -17,22 +17,21 @@ import { Field } from '../../models/field.model';
 import { HttpMethod } from '../../models/data-source.model';
 
 @Component({
-  selector: 'app-entity-form',
-  standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    MatButtonModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
-    MatSelectModule,
-    MatDividerModule,
-    MatSnackBarModule,
-    MatTooltipModule,
-  ],
-  template: `
+    selector: 'app-entity-form',
+    imports: [
+        ReactiveFormsModule,
+        MatButtonModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatIconModule,
+        MatInputModule,
+        MatProgressSpinnerModule,
+        MatSelectModule,
+        MatDividerModule,
+        MatSnackBarModule,
+        MatTooltipModule,
+    ],
+    template: `
     <div class="container">
       <div class="header">
         <h1>{{ isEditMode ? 'Edit Entity' : 'Add Entity' }}</h1>
@@ -201,7 +200,7 @@ import { HttpMethod } from '../../models/data-source.model';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .container {
       max-width: 900px;
       margin: 24px auto;
@@ -242,7 +241,7 @@ import { HttpMethod } from '../../models/data-source.model';
       justify-content: center;
       padding: 48px 0;
     }
-  `],
+  `]
 })
 export class EntityFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

@@ -2,7 +2,10 @@ import { FieldType } from '../field-type.enum';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-export interface DropdownOption { label: string; value: string | number }
+export interface DropdownOption {
+  label: string;
+  value: string | number;
+}
 
 export interface Field {
   id: string;

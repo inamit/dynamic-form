@@ -31,14 +31,16 @@ export class EntitiesService {
 
   update(id: string, dto: UpdateEntityDto): Entity {
     const existing = this.findOne(id);
-    const updated: Entity = {
-      ...existing,
-      ...dto,
-      id,
-      fields: dto.fields
-        ? dto.fields.map((f) => ({ ...f, id: randomUUID() }))
-        : existing.fields,
-    };
+    const fields: Field[] = dto.fields
+      ? dto.fields.map((f) => {
+          // Preserve ID for fields that already exist (matched by apiName)
+          const existingField = existing.fields.find(
+            (ef) => ef.apiName === f.apiName,
+          );
+          return { ...f, id: existingField ? existingField.id : randomUUID() };
+        })
+      : existing.fields;
+    const updated: Entity = { ...existing, ...dto, id, fields };
     this.storage.save(updated);
     return updated;
   }
@@ -56,10 +58,15 @@ export class EntitiesService {
     return field;
   }
 
-  updateField(entityId: string, fieldId: string, updates: Partial<Omit<Field, 'id'>>): Field {
+  updateField(
+    entityId: string,
+    fieldId: string,
+    updates: Partial<Omit<Field, 'id'>>,
+  ): Field {
     const entity = this.findOne(entityId);
     const fieldIndex = entity.fields.findIndex((f) => f.id === fieldId);
-    if (fieldIndex < 0) throw new NotFoundException(`Field ${fieldId} not found`);
+    if (fieldIndex < 0)
+      throw new NotFoundException(`Field ${fieldId} not found`);
     entity.fields[fieldIndex] = { ...entity.fields[fieldIndex], ...updates };
     this.storage.save(entity);
     return entity.fields[fieldIndex];

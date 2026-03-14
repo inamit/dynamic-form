@@ -1,98 +1,73 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { Entity } from '../models/entity.model';
 import { Field } from '../models/field.model';
-import { v4 as uuidv4 } from 'uuid';
+import { HttpMethod } from '../models/data-source.model';
+import { FieldType } from '../models/field-type.enum';
 
-export type EntityInput = Omit<Entity, 'id' | 'fields'> & { fields: Omit<Field, 'id'>[] };
+export interface EntityInput {
+  apiName: string;
+  displayName: string;
+  description?: string;
+  icon?: string;
+  dataSource: {
+    url: string;
+    method: HttpMethod;
+    endpoints: { name: string; path: string; method: HttpMethod; body?: Record<string, unknown> }[];
+    body?: Record<string, unknown>;
+  };
+  fields: Omit<Field, 'id'>[];
+}
+
+export interface FieldInput {
+  apiName: string;
+  displayName: string;
+  fieldType: FieldType;
+  required?: boolean;
+  options?: Field['options'];
+}
 
 @Injectable({
   providedIn: 'root',
 })
-export class EntityConfigService {
-  private readonly entitiesSignal = signal<Entity[]>([]);
+export class EntityApiService {
+  private readonly http = inject(HttpClient);
+  private readonly BASE = '/api/entities';
 
-  readonly entities = computed(() => this.entitiesSignal());
-
-  addEntity(entity: EntityInput): Entity {
-    const newEntity: Entity = {
-      ...entity,
-      id: uuidv4(),
-      fields: entity.fields.map((f) => ({ ...f, id: uuidv4() })),
-    };
-    this.entitiesSignal.update((entities) => [...entities, newEntity]);
-    return newEntity;
+  getEntities(): Observable<Entity[]> {
+    return this.http.get<Entity[]>(this.BASE);
   }
 
-  updateEntity(id: string, updates: Partial<EntityInput>): Entity | undefined {
-    let updatedEntity: Entity | undefined;
-    this.entitiesSignal.update((entities) =>
-      entities.map((e) => {
-        if (e.id === id) {
-          const fields: Field[] = updates.fields
-            ? updates.fields.map((f) => ({ ...f, id: uuidv4() }))
-            : e.fields;
-          updatedEntity = { ...e, ...updates, fields };
-          return updatedEntity;
-        }
-        return e;
-      })
-    );
-    return updatedEntity;
+  getEntity(id: string): Observable<Entity> {
+    return this.http.get<Entity>(`${this.BASE}/${id}`);
   }
 
-  deleteEntity(id: string): void {
-    this.entitiesSignal.update((entities) => entities.filter((e) => e.id !== id));
+  createEntity(data: EntityInput): Observable<Entity> {
+    return this.http.post<Entity>(this.BASE, data);
   }
 
-  getEntityById(id: string): Entity | undefined {
-    return this.entitiesSignal().find((e) => e.id === id);
+  updateEntity(id: string, data: Partial<EntityInput>): Observable<Entity> {
+    return this.http.put<Entity>(`${this.BASE}/${id}`, data);
   }
 
-  addField(entityId: string, field: Omit<Field, 'id'>): Field | undefined {
-    const newField: Field = { ...field, id: uuidv4() };
-    let added = false;
-    this.entitiesSignal.update((entities) =>
-      entities.map((e) => {
-        if (e.id === entityId) {
-          added = true;
-          return { ...e, fields: [...e.fields, newField] };
-        }
-        return e;
-      })
-    );
-    return added ? newField : undefined;
+  deleteEntity(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.BASE}/${id}`);
   }
 
-  updateField(entityId: string, fieldId: string, updates: Partial<Omit<Field, 'id'>>): Field | undefined {
-    let updatedField: Field | undefined;
-    this.entitiesSignal.update((entities) =>
-      entities.map((e) => {
-        if (e.id === entityId) {
-          return {
-            ...e,
-            fields: e.fields.map((f) => {
-              if (f.id === fieldId) {
-                updatedField = { ...f, ...updates };
-                return updatedField;
-              }
-              return f;
-            }),
-          };
-        }
-        return e;
-      })
-    );
-    return updatedField;
+  addField(entityId: string, field: FieldInput): Observable<Field> {
+    return this.http.post<Field>(`${this.BASE}/${entityId}/fields`, field);
   }
 
-  deleteField(entityId: string, fieldId: string): void {
-    this.entitiesSignal.update((entities) =>
-      entities.map((e) => {
-        if (e.id === entityId) {
-          return { ...e, fields: e.fields.filter((f) => f.id !== fieldId) };
-        }
-        return e;
-      })
-    );
+  updateField(entityId: string, fieldId: string, updates: Partial<FieldInput>): Observable<Field> {
+    return this.http.put<Field>(`${this.BASE}/${entityId}/fields/${fieldId}`, updates);
+  }
+
+  deleteField(entityId: string, fieldId: string): Observable<void> {
+    return this.http.delete<void>(`${this.BASE}/${entityId}/fields/${fieldId}`);
+  }
+
+  executeForm(entityId: string, data: Record<string, unknown>): Observable<unknown> {
+    return this.http.post<unknown>(`${this.BASE}/${entityId}/execute`, { data });
   }
 }

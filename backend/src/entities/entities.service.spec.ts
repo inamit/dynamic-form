@@ -35,7 +35,11 @@ describe('EntitiesService', () => {
     const entity = service.create({
       apiName: 'customer',
       displayName: 'Customer',
-      dataSource: { url: 'https://api.example.com', method: 'GET', endpoints: [] },
+      dataSource: {
+        url: 'https://api.example.com',
+        method: 'GET',
+        endpoints: [],
+      },
       fields: [],
     });
     expect(entity.id).toBeTruthy();
@@ -50,13 +54,21 @@ describe('EntitiesService', () => {
 
   it('should add a field to an entity', () => {
     const existingEntity = {
-      id: 'e1', apiName: 'customer', displayName: 'Customer',
-      dataSource: { url: 'https://api.example.com', method: 'GET' as const, endpoints: [] },
+      id: 'e1',
+      apiName: 'customer',
+      displayName: 'Customer',
+      dataSource: {
+        url: 'https://api.example.com',
+        method: 'GET' as const,
+        endpoints: [],
+      },
       fields: [],
     };
     mockStorage.getById.mockReturnValue(existingEntity);
     const field = service.addField('e1', {
-      apiName: 'name', displayName: 'Name', fieldType: FieldType.STRING,
+      apiName: 'name',
+      displayName: 'Name',
+      fieldType: FieldType.STRING,
     });
     expect(field.id).toBeTruthy();
     expect(mockStorage.save).toHaveBeenCalled();
@@ -64,8 +76,14 @@ describe('EntitiesService', () => {
 
   it('should delete an entity', () => {
     const existingEntity = {
-      id: 'e1', apiName: 'customer', displayName: 'Customer',
-      dataSource: { url: 'https://api.example.com', method: 'GET' as const, endpoints: [] },
+      id: 'e1',
+      apiName: 'customer',
+      displayName: 'Customer',
+      dataSource: {
+        url: 'https://api.example.com',
+        method: 'GET' as const,
+        endpoints: [],
+      },
       fields: [],
     };
     mockStorage.getById.mockReturnValue(existingEntity);

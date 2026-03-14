@@ -1,5 +1,13 @@
 import {
-  Controller, Get, Post, Put, Delete, Param, Body, HttpCode, HttpStatus,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { EntitiesService } from './entities.service';
 import { CreateEntityDto, CreateFieldDto } from './dto/create-entity.dto';
@@ -56,7 +64,10 @@ export class EntitiesController {
 
   @Delete(':id/fields/:fieldId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  removeField(@Param('id') entityId: string, @Param('fieldId') fieldId: string) {
+  removeField(
+    @Param('id') entityId: string,
+    @Param('fieldId') fieldId: string,
+  ) {
     this.entitiesService.removeField(entityId, fieldId);
   }
 

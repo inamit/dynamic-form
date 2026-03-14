@@ -33,7 +33,11 @@ export class StorageService implements OnModuleInit {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(this.entities, null, 2), 'utf-8');
+    fs.writeFileSync(
+      DATA_FILE,
+      JSON.stringify(this.entities, null, 2),
+      'utf-8',
+    );
   }
 
   getAll(): Entity[] {

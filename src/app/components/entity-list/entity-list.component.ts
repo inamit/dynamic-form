@@ -1,18 +1,29 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EntityConfigService } from '../../services/entity-config.service';
+import { EntityApiService } from '../../services/entity-config.service';
 import { Entity } from '../../models';
 
 @Component({
   selector: 'app-entity-list',
   standalone: true,
-  imports: [MatButtonModule, MatCardModule, MatDialogModule, MatIconModule, MatListModule, MatTooltipModule],
+  imports: [
+    MatButtonModule,
+    MatCardModule,
+    MatDialogModule,
+    MatIconModule,
+    MatListModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule,
+    MatTooltipModule,
+  ],
   template: `
     <div class="container">
       <div class="header">
@@ -23,42 +34,46 @@ import { Entity } from '../../models';
         </button>
       </div>
 
-      @if (entities().length === 0) {
+      @if (loading()) {
+        <div class="spinner-wrapper">
+          <mat-spinner diameter="48"></mat-spinner>
+        </div>
+      } @else if (entities().length === 0) {
         <mat-card>
           <mat-card-content>
             <p class="empty-state">No entities configured yet. Click "Add Entity" to get started.</p>
           </mat-card-content>
         </mat-card>
-      }
-
-      @for (entity of entities(); track entity.id) {
-        <mat-card class="entity-card">
-          <mat-card-header>
-            <mat-icon mat-card-avatar>{{ entity.icon || 'description' }}</mat-icon>
-            <mat-card-title>{{ entity.displayName }}</mat-card-title>
-            <mat-card-subtitle>API Name: {{ entity.apiName }}</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            @if (entity.description) {
-              <p>{{ entity.description }}</p>
-            }
-            <p class="field-count"><strong>Fields:</strong> {{ entity.fields.length }}</p>
-          </mat-card-content>
-          <mat-card-actions>
-            <button mat-button color="primary" (click)="viewForm(entity)">
-              <mat-icon>visibility</mat-icon>
-              View Form
-            </button>
-            <button mat-button (click)="editEntity(entity)">
-              <mat-icon>edit</mat-icon>
-              Edit
-            </button>
-            <button mat-button color="warn" (click)="confirmDelete(entity)">
-              <mat-icon>delete</mat-icon>
-              Delete
-            </button>
-          </mat-card-actions>
-        </mat-card>
+      } @else {
+        @for (entity of entities(); track entity.id) {
+          <mat-card class="entity-card">
+            <mat-card-header>
+              <mat-icon mat-card-avatar>{{ entity.icon || 'description' }}</mat-icon>
+              <mat-card-title>{{ entity.displayName }}</mat-card-title>
+              <mat-card-subtitle>API Name: {{ entity.apiName }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @if (entity.description) {
+                <p>{{ entity.description }}</p>
+              }
+              <p class="field-count"><strong>Fields:</strong> {{ entity.fields.length }}</p>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-button color="primary" (click)="viewForm(entity)">
+                <mat-icon>visibility</mat-icon>
+                View Form
+              </button>
+              <button mat-button (click)="editEntity(entity)">
+                <mat-icon>edit</mat-icon>
+                Edit
+              </button>
+              <button mat-button color="warn" (click)="confirmDelete(entity)">
+                <mat-icon>delete</mat-icon>
+                Delete
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        }
       }
     </div>
   `,
@@ -85,14 +100,39 @@ import { Entity } from '../../models';
     .field-count {
       margin-top: 8px;
     }
+    .spinner-wrapper {
+      display: flex;
+      justify-content: center;
+      padding: 48px 0;
+    }
   `],
 })
-export class EntityListComponent {
-  private readonly entityService = inject(EntityConfigService);
+export class EntityListComponent implements OnInit {
+  private readonly apiService = inject(EntityApiService);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
-  readonly entities = this.entityService.entities;
+  readonly entities = signal<Entity[]>([]);
+  readonly loading = signal(false);
+
+  ngOnInit(): void {
+    this.loadEntities();
+  }
+
+  loadEntities(): void {
+    this.loading.set(true);
+    this.apiService.getEntities().subscribe({
+      next: (data) => {
+        this.entities.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.snackBar.open('Failed to load entities', 'Close', { duration: 3000 });
+        this.loading.set(false);
+      },
+    });
+  }
 
   addEntity(): void {
     this.router.navigate(['/entities/new']);
@@ -107,18 +147,24 @@ export class EntityListComponent {
   }
 
   confirmDelete(entity: Entity): void {
-    const confirmed = this.dialog.open(DeleteConfirmDialogComponent, {
+    const ref = this.dialog.open(DeleteConfirmDialogComponent, {
       data: { name: entity.displayName },
     });
-    confirmed.afterClosed().subscribe((result: boolean) => {
-      if (result) {
-        this.entityService.deleteEntity(entity.id);
+    ref.afterClosed().subscribe((confirmed: boolean) => {
+      if (confirmed) {
+        this.apiService.deleteEntity(entity.id).subscribe({
+          next: () => {
+            this.snackBar.open('Entity deleted', 'Close', { duration: 2000 });
+            this.loadEntities();
+          },
+          error: () => {
+            this.snackBar.open('Failed to delete entity', 'Close', { duration: 3000 });
+          },
+        });
       }
     });
   }
 }
-
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-delete-confirm-dialog',

@@ -7,9 +7,10 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { MatChipsModule } from '@angular/material/chips';
-import { EntityConfigService } from '../../services/entity-config.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { EntityApiService } from '../../services/entity-config.service';
 import { Entity } from '../../models/entity.model';
 import { Field } from '../../models/field.model';
 import { FieldType } from '../../models/field-type.enum';
@@ -25,11 +26,16 @@ import { FieldType } from '../../models/field-type.enum';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatProgressSpinnerModule,
     MatSelectModule,
-    MatChipsModule,
+    MatSnackBarModule,
   ],
   template: `
-    @if (entity) {
+    @if (loadingEntity) {
+      <div class="spinner-wrapper">
+        <mat-spinner diameter="48"></mat-spinner>
+      </div>
+    } @else if (entity) {
       <div class="container">
         <div class="header">
           <div class="title-row">
@@ -116,36 +122,36 @@ import { FieldType } from '../../models/field-type.enum';
 
               <div class="form-actions">
                 <button mat-button type="button" (click)="reset()">Reset</button>
-                <button mat-raised-button color="primary" type="submit" [disabled]="dynamicForm.invalid">
-                  Submit
+                <button mat-raised-button color="primary" type="submit"
+                        [disabled]="dynamicForm.invalid || submitting">
+                  @if (submitting) {
+                    <mat-spinner diameter="20" style="display:inline-block"></mat-spinner>
+                  } @else {
+                    Submit
+                  }
                 </button>
               </div>
             </form>
           </mat-card-content>
         </mat-card>
 
-        @if (submittedData) {
+        @if (responseData !== null) {
           <mat-card style="margin-top: 16px">
             <mat-card-header>
-              <mat-card-title>Submitted Data</mat-card-title>
+              <mat-card-title>Response</mat-card-title>
             </mat-card-header>
             <mat-card-content>
-              <pre>{{ submittedData | json }}</pre>
+              <pre>{{ responseData | json }}</pre>
             </mat-card-content>
           </mat-card>
         }
-      </div>
-    } @else {
-      <div class="container">
-        <mat-card>
-          <mat-card-content>
-            <p class="empty-state">Entity not found.</p>
-            <button mat-button (click)="back()">
-              <mat-icon>arrow_back</mat-icon>
-              Back to Entities
-            </button>
-          </mat-card-content>
-        </mat-card>
+
+        <div style="margin-top: 16px">
+          <button mat-button (click)="back()">
+            <mat-icon>arrow_back</mat-icon>
+            Back to Entities
+          </button>
+        </div>
       </div>
     }
   `,
@@ -194,24 +200,50 @@ import { FieldType } from '../../models/field-type.enum';
       gap: 8px;
       margin-top: 16px;
     }
+    .spinner-wrapper {
+      display: flex;
+      justify-content: center;
+      padding: 48px 0;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 4px;
+      overflow: auto;
+      font-size: 12px;
+    }
   `],
 })
 export class DynamicFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
-  private readonly entityService = inject(EntityConfigService);
+  private readonly apiService = inject(EntityApiService);
+  private readonly snackBar = inject(MatSnackBar);
 
   entity: Entity | undefined;
   dynamicForm!: FormGroup;
-  submittedData: Record<string, unknown> | null = null;
+  loadingEntity = false;
+  submitting = false;
+  responseData: unknown = null;
   readonly FieldType = FieldType;
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.entity = this.entityService.getEntityById(id);
-      this.buildForm();
+      this.loadingEntity = true;
+      this.apiService.getEntity(id).subscribe({
+        next: (entity) => {
+          this.entity = entity;
+          this.buildForm();
+          this.loadingEntity = false;
+        },
+        error: () => {
+          this.snackBar.open('Failed to load entity', 'Close', { duration: 3000 });
+          this.loadingEntity = false;
+          this.router.navigate(['/entities']);
+        },
+      });
     }
   }
 
@@ -234,14 +266,32 @@ export class DynamicFormComponent implements OnInit {
   }
 
   submit(): void {
-    if (this.dynamicForm.valid) {
-      this.submittedData = this.dynamicForm.value as Record<string, unknown>;
-    }
+    if (this.dynamicForm.invalid || !this.entity) return;
+
+    const formValue = this.dynamicForm.value as Record<string, unknown>;
+    this.submitting = true;
+    this.responseData = null;
+
+    this.apiService.executeForm(this.entity.id, formValue).subscribe({
+      next: (response) => {
+        this.responseData = response;
+        this.submitting = false;
+        this.snackBar.open('Form submitted successfully', 'Close', { duration: 2000 });
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.snackBar.open(
+          err?.error?.message ?? 'Form submission failed',
+          'Close',
+          { duration: 4000 }
+        );
+        this.submitting = false;
+      },
+    });
   }
 
   reset(): void {
     this.dynamicForm.reset();
-    this.submittedData = null;
+    this.responseData = null;
   }
 
   back(): void {

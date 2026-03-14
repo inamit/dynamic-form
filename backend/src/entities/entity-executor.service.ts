@@ -5,7 +5,10 @@ import { EntitiesService } from './entities.service';
 export class EntityExecutorService {
   constructor(private readonly entitiesService: EntitiesService) {}
 
-  async execute(entityId: string, formData: Record<string, unknown>): Promise<unknown> {
+  async execute(
+    entityId: string,
+    formData: Record<string, unknown>,
+  ): Promise<unknown> {
     const entity = this.entitiesService.findOne(entityId);
     const { dataSource } = entity;
 
@@ -15,9 +18,14 @@ export class EntityExecutorService {
 
     const url = dataSource.url;
     const method = dataSource.method;
-    const body = method !== 'GET' ? JSON.stringify({ ...dataSource.body, ...formData }) : undefined;
+    const body =
+      method !== 'GET'
+        ? JSON.stringify({ ...dataSource.body, ...formData })
+        : undefined;
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
 
     try {
       const response = await fetch(url, {

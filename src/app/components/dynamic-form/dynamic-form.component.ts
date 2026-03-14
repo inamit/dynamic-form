@@ -85,7 +85,7 @@ import { FieldType } from '../../models/field-type.enum';
                     }
                     @case (FieldType.POINT) {
                       <div class="geo-field">
-                        <label>{{ field.displayName }}</label>
+                        <p class="geo-label">{{ field.displayName }}</p>
                         <div class="coordinates">
                           <mat-form-field appearance="outline">
                             <mat-label>Latitude</mat-label>
@@ -100,7 +100,7 @@ import { FieldType } from '../../models/field-type.enum';
                     }
                     @case (FieldType.POLYGON) {
                       <div class="geo-field">
-                        <label>{{ field.displayName }}</label>
+                        <p class="geo-label">{{ field.displayName }}</p>
                         <div class="polygon-input">
                           <mat-form-field appearance="outline" class="full-width">
                             <mat-label>Coordinates (JSON array of [lat, lng] pairs)</mat-label>
@@ -179,8 +179,7 @@ import { FieldType } from '../../models/field-type.enum';
     .geo-field {
       margin-bottom: 16px;
     }
-    .geo-field label {
-      display: block;
+    .geo-label {
       font-size: 14px;
       color: rgba(0,0,0,0.6);
       margin-bottom: 8px;

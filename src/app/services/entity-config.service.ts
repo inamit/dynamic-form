@@ -3,6 +3,8 @@ import { Entity } from '../models/entity.model';
 import { Field } from '../models/field.model';
 import { v4 as uuidv4 } from 'uuid';
 
+export type EntityInput = Omit<Entity, 'id' | 'fields'> & { fields: Omit<Field, 'id'>[] };
+
 @Injectable({
   providedIn: 'root',
 })
@@ -11,18 +13,25 @@ export class EntityConfigService {
 
   readonly entities = computed(() => this.entitiesSignal());
 
-  addEntity(entity: Omit<Entity, 'id'>): Entity {
-    const newEntity: Entity = { ...entity, id: uuidv4() };
+  addEntity(entity: EntityInput): Entity {
+    const newEntity: Entity = {
+      ...entity,
+      id: uuidv4(),
+      fields: entity.fields.map((f) => ({ ...f, id: uuidv4() })),
+    };
     this.entitiesSignal.update((entities) => [...entities, newEntity]);
     return newEntity;
   }
 
-  updateEntity(id: string, updates: Partial<Omit<Entity, 'id'>>): Entity | undefined {
+  updateEntity(id: string, updates: Partial<EntityInput>): Entity | undefined {
     let updatedEntity: Entity | undefined;
     this.entitiesSignal.update((entities) =>
       entities.map((e) => {
         if (e.id === id) {
-          updatedEntity = { ...e, ...updates };
+          const fields: Field[] = updates.fields
+            ? updates.fields.map((f) => ({ ...f, id: uuidv4() }))
+            : e.fields;
+          updatedEntity = { ...e, ...updates, fields };
           return updatedEntity;
         }
         return e;

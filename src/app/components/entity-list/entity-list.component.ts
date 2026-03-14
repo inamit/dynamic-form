@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -11,7 +12,7 @@ import { Entity } from '../../models';
 @Component({
   selector: 'app-entity-list',
   standalone: true,
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatListModule, MatTooltipModule],
+  imports: [MatButtonModule, MatCardModule, MatDialogModule, MatIconModule, MatListModule, MatTooltipModule],
   template: `
     <div class="container">
       <div class="header">
@@ -52,7 +53,7 @@ import { Entity } from '../../models';
               <mat-icon>edit</mat-icon>
               Edit
             </button>
-            <button mat-button color="warn" (click)="deleteEntity(entity)">
+            <button mat-button color="warn" (click)="confirmDelete(entity)">
               <mat-icon>delete</mat-icon>
               Delete
             </button>
@@ -89,6 +90,7 @@ import { Entity } from '../../models';
 export class EntityListComponent {
   private readonly entityService = inject(EntityConfigService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   readonly entities = this.entityService.entities;
 
@@ -104,7 +106,36 @@ export class EntityListComponent {
     this.router.navigate(['/entities', entity.id, 'form']);
   }
 
-  deleteEntity(entity: Entity): void {
-    this.entityService.deleteEntity(entity.id);
+  confirmDelete(entity: Entity): void {
+    const confirmed = this.dialog.open(DeleteConfirmDialogComponent, {
+      data: { name: entity.displayName },
+    });
+    confirmed.afterClosed().subscribe((result: boolean) => {
+      if (result) {
+        this.entityService.deleteEntity(entity.id);
+      }
+    });
   }
+}
+
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+
+@Component({
+  selector: 'app-delete-confirm-dialog',
+  standalone: true,
+  imports: [MatButtonModule, MatDialogModule],
+  template: `
+    <h2 mat-dialog-title>Delete Entity</h2>
+    <mat-dialog-content>
+      Are you sure you want to delete <strong>{{ data.name }}</strong>? This action cannot be undone.
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button [mat-dialog-close]="false">Cancel</button>
+      <button mat-raised-button color="warn" [mat-dialog-close]="true">Delete</button>
+    </mat-dialog-actions>
+  `,
+})
+export class DeleteConfirmDialogComponent {
+  readonly data = inject<{ name: string }>(MAT_DIALOG_DATA);
+  readonly dialogRef = inject(MatDialogRef<DeleteConfirmDialogComponent>);
 }

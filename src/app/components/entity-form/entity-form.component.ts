@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EntityConfigService } from '../../services/entity-config.service';
+import { EntityConfigService, EntityInput } from '../../services/entity-config.service';
 import { FieldType } from '../../models/field-type.enum';
 import { Field } from '../../models/field.model';
 import { HttpMethod } from '../../models/data-source.model';
@@ -317,13 +317,17 @@ export class EntityFormComponent implements OnInit {
     if (this.form.invalid) return;
 
     const value = this.form.getRawValue();
-    const fields: Omit<Field, 'id'>[] = (value.fields ?? []).map((f: any) => ({
+
+    type RawField = { apiName: string; displayName: string; fieldType: FieldType };
+    type RawEndpoint = { name: string; path: string; method: string };
+
+    const fields: Omit<Field, 'id'>[] = ((value.fields ?? []) as RawField[]).map((f) => ({
       apiName: f.apiName,
       displayName: f.displayName,
       fieldType: f.fieldType,
     }));
 
-    const entityData = {
+    const entityData: EntityInput = {
       apiName: value.apiName!,
       displayName: value.displayName!,
       description: value.description ?? undefined,
@@ -331,13 +335,13 @@ export class EntityFormComponent implements OnInit {
       dataSource: {
         url: value.dataSource!.url!,
         method: value.dataSource!.method as HttpMethod,
-        endpoints: (value.dataSource!.endpoints ?? []).map((ep: any) => ({
+        endpoints: ((value.dataSource!.endpoints ?? []) as RawEndpoint[]).map((ep) => ({
           name: ep.name,
           path: ep.path,
           method: ep.method as HttpMethod,
         })),
       },
-      fields: fields as Field[],
+      fields,
     };
 
     if (this.isEditMode && this.entityId) {

@@ -1,0 +1,15 @@
+{
+  "name": "dynamic-form-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "start": "npm run start --workspaces"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.4.1"
+  }
+}

@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { PrismaClient } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 import { PrismaPGlite } from 'pglite-prisma-adapter';
 import { PGlite } from '@electric-sql/pglite';
 import axios from 'axios';
@@ -8,9 +9,15 @@ import { request, gql } from 'graphql-request';
 
 const app = express();
 
-const client = new PGlite('./pglite-db');
-const adapter = new PrismaPGlite(client);
-const prisma = new PrismaClient({ adapter });
+let prisma: any;
+
+if (process.env.NODE_ENV === 'production' || process.env.USE_REAL_POSTGRES === 'true') {
+  prisma = new PrismaClient();
+} else {
+  const client = new PGlite('./pglite-db');
+  const adapter = new PrismaPGlite(client);
+  prisma = new PrismaClient({ adapter });
+}
 
 app.use(cors());
 app.use(express.json());
@@ -19,11 +26,16 @@ app.use(express.json());
 
 app.get('/api/config', async (req, res) => {
   try {
-    const configs = await prisma.entityConfig.findMany();
+    const configs = await prisma.entityConfig.findMany({
+      include: { dataSource: true, fields: true }
+    });
+
     const parsedConfigs = configs.map((c: any) => ({
       ...c,
-      fields: JSON.parse(c.fields)
+      apiUrl: c.dataSource.apiUrl,
+      apiType: c.dataSource.apiType
     }));
+
     res.json(parsedConfigs);
   } catch (error) {
     console.error(error);
@@ -34,14 +46,18 @@ app.get('/api/config', async (req, res) => {
 app.get('/api/config/:name', async (req, res) => {
   try {
     const config = await prisma.entityConfig.findUnique({
-      where: { name: req.params.name }
+      where: { name: req.params.name },
+      include: { dataSource: true, fields: true }
     });
+
     if (!config) {
       return res.status(404).json({ error: 'Configuration not found' });
     }
+
     res.json({
       ...config,
-      fields: JSON.parse(config.fields)
+      apiUrl: config.dataSource.apiUrl,
+      apiType: config.dataSource.apiType
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch configuration' });
@@ -49,31 +65,7 @@ app.get('/api/config/:name', async (req, res) => {
 });
 
 app.post('/api/config', async (req, res) => {
-  try {
-    const { name, apiUrl, apiType, fields } = req.body;
-
-    const config = await prisma.entityConfig.upsert({
-      where: { name },
-      update: {
-        apiUrl,
-        apiType: apiType || 'REST',
-        fields: JSON.stringify(fields)
-      },
-      create: {
-        name,
-        apiUrl,
-        apiType: apiType || 'REST',
-        fields: JSON.stringify(fields)
-      }
-    });
-
-    res.json({
-      ...config,
-      fields: JSON.parse(config.fields)
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to save configuration' });
-  }
+  res.status(501).json({ error: 'Creating endpoints via config dynamically disabled for now.' });
 });
 
 
@@ -81,24 +73,25 @@ app.post('/api/config', async (req, res) => {
 
 app.get('/api/data/:entity', async (req, res) => {
   const { entity } = req.params;
-  const config = await prisma.entityConfig.findUnique({ where: { name: entity }});
+  const config = await prisma.entityConfig.findUnique({
+    where: { name: entity },
+    include: { dataSource: true, fields: true }
+  });
 
   if (!config) return res.status(404).json({ error: 'Entity not found' });
 
   try {
-    if (config.apiType === 'REST') {
-      const response = await axios.get(config.apiUrl);
+    const ds = config.dataSource;
+    if (ds.apiType === 'REST') {
+      const response = await axios.get(ds.apiUrl);
       res.json(response.data);
-    } else if (config.apiType === 'GRAPHQL') {
-      const query = gql`
-        query {
-          ${entity}s {
-            id
-            ${JSON.parse(config.fields).map((f: any) => f.name).join('\n            ')}
-          }
-        }
-      `;
-      const data = await request(config.apiUrl, query) as any;
+    } else if (ds.apiType === 'GRAPHQL') {
+      const ops = JSON.parse(ds.endpointsQueries || '{}');
+      const queryStr = ops.list;
+      if (!queryStr) throw new Error("Missing 'list' query configuration");
+
+      const query = gql`${queryStr}`;
+      const data = await request(ds.apiUrl, query) as any;
       res.json(data[`${entity}s`]);
     }
   } catch (error: any) {
@@ -109,25 +102,26 @@ app.get('/api/data/:entity', async (req, res) => {
 
 app.get('/api/data/:entity/:id', async (req, res) => {
   const { entity, id } = req.params;
-  const config = await prisma.entityConfig.findUnique({ where: { name: entity }});
+  const config = await prisma.entityConfig.findUnique({
+    where: { name: entity },
+    include: { dataSource: true, fields: true }
+  });
 
   if (!config) return res.status(404).json({ error: 'Entity not found' });
 
   try {
-    if (config.apiType === 'REST') {
-      const response = await axios.get(`${config.apiUrl}/${id}`);
+    const ds = config.dataSource;
+    if (ds.apiType === 'REST') {
+      const response = await axios.get(`${ds.apiUrl}/${id}`);
       res.json(response.data);
-    } else if (config.apiType === 'GRAPHQL') {
-      const query = gql`
-        query Get${entity.charAt(0).toUpperCase() + entity.slice(1)}($id: ID!) {
-          ${entity}(id: $id) {
-            id
-            ${JSON.parse(config.fields).map((f: any) => f.name).join('\n            ')}
-          }
-        }
-      `;
+    } else if (ds.apiType === 'GRAPHQL') {
+      const ops = JSON.parse(ds.endpointsQueries || '{}');
+      const queryStr = ops.get;
+      if (!queryStr) throw new Error("Missing 'get' query configuration");
+
+      const query = gql`${queryStr}`;
       const variables = { id };
-      const data = await request(config.apiUrl, query, variables) as any;
+      const data = await request(ds.apiUrl, query, variables) as any;
       res.json(data[entity]);
     }
   } catch (error: any) {
@@ -138,34 +132,31 @@ app.get('/api/data/:entity/:id', async (req, res) => {
 
 app.post('/api/data/:entity', async (req, res) => {
   const { entity } = req.params;
-  const config = await prisma.entityConfig.findUnique({ where: { name: entity }});
+  const config = await prisma.entityConfig.findUnique({
+    where: { name: entity },
+    include: { dataSource: true, fields: true }
+  });
 
   if (!config) return res.status(404).json({ error: 'Entity not found' });
 
   try {
-    if (config.apiType === 'REST') {
-      const response = await axios.post(config.apiUrl, req.body);
+    const ds = config.dataSource;
+    if (ds.apiType === 'REST') {
+      const response = await axios.post(ds.apiUrl, req.body);
       res.json(response.data);
-    } else if (config.apiType === 'GRAPHQL') {
-      const fields = JSON.parse(config.fields);
-      const varDefs = fields.map((f: any) => `$${f.name}: ${f.type === 'number' ? 'Float!' : (f.type === 'checkbox' ? 'Boolean!' : 'String!')}`).join(', ');
-      const argsList = fields.map((f: any) => `${f.name}: $${f.name}`).join(', ');
+    } else if (ds.apiType === 'GRAPHQL') {
+      const ops = JSON.parse(ds.endpointsQueries || '{}');
+      const queryStr = ops.create;
+      if (!queryStr) throw new Error("Missing 'create' query configuration");
 
-      const mutation = gql`
-        mutation Create${entity.charAt(0).toUpperCase() + entity.slice(1)}(${varDefs}) {
-          create${entity.charAt(0).toUpperCase() + entity.slice(1)}(${argsList}) {
-            id
-            ${fields.map((f: any) => f.name).join('\n            ')}
-          }
-        }
-      `;
+      const mutation = gql`${queryStr}`;
 
       const variables: Record<string, any> = {};
-      fields.forEach((f: any) => {
+      config.fields.forEach((f: any) => {
          variables[f.name] = req.body[f.name];
       });
 
-      const data = await request(config.apiUrl, mutation, variables) as any;
+      const data = await request(ds.apiUrl, mutation, variables) as any;
       res.json(data[`create${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
     }
   } catch (error: any) {
@@ -176,36 +167,33 @@ app.post('/api/data/:entity', async (req, res) => {
 
 app.put('/api/data/:entity/:id', async (req, res) => {
   const { entity, id } = req.params;
-  const config = await prisma.entityConfig.findUnique({ where: { name: entity }});
+  const config = await prisma.entityConfig.findUnique({
+    where: { name: entity },
+    include: { dataSource: true, fields: true }
+  });
 
   if (!config) return res.status(404).json({ error: 'Entity not found' });
 
   try {
-    if (config.apiType === 'REST') {
-      const response = await axios.put(`${config.apiUrl}/${id}`, req.body);
+    const ds = config.dataSource;
+    if (ds.apiType === 'REST') {
+      const response = await axios.put(`${ds.apiUrl}/${id}`, req.body);
       res.json(response.data);
-    } else if (config.apiType === 'GRAPHQL') {
-      const fields = JSON.parse(config.fields);
-      const varDefs = fields.map((f: any) => `$${f.name}: ${f.type === 'number' ? 'Float' : (f.type === 'checkbox' ? 'Boolean' : 'String')}`).join(', ');
-      const argsList = fields.map((f: any) => `${f.name}: $${f.name}`).join(', ');
+    } else if (ds.apiType === 'GRAPHQL') {
+      const ops = JSON.parse(ds.endpointsQueries || '{}');
+      const queryStr = ops.update;
+      if (!queryStr) throw new Error("Missing 'update' query configuration");
 
-      const mutation = gql`
-        mutation Update${entity.charAt(0).toUpperCase() + entity.slice(1)}($id: ID!, ${varDefs}) {
-          update${entity.charAt(0).toUpperCase() + entity.slice(1)}(id: $id, ${argsList}) {
-            id
-            ${fields.map((f: any) => f.name).join('\n            ')}
-          }
-        }
-      `;
+      const mutation = gql`${queryStr}`;
 
       const variables: Record<string, any> = { id };
-      fields.forEach((f: any) => {
+      config.fields.forEach((f: any) => {
          if (req.body[f.name] !== undefined) {
              variables[f.name] = req.body[f.name];
          }
       });
 
-      const data = await request(config.apiUrl, mutation, variables) as any;
+      const data = await request(ds.apiUrl, mutation, variables) as any;
       res.json(data[`update${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
     }
   } catch (error: any) {
@@ -216,22 +204,26 @@ app.put('/api/data/:entity/:id', async (req, res) => {
 
 app.delete('/api/data/:entity/:id', async (req, res) => {
   const { entity, id } = req.params;
-  const config = await prisma.entityConfig.findUnique({ where: { name: entity }});
+  const config = await prisma.entityConfig.findUnique({
+    where: { name: entity },
+    include: { dataSource: true, fields: true }
+  });
 
   if (!config) return res.status(404).json({ error: 'Entity not found' });
 
   try {
-    if (config.apiType === 'REST') {
-      await axios.delete(`${config.apiUrl}/${id}`);
+    const ds = config.dataSource;
+    if (ds.apiType === 'REST') {
+      await axios.delete(`${ds.apiUrl}/${id}`);
       res.json({ success: true });
-    } else if (config.apiType === 'GRAPHQL') {
-      const mutation = gql`
-        mutation Delete${entity.charAt(0).toUpperCase() + entity.slice(1)}($id: ID!) {
-          delete${entity.charAt(0).toUpperCase() + entity.slice(1)}(id: $id)
-        }
-      `;
+    } else if (ds.apiType === 'GRAPHQL') {
+      const ops = JSON.parse(ds.endpointsQueries || '{}');
+      const queryStr = ops.delete;
+      if (!queryStr) throw new Error("Missing 'delete' query configuration");
+
+      const mutation = gql`${queryStr}`;
       const variables = { id };
-      await request(config.apiUrl, mutation, variables);
+      await request(ds.apiUrl, mutation, variables);
       res.json({ success: true });
     }
   } catch (error: any) {

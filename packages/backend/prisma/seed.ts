@@ -1,25 +1,55 @@
-import { PrismaClient } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 import { PrismaPGlite } from 'pglite-prisma-adapter';
 import { PGlite } from '@electric-sql/pglite';
 
-const client = new PGlite('./pglite-db');
-const adapter = new PrismaPGlite(client);
-const prisma = new PrismaClient({ adapter });
+let prisma: any;
+
+if (process.env.NODE_ENV === 'production' || process.env.USE_REAL_POSTGRES === 'true') {
+  prisma = new PrismaClient();
+} else {
+  const client = new PGlite('./pglite-db');
+  const adapter = new PrismaPGlite(client);
+  prisma = new PrismaClient({ adapter });
+}
 
 async function main() {
+  // REST DataSource for Persons
+  const personDs = await prisma.dataSource.upsert({
+    where: { name: 'person-api' },
+    update: {},
+    create: {
+      name: 'person-api',
+      apiUrl: 'http://localhost:4000/api/persons',
+      apiType: 'REST'
+    }
+  });
+
   await prisma.entityConfig.upsert({
     where: { name: 'person' },
     update: {},
     create: {
       name: 'person',
-      apiUrl: 'http://localhost:4000/api/persons',
-      apiType: 'REST',
-      fields: JSON.stringify([
-        { name: 'firstName', type: 'text', label: 'First Name' },
-        { name: 'age', type: 'number', label: 'Age' },
-        { name: 'isActive', type: 'checkbox', label: 'Active' },
-      ]),
+      dataSourceId: personDs.id,
+      fields: {
+        create: [
+          { name: 'firstName', type: 'text', label: 'First Name' },
+          { name: 'age', type: 'number', label: 'Age' },
+          { name: 'isActive', type: 'checkbox', label: 'Active' },
+        ]
+      }
     },
+  });
+
+  // REST DataSource for Candies
+  const candyDs = await prisma.dataSource.upsert({
+    where: { name: 'candy-api' },
+    update: {},
+    create: {
+      name: 'candy-api',
+      apiUrl: 'http://localhost:4000/api/candies',
+      apiType: 'REST'
+    }
   });
 
   await prisma.entityConfig.upsert({
@@ -27,14 +57,75 @@ async function main() {
     update: {},
     create: {
       name: 'candy',
-      apiUrl: 'http://localhost:4000/api/candies',
-      apiType: 'REST',
-      fields: JSON.stringify([
-        { name: 'name', type: 'text', label: 'Candy Name' },
-        { name: 'price', type: 'number', label: 'Price ($)' },
-        { name: 'isVegan', type: 'checkbox', label: 'Is Vegan?' },
-      ]),
+      dataSourceId: candyDs.id,
+      fields: {
+        create: [
+          { name: 'name', type: 'text', label: 'Candy Name' },
+          { name: 'price', type: 'number', label: 'Price ($)' },
+          { name: 'isVegan', type: 'checkbox', label: 'Is Vegan?' },
+        ]
+      }
     },
+  });
+
+  // GraphQL DataSource for Stores
+  const storeQueries = {
+    list: `
+      query {
+        stores {
+          id
+          name
+          rating
+          isOpen
+        }
+      }
+    `,
+    get: `
+      query GetStore($id: ID!) {
+        store(id: $id) {
+          id
+          name
+          rating
+          isOpen
+        }
+      }
+    `,
+    create: `
+      mutation CreateStore($name: String!, $rating: Float!, $isOpen: Boolean!) {
+        createStore(name: $name, rating: $rating, isOpen: $isOpen) {
+          id
+          name
+          rating
+          isOpen
+        }
+      }
+    `,
+    update: `
+      mutation UpdateStore($id: ID!, $name: String, $rating: Float, $isOpen: Boolean) {
+        updateStore(id: $id, name: $name, rating: $rating, isOpen: $isOpen) {
+          id
+          name
+          rating
+          isOpen
+        }
+      }
+    `,
+    delete: `
+      mutation DeleteStore($id: ID!) {
+        deleteStore(id: $id)
+      }
+    `
+  };
+
+  const storeDs = await prisma.dataSource.upsert({
+    where: { name: 'store-graphql' },
+    update: {},
+    create: {
+      name: 'store-graphql',
+      apiUrl: 'http://localhost:4000/graphql',
+      apiType: 'GRAPHQL',
+      endpointsQueries: JSON.stringify(storeQueries)
+    }
   });
 
   await prisma.entityConfig.upsert({
@@ -42,13 +133,14 @@ async function main() {
     update: {},
     create: {
       name: 'store',
-      apiUrl: 'http://localhost:4000/graphql',
-      apiType: 'GRAPHQL',
-      fields: JSON.stringify([
-        { name: 'name', type: 'text', label: 'Store Name' },
-        { name: 'rating', type: 'number', label: 'Rating' },
-        { name: 'isOpen', type: 'checkbox', label: 'Is Open?' },
-      ]),
+      dataSourceId: storeDs.id,
+      fields: {
+        create: [
+          { name: 'name', type: 'text', label: 'Store Name' },
+          { name: 'rating', type: 'number', label: 'Rating' },
+          { name: 'isOpen', type: 'checkbox', label: 'Is Open?' },
+        ]
+      }
     },
   });
 

@@ -1,0 +1,16 @@
+
+> example-app@0.0.0 dev
+> vite
+
+
+  VITE v8.0.1  ready in 538 ms
+
+  ➜  Local:   http://localhost:5000/
+  ➜  Network: use --host to expose
+npm error Lifecycle script `dev` failed with error:
+npm error code 143
+npm error path /app/packages/example-app
+npm error workspace example-app@0.0.0
+npm error location /app/packages/example-app
+npm error command failed
+npm error command sh -c vite

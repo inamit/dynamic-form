@@ -19,7 +19,8 @@ async function main() {
     CREATE TABLE IF NOT EXISTS public."EntityConfig" (
       id SERIAL PRIMARY KEY,
       name TEXT UNIQUE NOT NULL,
-      "dataSourceId" INTEGER NOT NULL REFERENCES public."DataSource"(id)
+      "dataSourceId" INTEGER NOT NULL REFERENCES public."DataSource"(id),
+      "gridTemplate" TEXT
     );
 
     CREATE TABLE IF NOT EXISTS public."Field" (

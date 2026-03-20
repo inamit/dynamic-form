@@ -5,7 +5,7 @@ import type { EntityConfig } from '../types';
 
 const API_BASE = 'http://localhost:3001/api';
 
-export default function EntityForm() {
+export default function EntityForm({ gridTemplate: injectedGridTemplate }: { gridTemplate?: string }) {
   const { entity, id } = useParams<{ entity: string; id?: string }>();
   const navigate = useNavigate();
 
@@ -67,12 +67,17 @@ export default function EntityForm() {
   if (loading) return <div>Loading...</div>;
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
 
+  const activeGridTemplate = injectedGridTemplate || config.gridTemplate;
+  const formStyle: React.CSSProperties = activeGridTemplate
+    ? { display: 'grid', gridTemplateAreas: activeGridTemplate, gap: '15px' }
+    : { display: 'flex', flexDirection: 'column', gap: '15px' };
+
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', background: '#f9f9f9', padding: '20px', borderRadius: '8px' }}>
+    <div style={{ maxWidth: activeGridTemplate ? '800px' : '600px', margin: '0 auto', background: '#f9f9f9', padding: '20px', borderRadius: '8px' }}>
       <h2>{id ? `Edit ${entity}` : `Create ${entity}`}</h2>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      <form onSubmit={handleSubmit} style={formStyle}>
         {config.fields.map(field => (
-          <div key={field.name} style={{ display: 'flex', flexDirection: 'column' }}>
+          <div key={field.name} style={{ display: 'flex', flexDirection: 'column', gridArea: activeGridTemplate ? field.name : undefined }}>
             <label style={{ fontWeight: 'bold', marginBottom: '5px' }}>
               {field.label}
             </label>
@@ -96,7 +101,7 @@ export default function EntityForm() {
           </div>
         ))}
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '10px', gridColumn: activeGridTemplate ? '1 / -1' : undefined }}>
           <button
             type="submit"
             style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="1" author="jules">
+        <createTable tableName="DataSource">
+            <column name="id" type="serial">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="text">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="apiUrl" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="apiType" type="text" defaultValue="REST">
+                <constraints nullable="false"/>
+            </column>
+            <column name="headers" type="text"/>
+            <column name="endpointsQueries" type="text"/>
+        </createTable>
+
+        <createTable tableName="EntityConfig">
+            <column name="id" type="serial">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="text">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="dataSourceId" type="int">
+                <constraints nullable="false" foreignKeyName="fk_entity_datasource" references="DataSource(id)"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="Field">
+            <column name="id" type="serial">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entityConfigId" type="int">
+                <constraints nullable="false" foreignKeyName="fk_field_entityconfig" references="EntityConfig(id)" deleteCascade="true"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="Field" columnNames="entityConfigId, name" constraintName="uq_field_entityconfig_name"/>
+    </changeSet>
+
+</databaseChangeLog>

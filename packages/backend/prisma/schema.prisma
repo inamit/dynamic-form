@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model DataSource {
+  id               Int            @id @default(autoincrement())
+  name             String         @unique
+  apiUrl           String
+  apiType          String         @default("REST") // "REST" or "GRAPHQL"
+  headers          String?        // JSON string of headers
+  endpointsQueries String?        // JSON string containing map of operation -> endpoint/query
+  entityConfigs    EntityConfig[]
+}
+
+model EntityConfig {
+  id           Int        @id @default(autoincrement())
+  name         String     @unique
+  dataSourceId Int
+  dataSource   DataSource @relation(fields: [dataSourceId], references: [id])
+  fields       Field[]
+}
+
+model Field {
+  id             Int          @id @default(autoincrement())
+  name           String
+  type           String       // "text", "number", "checkbox"
+  label          String
+  entityConfigId Int
+  entityConfig   EntityConfig @relation(fields: [entityConfigId], references: [id], onDelete: Cascade)
+
+  @@unique([entityConfigId, name])
+}

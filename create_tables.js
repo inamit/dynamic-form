@@ -27,6 +27,7 @@ async function main() {
       name TEXT NOT NULL,
       type TEXT NOT NULL,
       label TEXT NOT NULL,
+      "enumName" TEXT,
       "entityConfigId" INTEGER NOT NULL REFERENCES public."EntityConfig"(id) ON DELETE CASCADE,
       UNIQUE("entityConfigId", name)
     );

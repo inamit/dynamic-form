@@ -41,9 +41,21 @@ async function main() {
                     {name: 'firstName', type: 'text', label: 'First Name'},
                     {name: 'age', type: 'number', label: 'Age'},
                     {name: 'isActive', type: 'checkbox', label: 'Active'},
+                    {name: 'status', type: 'enum', label: 'Status', enumName: 'person-status'},
                 ]
             }
         },
+    });
+
+    // Enum DataSource
+    await prisma.dataSource.upsert({
+        where: {name: 'enum'},
+        update: {},
+        create: {
+            name: 'enum',
+            apiUrl: 'http://localhost:4000/api/enums',
+            apiType: 'REST'
+        }
     });
 
     // REST DataSource for Candies

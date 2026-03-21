@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import type { EntityConfig } from '../types';
 
 const API_BASE = 'http://localhost:3001/api';
 
-export default function EntityList() {
-  const { entity } = useParams<{ entity: string }>();
+export default function EntityList({entity}: {entity: string}) {
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,12 +46,6 @@ export default function EntityList() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h3>{entity}s</h3>
-        <Link
-          to={`/${entity}/form`}
-          style={{ padding: '8px 16px', background: '#007bff', color: 'white', textDecoration: 'none', borderRadius: '4px' }}
-        >
-          Create New
-        </Link>
       </div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -78,7 +70,6 @@ export default function EntityList() {
                 </td>
               ))}
               <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                <Link to={`/${entity}/form/${item.id}`} style={{ marginRight: '10px' }}>Edit</Link>
                 <button
                   onClick={() => handleDelete(item.id)}
                   style={{ background: 'transparent', border: 'none', color: 'red', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}

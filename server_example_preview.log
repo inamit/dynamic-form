@@ -4,3 +4,10 @@
 
   ➜  Local:   http://localhost:5000/
   ➜  Network: use --host to expose
+npm error Lifecycle script `preview` failed with error:
+npm error code 143
+npm error path /app/packages/example-app
+npm error workspace example-app@0.0.0
+npm error location /app/packages/example-app
+npm error command failed
+npm error command sh -c vite preview

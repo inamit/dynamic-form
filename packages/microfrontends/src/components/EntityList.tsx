@@ -4,7 +4,13 @@ import type { EntityConfig } from '../types';
 
 const API_BASE = 'http://localhost:3001/api';
 
-export default function EntityList({entity}: {entity: string}) {
+interface EntityListProps {
+  entity: string;
+  onEdit: (id: string) => void;
+  onCreate: () => void;
+}
+
+export default function EntityList({ entity, onEdit, onCreate }: EntityListProps) {
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +52,12 @@ export default function EntityList({entity}: {entity: string}) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h3>{entity}s</h3>
+        <button
+          onClick={onCreate}
+          style={{ padding: '8px 16px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px' }}
+        >
+          Create New
+        </button>
       </div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -70,6 +82,12 @@ export default function EntityList({entity}: {entity: string}) {
                 </td>
               ))}
               <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                <button
+                  onClick={() => onEdit(item.id)}
+                  style={{ background: 'transparent', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', padding: 0, marginRight: '10px' }}
+                >
+                  Edit
+                </button>
                 <button
                   onClick={() => handleDelete(item.id)}
                   style={{ background: 'transparent', border: 'none', color: 'red', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}

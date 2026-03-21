@@ -8,7 +8,7 @@ function App() {
 
     useEffect(() => {
         setId(undefined);
-    }, []);
+    }, [entity]);
 
     const entities: { entityName: string, entityDisplayName: string }[] = [
         {

@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
+import * as _postal from 'postal';
+const postal = _postal as any;
 import EntityList from './components/EntityList';
 import EntityForm from './components/EntityForm';
 
@@ -6,32 +9,83 @@ function ListWrapper() {
   const { entity } = useParams<{ entity: string }>();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const subCreate = postal.subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.create',
+      callback: (data: any) => {
+        if (data.entity === entity) {
+          navigate(`/${entity}/form`);
+        }
+      }
+    });
+
+    const subEdit = postal.subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.edit',
+      callback: (data: any) => {
+        if (data.entity === entity) {
+          navigate(`/${entity}/form/${data.id}`);
+        }
+      }
+    });
+
+    return () => {
+      subCreate.unsubscribe();
+      subEdit.unsubscribe();
+    };
+  }, [entity, navigate]);
+
   if (!entity) return <p>No entity selected</p>;
 
-  return (
-    <EntityList
-      entity={entity}
-      onEdit={(id: string) => navigate(`/${entity}/form/${id}`)}
-      onCreate={() => navigate(`/${entity}/form`)}
-    />
-  );
+  return <EntityList entity={entity} />;
 }
 
 function FormWrapper() {
   const { entity, id } = useParams<{ entity: string, id?: string }>();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const subSaved = postal.subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.saved',
+      callback: (data: any) => {
+        if (data.entity === entity) {
+          navigate(`/${entity}/list`);
+        }
+      }
+    });
+
+    const subError = postal.subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.error',
+      callback: (data: any) => {
+        if (data.entity === entity) {
+          console.error(data.error);
+        }
+      }
+    });
+
+    const subCancel = postal.subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.cancel',
+      callback: (data: any) => {
+        if (data.entity === entity) {
+          navigate(`/${entity}/list`);
+        }
+      }
+    });
+
+    return () => {
+      subSaved.unsubscribe();
+      subError.unsubscribe();
+      subCancel.unsubscribe();
+    };
+  }, [entity, navigate]);
+
   if (!entity) return <p>No entity selected</p>;
 
-  return (
-    <EntityForm
-      entity={entity}
-      id={id}
-      onSaved={() => navigate(`/${entity}/list`)}
-      onError={(err) => console.error(err)}
-      onCancel={() => navigate(`/${entity}/list`)}
-    />
-  );
+  return <EntityForm entity={entity} id={id} />;
 }
 
 function App() {

@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import 'postal';
+const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
 
 const API_BASE = 'http://localhost:3001/api';
 
 interface EntityListProps {
   entity: string;
-  onEdit: (id: string) => void;
-  onCreate: () => void;
 }
 
-export default function EntityList({ entity, onEdit, onCreate }: EntityListProps) {
+export default function EntityList({ entity }: EntityListProps) {
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +45,22 @@ export default function EntityList({ entity, onEdit, onCreate }: EntityListProps
     }
   };
 
+  const handleCreate = () => {
+    (postal as any).publish({
+      channel: 'dynamic_form',
+      topic: 'entity.create',
+      data: { entity }
+    });
+  };
+
+  const handleEdit = (id: string) => {
+    (postal as any).publish({
+      channel: 'dynamic_form',
+      topic: 'entity.edit',
+      data: { entity, id }
+    });
+  };
+
   if (loading) return <div>Loading...</div>;
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
 
@@ -53,7 +69,7 @@ export default function EntityList({ entity, onEdit, onCreate }: EntityListProps
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h3>{entity}s</h3>
         <button
-          onClick={onCreate}
+          onClick={handleCreate}
           style={{ padding: '8px 16px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px' }}
         >
           Create New
@@ -83,7 +99,7 @@ export default function EntityList({ entity, onEdit, onCreate }: EntityListProps
               ))}
               <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
                 <button
-                  onClick={() => onEdit(item.id)}
+                  onClick={() => handleEdit(item.id)}
                   style={{ background: 'transparent', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', padding: 0, marginRight: '10px' }}
                 >
                   Edit

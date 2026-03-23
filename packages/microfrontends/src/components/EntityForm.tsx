@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import 'postal';
+const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -7,12 +9,9 @@ const API_BASE = 'http://localhost:3001/api';
 interface EntityFormProps {
   entity: string;
   id?: string;
-  onSaved: (data: any) => void;
-  onError: (err: any) => void;
-  onCancel: () => void;
 }
 
-export default function EntityForm({ entity, id, onSaved, onError, onCancel }: EntityFormProps) {
+export default function EntityForm({ entity, id }: EntityFormProps) {
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
@@ -40,7 +39,11 @@ export default function EntityForm({ entity, id, onSaved, onError, onCancel }: E
       }
     } catch (err) {
       console.error('Failed to fetch form data', err);
-      onError(err);
+      (postal as any).publish({
+        channel: 'dynamic_form',
+        topic: 'entity.error',
+        data: { entity, error: err }
+      });
     } finally {
       setLoading(false);
     }
@@ -63,11 +66,27 @@ export default function EntityForm({ entity, id, onSaved, onError, onCancel }: E
       } else {
         response = await axios.post(`${API_BASE}/data/${entity}`, formData);
       }
-      onSaved(response.data);
+      (postal as any).publish({
+        channel: 'dynamic_form',
+        topic: 'entity.saved',
+        data: { entity, data: response.data }
+      });
     } catch (err) {
       console.error('Failed to save', err);
-      onError(err);
+      (postal as any).publish({
+        channel: 'dynamic_form',
+        topic: 'entity.error',
+        data: { entity, error: err }
+      });
     }
+  };
+
+  const handleCancel = () => {
+    (postal as any).publish({
+      channel: 'dynamic_form',
+      topic: 'entity.cancel',
+      data: { entity }
+    });
   };
 
   if (loading) return <div>Loading...</div>;
@@ -111,7 +130,7 @@ export default function EntityForm({ entity, id, onSaved, onError, onCancel }: E
           </button>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancel}
             style={{ padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
           >
             Cancel

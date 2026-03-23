@@ -1,16 +1,9 @@
 declare module 'dynamic_form/EntityList' {
-  interface EntityListProps {
-    entity: string;
-  }
-  const EntityList: React.ComponentType<EntityListProps>;
+  const EntityList: React.ComponentType<any>;
   export default EntityList;
 }
 
 declare module 'dynamic_form/EntityForm' {
-  interface EntityFormProps {
-    entity: string;
-    id?: string;
-  }
-  const EntityForm: React.ComponentType<EntityFormProps>;
+  const EntityForm: React.ComponentType<any>;
   export default EntityForm;
 }

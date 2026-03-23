@@ -36,9 +36,37 @@ function ListWrapper() {
     };
   }, [entity, navigate]);
 
+  useEffect(() => {
+    if (!entity) return;
+    const subReady = (postal as any).subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.ready',
+      callback: (data: any) => {
+        if (data.type === 'list') {
+          (postal as any).publish({
+            channel: 'dynamic_form',
+            topic: 'entity.loadList',
+            data: { entity }
+          });
+        }
+      }
+    });
+
+    // Also publish immediately in case remote rendered and subscribed before we did
+    (postal as any).publish({
+      channel: 'dynamic_form',
+      topic: 'entity.loadList',
+      data: { entity }
+    });
+
+    return () => {
+      subReady.unsubscribe();
+    };
+  }, [entity]);
+
   if (!entity) return <p>No entity selected</p>;
 
-  return <EntityList entity={entity} />;
+  return <EntityList />;
 }
 
 function FormWrapper() {
@@ -85,9 +113,36 @@ function FormWrapper() {
     };
   }, [entity, navigate]);
 
+  useEffect(() => {
+    if (!entity) return;
+    const subReady = (postal as any).subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.ready',
+      callback: (data: any) => {
+        if (data.type === 'form') {
+          (postal as any).publish({
+            channel: 'dynamic_form',
+            topic: 'entity.loadForm',
+            data: { entity, id }
+          });
+        }
+      }
+    });
+
+    (postal as any).publish({
+      channel: 'dynamic_form',
+      topic: 'entity.loadForm',
+      data: { entity, id }
+    });
+
+    return () => {
+      subReady.unsubscribe();
+    };
+  }, [entity, id]);
+
   if (!entity) return <p>No entity selected</p>;
 
-  return <EntityForm entity={entity} id={id} />;
+  return <EntityForm />;
 }
 
 function App() {

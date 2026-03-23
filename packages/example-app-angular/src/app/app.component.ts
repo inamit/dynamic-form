@@ -52,11 +52,34 @@ export class EntityListComponent implements OnInit, OnDestroy {
   constructor(private route: ActivatedRoute, private router: Router, private cdr: ChangeDetectorRef) {
     this.route.params.subscribe(params => {
       this.entity = params['entity'];
+
+      (postal as any).publish({
+        channel: 'dynamic_form',
+        topic: 'entity.loadList',
+        data: { entity: this.entity }
+      });
+
       this.cdr.detectChanges();
     });
   }
 
   ngOnInit() {
+    this.subs.push(
+      (postal as any).subscribe({
+        channel: 'dynamic_form',
+        topic: 'entity.ready',
+        callback: (data: any) => {
+          if (data.type === 'list') {
+            (postal as any).publish({
+              channel: 'dynamic_form',
+              topic: 'entity.loadList',
+              data: { entity: this.entity }
+            });
+          }
+        }
+      })
+    );
+
     this.subs.push(
       (postal as any).subscribe({
         channel: 'dynamic_form',
@@ -115,11 +138,34 @@ export class EntityFormComponent implements OnInit, OnDestroy {
     this.route.params.subscribe(params => {
       this.entity = params['entity'];
       this.id = params['id'];
+
+      (postal as any).publish({
+        channel: 'dynamic_form',
+        topic: 'entity.loadForm',
+        data: { entity: this.entity, id: this.id }
+      });
+
       this.cdr.detectChanges();
     });
   }
 
   ngOnInit() {
+    this.subs.push(
+      (postal as any).subscribe({
+        channel: 'dynamic_form',
+        topic: 'entity.ready',
+        callback: (data: any) => {
+          if (data.type === 'form') {
+            (postal as any).publish({
+              channel: 'dynamic_form',
+              topic: 'entity.loadForm',
+              data: { entity: this.entity, id: this.id }
+            });
+          }
+        }
+      })
+    );
+
     this.subs.push(
       (postal as any).subscribe({
         channel: 'dynamic_form',

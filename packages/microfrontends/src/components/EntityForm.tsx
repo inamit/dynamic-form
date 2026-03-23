@@ -6,28 +6,50 @@ import type { EntityConfig } from '../types';
 
 const API_BASE = 'http://localhost:3001/api';
 
-interface EntityFormProps {
-  entity: string;
-  id?: string;
-}
-
-export default function EntityForm({ entity, id }: EntityFormProps) {
+export default function EntityForm() {
+  const [entity, setEntity] = useState<string | null>(null);
+  const [id, setId] = useState<string | undefined>(undefined);
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchConfigAndData();
+    const sub = postal.subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.loadForm',
+      callback: (data: { entity: string, id?: string }) => {
+        setEntity(data.entity);
+        setId(data.id);
+      }
+    });
+
+    postal.publish({
+      channel: 'dynamic_form',
+      topic: 'entity.ready',
+      data: { type: 'form' }
+    });
+
+    return () => {
+      sub.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (entity) {
+      fetchConfigAndData(entity, id);
+    } else {
+      setLoading(false);
+    }
   }, [entity, id]);
 
-  const fetchConfigAndData = async () => {
+  const fetchConfigAndData = async (currentEntity: string, currentId?: string) => {
     setLoading(true);
     try {
-      const configRes = await axios.get(`${API_BASE}/config/${entity}`);
+      const configRes = await axios.get(`${API_BASE}/config/${currentEntity}`);
       setConfig(configRes.data);
 
-      if (id) {
-        const dataRes = await axios.get(`${API_BASE}/data/${entity}/${id}`);
+      if (currentId) {
+        const dataRes = await axios.get(`${API_BASE}/data/${currentEntity}/${currentId}`);
         setFormData(dataRes.data);
       } else {
         // Initialize empty form data
@@ -42,7 +64,7 @@ export default function EntityForm({ entity, id }: EntityFormProps) {
       (postal as any).publish({
         channel: 'dynamic_form',
         topic: 'entity.error',
-        data: { entity, error: err }
+        data: { entity: currentEntity, error: err }
       });
     } finally {
       setLoading(false);

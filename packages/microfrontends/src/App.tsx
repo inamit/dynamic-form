@@ -36,9 +36,36 @@ function ListWrapper() {
     };
   }, [entity, navigate]);
 
+  useEffect(() => {
+    if (!entity) return;
+    const subReady = postal.subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.ready',
+      callback: (data: any) => {
+        if (data.type === 'list') {
+          postal.publish({
+            channel: 'dynamic_form',
+            topic: 'entity.loadList',
+            data: { entity }
+          });
+        }
+      }
+    });
+
+    postal.publish({
+      channel: 'dynamic_form',
+      topic: 'entity.loadList',
+      data: { entity }
+    });
+
+    return () => {
+      subReady.unsubscribe();
+    };
+  }, [entity]);
+
   if (!entity) return <p>No entity selected</p>;
 
-  return <EntityList entity={entity} />;
+  return <EntityList />;
 }
 
 function FormWrapper() {
@@ -83,9 +110,36 @@ function FormWrapper() {
     };
   }, [entity, navigate]);
 
+  useEffect(() => {
+    if (!entity) return;
+    const subReady = postal.subscribe({
+      channel: 'dynamic_form',
+      topic: 'entity.ready',
+      callback: (data: any) => {
+        if (data.type === 'form') {
+          postal.publish({
+            channel: 'dynamic_form',
+            topic: 'entity.loadForm',
+            data: { entity, id }
+          });
+        }
+      }
+    });
+
+    postal.publish({
+      channel: 'dynamic_form',
+      topic: 'entity.loadForm',
+      data: { entity, id }
+    });
+
+    return () => {
+      subReady.unsubscribe();
+    };
+  }, [entity, id]);
+
   if (!entity) return <p>No entity selected</p>;
 
-  return <EntityForm entity={entity} id={id} />;
+  return <EntityForm />;
 }
 
 function App() {

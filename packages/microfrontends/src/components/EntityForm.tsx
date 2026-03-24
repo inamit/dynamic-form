@@ -50,6 +50,21 @@ export default function EntityForm() {
       const configRes = await axios.get(`${API_BASE}/config/${currentEntity}`);
       setConfig(configRes.data);
 
+      const enums: Record<string, {code: string, value: string}[]> = {};
+      const enumPromises = configRes.data.fields
+          .filter((f: any) => f.type === 'enum' && f.enumName)
+          .map(async (f: any) => {
+            try {
+              const res = await axios.get(`${API_BASE}/enums/${f.enumName}`);
+              enums[f.name] = res.data;
+            } catch (err) {
+              console.error(`Failed to fetch enum ${f.enumName}`, err);
+            }
+          });
+
+      await Promise.all(enumPromises);
+      setEnumValues(enums);
+
       if (currentId) {
         const dataRes = await axios.get(`${API_BASE}/data/${currentEntity}/${currentId}`);
         setFormData(dataRes.data);
@@ -58,7 +73,7 @@ export default function EntityForm() {
         const initialData: Record<string, any> = {};
         configRes.data.fields.forEach((f: any) => {
           if (f.type === 'enum') {
-            initialData[f.name] = enums[f.name]?.[0]?.code || '';
+            initialData[f.name] = enumValues[f.name]?.[0]?.code || '';
           } else {
             initialData[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
           }

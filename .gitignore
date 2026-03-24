@@ -4,6 +4,3 @@ dist
 pglite-db
 pglite-db
 pglite-db
-dist/
-node_modules/
-*.log

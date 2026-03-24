@@ -7,9 +7,11 @@ export default defineConfig({
   plugins: [
     react(),
     federation({
-      name: 'example_app',
-      remotes: {
-        dynamic_form: 'http://localhost:5001/assets/remoteEntry.js'
+      name: 'dynamic_form',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './EntityList': './src/components/EntityList.tsx',
+        './EntityForm': './src/components/EntityForm.tsx'
       },
       shared: ['react', 'react-dom', 'react-router-dom', 'axios']
     })
@@ -19,11 +21,5 @@ export default defineConfig({
     target: 'esnext',
     minify: false,
     cssCodeSplit: false
-  },
-  server: {
-    port: 5000,
-  },
-  preview: {
-    port: 5000,
   }
 })

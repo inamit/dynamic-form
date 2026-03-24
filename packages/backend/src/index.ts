@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
+import {PrismaClient} from '@prisma/client';
 import {PrismaPGlite} from 'pglite-prisma-adapter';
 import {PGlite} from '@electric-sql/pglite';
 import axios from 'axios';

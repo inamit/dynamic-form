@@ -24,7 +24,21 @@ let stores = [
 ];
 
 
-// --- REST ENDPOINTS (Person & Candy) ---
+// --- REST ENDPOINTS (Person & Candy & Enums) ---
+
+// Enums
+app.get('/api/enums/:enumName', (req, res) => {
+  const { enumName } = req.params;
+  if (enumName === 'person-status') {
+    res.json([
+      { code: 'ACTIVE', value: 'Active' },
+      { code: 'INACTIVE', value: 'Inactive' },
+      { code: 'PENDING', value: 'Pending' }
+    ]);
+  } else {
+    res.status(404).json({ error: 'Enum not found' });
+  }
+});
 
 // Person
 app.get('/api/persons', (req, res) => res.json(persons));

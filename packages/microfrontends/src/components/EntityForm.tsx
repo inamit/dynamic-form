@@ -12,6 +12,7 @@ export default function EntityForm() {
   const [id, setId] = useState<string | undefined>(undefined);
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [enumValues, setEnumValues] = useState<Record<string, {code: string, value: string}[]>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,6 +50,21 @@ export default function EntityForm() {
       const configRes = await axios.get(`${API_BASE}/config/${currentEntity}`);
       setConfig(configRes.data);
 
+      const enums: Record<string, {code: string, value: string}[]> = {};
+      const enumPromises = configRes.data.fields
+          .filter((f: any) => f.type === 'enum' && f.enumName)
+          .map(async (f: any) => {
+            try {
+              const res = await axios.get(`${API_BASE}/enums/${f.enumName}`);
+              enums[f.name] = res.data;
+            } catch (err) {
+              console.error(`Failed to fetch enum ${f.enumName}`, err);
+            }
+          });
+
+      await Promise.all(enumPromises);
+      setEnumValues(enums);
+
       if (currentId) {
         const dataRes = await axios.get(`${API_BASE}/data/${currentEntity}/${currentId}`);
         setFormData(dataRes.data);
@@ -56,7 +72,11 @@ export default function EntityForm() {
         // Initialize empty form data
         const initialData: Record<string, any> = {};
         configRes.data.fields.forEach((f: any) => {
-          initialData[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
+          if (f.type === 'enum') {
+            initialData[f.name] = enumValues[f.name]?.[0]?.code || '';
+          } else {
+            initialData[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
+          }
         });
         setFormData(initialData);
       }
@@ -72,8 +92,9 @@ export default function EntityForm() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : (type === 'number' ? Number(value) : value)
@@ -132,6 +153,17 @@ export default function EntityForm() {
                 onChange={handleChange}
                 style={{ alignSelf: 'center' }}
               />
+            ) : field.type === 'enum' ? (
+              <select
+                name={field.name}
+                value={formData[field.name] || ''}
+                onChange={handleChange}
+                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+              >
+                {enumValues[field.name]?.map((opt: any) => (
+                  <option key={opt.code} value={opt.code}>{opt.value}</option>
+                ))}
+              </select>
             ) : (
               <input
                 type={field.type}

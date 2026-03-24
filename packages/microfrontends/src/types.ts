@@ -1,7 +1,8 @@
 export interface EntityField {
   name: string;
-  type: 'text' | 'number' | 'checkbox';
+  type: 'text' | 'number' | 'checkbox' | 'enum';
   label: string;
+  enumName?: string;
 }
 
 export interface EntityConfig {

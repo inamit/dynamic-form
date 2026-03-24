@@ -31,8 +31,9 @@ model EntityConfig {
 model Field {
   id             Int          @id @default(autoincrement())
   name           String
-  type           String       // "text", "number", "checkbox"
+  type           String       // "text", "number", "checkbox", "enum"
   label          String
+  enumName       String?
   entityConfigId Int
   entityConfig   EntityConfig @relation(fields: [entityConfigId], references: [id], onDelete: Cascade)
 

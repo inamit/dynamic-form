@@ -73,6 +73,29 @@ app.post('/api/config', async (req, res) => {
 });
 
 
+// --- ENUM ENDPOINTS ---
+
+app.get('/api/enums/:enumName', async (req, res) => {
+    try {
+        const {enumName} = req.params;
+        const ds = await prisma.dataSource.findUnique({
+            where: {name: 'enum'}
+        });
+
+        if (!ds) {
+            return res.status(404).json({error: 'Enum data source not found'});
+        }
+
+        const headers = ds.headers ? JSON.parse(ds.headers) : {};
+        const response = await axios.get(`${ds.apiUrl}/${enumName}`, { headers });
+        res.json(response.data);
+    } catch (error: any) {
+        console.error(error.message);
+        res.status(500).json({error: 'Failed to fetch enum values'});
+    }
+});
+
+
 // --- DATA PROXY ENDPOINTS ---
 
 app.get('/api/data/:entity', async (req, res) => {

@@ -39,7 +39,7 @@ async function main() {
             fields: {
                 create: [
                     {name: 'firstName', type: 'text', label: 'First Name'},
-                    {name: 'age', type: 'number', label: 'Age'},
+                    {name: 'lastName', type: 'text', label: 'Last Name'},
                     {name: 'isActive', type: 'checkbox', label: 'Active'},
                     {name: 'status', type: 'enum', label: 'Status', enumName: 'person-status'},
                 ]

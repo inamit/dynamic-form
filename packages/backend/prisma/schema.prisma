@@ -26,6 +26,7 @@ model EntityConfig {
   dataSourceId Int
   dataSource   DataSource @relation(fields: [dataSourceId], references: [id])
   fields       Field[]
+  gridTemplate String?
 }
 
 model Field {

@@ -11,7 +11,8 @@ export default defineConfig({
       filename: 'remoteEntry.js',
       exposes: {
         './EntityList': './src/components/EntityList.tsx',
-        './EntityForm': './src/components/EntityForm.tsx'
+        './EntityForm': './src/components/EntityForm.tsx',
+        './WebComponents': './src/web-components.tsx'
       },
       shared: ['react', 'react-dom', 'react-router-dom', 'axios']
     })

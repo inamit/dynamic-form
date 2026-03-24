@@ -1,9 +1,9 @@
-import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { RouterOutlet, RouterLink, ActivatedRoute, Router } from '@angular/router';
-import { ReactWrapperComponent } from './react-wrapper.component';
 import { CommonModule } from '@angular/common';
 import 'postal';
 const postal = (window as any).postal;
+import { loadWebComponents } from './load-web-component';
 
 @Component({
   selector: 'app-root',
@@ -24,20 +24,19 @@ const postal = (window as any).postal;
     </div>
   `
 })
-export class AppComponent {}
+export class AppComponent {
+  constructor() {
+    loadWebComponents();
+  }
+}
 
 @Component({
   selector: 'app-entity-list',
   standalone: true,
-  imports: [ReactWrapperComponent],
   template: `
-    <app-react-wrapper
-      url="http://localhost:5001/assets/remoteEntry.js"
-      scope="dynamic_form"
-      module="./EntityList"
-      [componentProps]="props"
-    ></app-react-wrapper>
-  `
+    <mfe-entity-list></mfe-entity-list>
+  `,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class EntityListComponent implements OnInit, OnDestroy {
   entity = '';
@@ -112,15 +111,10 @@ export class EntityListComponent implements OnInit, OnDestroy {
 @Component({
   selector: 'app-entity-form',
   standalone: true,
-  imports: [ReactWrapperComponent],
   template: `
-    <app-react-wrapper
-      url="http://localhost:5001/assets/remoteEntry.js"
-      scope="dynamic_form"
-      module="./EntityForm"
-      [componentProps]="props"
-    ></app-react-wrapper>
-  `
+    <mfe-entity-form></mfe-entity-form>
+  `,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class EntityFormComponent implements OnInit, OnDestroy {
   entity = '';

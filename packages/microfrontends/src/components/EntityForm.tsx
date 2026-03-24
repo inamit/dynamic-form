@@ -10,6 +10,7 @@ const API_BASE = 'http://localhost:3001/api';
 export default function EntityForm() {
   const [entity, setEntity] = useState<string | null>(null);
   const [id, setId] = useState<string | undefined>(undefined);
+  const [injectedGridTemplate, setInjectedGridTemplate] = useState<string | undefined>(undefined);
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [enumValues, setEnumValues] = useState<Record<string, {code: string, value: string}[]>>({});
@@ -19,9 +20,10 @@ export default function EntityForm() {
     const sub = postal.subscribe({
       channel: CHANNEL_NAME,
       topic: TOPICS.LOAD_FORM,
-      callback: (data: { entity: string, id?: string }) => {
+      callback: (data: { entity: string, id?: string, gridTemplate?: string }) => {
         setEntity(data.entity);
         setId(data.id);
+        setInjectedGridTemplate(data.gridTemplate);
       }
     });
 
@@ -136,12 +138,28 @@ export default function EntityForm() {
   if (loading) return <div>Loading...</div>;
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
 
+  const effectiveGridTemplate = injectedGridTemplate || config.gridTemplate;
+  const isGrid = !!effectiveGridTemplate;
+
+  // Extract all valid grid areas from the template so we can hide fields not in the template
+  const validGridAreas = new Set<string>();
+  if (isGrid && effectiveGridTemplate) {
+    const words = effectiveGridTemplate.replace(/['"]/g, '').split(/\s+/);
+    words.forEach(word => {
+      if (word !== '.') validGridAreas.add(word);
+    });
+  }
+
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', background: '#f9f9f9', padding: '20px', borderRadius: '8px' }}>
       <h2 style={{ textAlign: 'center' }}>{id ? `Edit ${entity}` : `Create ${entity}`}</h2>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        {config.fields.map(field => (
-          <div key={field.name} style={{ display: 'flex', flexDirection: 'column' }}>
+      <form onSubmit={handleSubmit} style={
+        isGrid
+          ? { display: 'grid', gridTemplateAreas: effectiveGridTemplate, gap: '15px' }
+          : { display: 'flex', flexDirection: 'column', gap: '15px' }
+      }>
+        {config.fields.filter(field => !isGrid || validGridAreas.has(field.name)).map(field => (
+          <div key={field.name} style={{ display: 'flex', flexDirection: 'column', gridArea: field.name }}>
             <label style={{ fontWeight: 'bold', marginBottom: '5px', textAlign: 'center' }}>
               {field.label}
             </label>
@@ -176,7 +194,7 @@ export default function EntityForm() {
           </div>
         ))}
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '10px', gridColumn: isGrid ? '1 / -1' : undefined }}>
           <button
             type="submit"
             style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}

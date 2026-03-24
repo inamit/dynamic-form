@@ -36,6 +36,7 @@ async function main() {
         create: {
             name: 'person',
             dataSourceId: personDs.id,
+            gridTemplate: '"firstName lastName" "status isActive"',
             fields: {
                 create: [
                     {name: 'firstName', type: 'text', label: 'First Name'},

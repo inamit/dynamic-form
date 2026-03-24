@@ -11,4 +11,5 @@ export interface EntityConfig {
   apiUrl: string;
   apiType: 'REST' | 'GRAPHQL';
   fields: EntityField[];
+  gridTemplate?: string;
 }

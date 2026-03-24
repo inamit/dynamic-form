@@ -38,6 +38,7 @@ function ListWrapper() {
 
   useEffect(() => {
     if (!entity) return;
+
     const subReady = (postal as any).subscribe({
       channel: 'dynamic_form',
       topic: 'entity.ready',
@@ -115,6 +116,12 @@ function FormWrapper() {
 
   useEffect(() => {
     if (!entity) return;
+
+    let gridTemplate: string | undefined;
+    if (entity === 'candy') {
+      gridTemplate = '"name price" "isVegan ."';
+    }
+
     const subReady = (postal as any).subscribe({
       channel: 'dynamic_form',
       topic: 'entity.ready',
@@ -123,7 +130,7 @@ function FormWrapper() {
           (postal as any).publish({
             channel: 'dynamic_form',
             topic: 'entity.loadForm',
-            data: { entity, id }
+            data: { entity, id, gridTemplate }
           });
         }
       }
@@ -132,7 +139,7 @@ function FormWrapper() {
     (postal as any).publish({
       channel: 'dynamic_form',
       topic: 'entity.loadForm',
-      data: { entity, id }
+      data: { entity, id, gridTemplate }
     });
 
     return () => {

@@ -1,0 +1,28 @@
+
+> mock-api@1.0.0 start
+> ts-node src/index.ts
+
+(node:105457) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Error: listen EADDRINUSE: address already in use :::4000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (/app/packages/mock-api/node_modules/express/lib/application.js:635:24)
+    at /app/packages/mock-api/src/index.ts:135:7
+    at Generator.next (<anonymous>)
+    at fulfilled (/app/packages/mock-api/src/index.ts:5:58)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '::',
+  port: 4000
+}
+npm error Lifecycle script `start` failed with error:
+npm error code 1
+npm error path /app/packages/mock-api
+npm error workspace mock-api@1.0.0
+npm error location /app/packages/mock-api
+npm error command failed
+npm error command sh -c ts-node src/index.ts

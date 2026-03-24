@@ -3,6 +3,7 @@ import axios from 'axios';
 import 'postal';
 const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
+import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -15,8 +16,8 @@ export default function EntityForm() {
 
   useEffect(() => {
     const sub = postal.subscribe({
-      channel: 'dynamic_form',
-      topic: 'entity.loadForm',
+      channel: CHANNEL_NAME,
+      topic: TOPICS.LOAD_FORM,
       callback: (data: { entity: string, id?: string }) => {
         setEntity(data.entity);
         setId(data.id);
@@ -24,8 +25,8 @@ export default function EntityForm() {
     });
 
     postal.publish({
-      channel: 'dynamic_form',
-      topic: 'entity.ready',
+      channel: CHANNEL_NAME,
+      topic: TOPICS.COMPONENT_READY,
       data: { type: 'form' }
     });
 
@@ -62,8 +63,8 @@ export default function EntityForm() {
     } catch (err) {
       console.error('Failed to fetch form data', err);
       (postal as any).publish({
-        channel: 'dynamic_form',
-        topic: 'entity.error',
+        channel: CHANNEL_NAME,
+        topic: TOPICS.FORM_LOAD_ERROR,
         data: { entity: currentEntity, error: err }
       });
     } finally {
@@ -89,15 +90,15 @@ export default function EntityForm() {
         response = await axios.post(`${API_BASE}/data/${entity}`, formData);
       }
       (postal as any).publish({
-        channel: 'dynamic_form',
-        topic: 'entity.saved',
+        channel: CHANNEL_NAME,
+        topic: TOPICS.ENTITY_SAVED,
         data: { entity, data: response.data }
       });
     } catch (err) {
       console.error('Failed to save', err);
       (postal as any).publish({
-        channel: 'dynamic_form',
-        topic: 'entity.error',
+        channel: CHANNEL_NAME,
+        topic: TOPICS.ENTITY_SAVE_ERROR,
         data: { entity, error: err }
       });
     }
@@ -105,8 +106,8 @@ export default function EntityForm() {
 
   const handleCancel = () => {
     (postal as any).publish({
-      channel: 'dynamic_form',
-      topic: 'entity.cancel',
+      channel: CHANNEL_NAME,
+      topic: TOPICS.ENTITY_SAVE_CANCEL,
       data: { entity }
     });
   };

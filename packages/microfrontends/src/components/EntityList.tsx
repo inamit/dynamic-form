@@ -3,6 +3,7 @@ import axios from 'axios';
 import 'postal';
 const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
+import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -14,8 +15,8 @@ export default function EntityList() {
 
   useEffect(() => {
     const sub = postal.subscribe({
-      channel: 'dynamic_form',
-      topic: 'entity.loadList',
+      channel: CHANNEL_NAME,
+      topic: TOPICS.LOAD_LIST,
       callback: (data: { entity: string }) => {
         setEntity(data.entity);
       }
@@ -23,8 +24,8 @@ export default function EntityList() {
 
     // Request initial data loading in case host rendered it recently
     postal.publish({
-      channel: 'dynamic_form',
-      topic: 'entity.ready',
+      channel: CHANNEL_NAME,
+      topic: TOPICS.COMPONENT_READY,
       data: { type: 'list' }
     });
 
@@ -70,16 +71,16 @@ export default function EntityList() {
 
   const handleCreate = () => {
     (postal as any).publish({
-      channel: 'dynamic_form',
-      topic: 'entity.create',
+      channel: CHANNEL_NAME,
+      topic: TOPICS.LIST_CREATE_CLICKED,
       data: { entity }
     });
   };
 
   const handleEdit = (id: string) => {
     (postal as any).publish({
-      channel: 'dynamic_form',
-      topic: 'entity.edit',
+      channel: CHANNEL_NAME,
+      topic: TOPICS.LIST_EDIT_CLICKED,
       data: { entity, id }
     });
   };

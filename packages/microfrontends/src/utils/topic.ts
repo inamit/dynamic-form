@@ -8,6 +8,8 @@ const TOPICS = {
     LIST_CREATE_CLICKED: 'entity.create',
     LIST_EDIT_CLICKED: 'entity.edit',
     LOAD_LIST: 'entity.loadList',
+    SELECT_LOCATION: 'map.selectLocation',
+    LOCATION_SELECTED: 'map.locationSelected',
 }
 
 const CHANNEL_NAME = 'dynamic_form';

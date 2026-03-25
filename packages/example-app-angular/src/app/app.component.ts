@@ -130,43 +130,46 @@ export class MapPickerComponent implements OnInit, OnDestroy {
   private handler: Cesium.ScreenSpaceEventHandler | null = null;
 
   ngOnInit() {
-    this.viewer = new Cesium.Viewer('cesiumContainer', {
-      terrainProvider: undefined,
-      baseLayerPicker: false,
-      geocoder: false,
-      homeButton: false,
-      sceneModePicker: false,
-      navigationHelpButton: false,
-      animation: false,
-      timeline: false,
-      fullscreenButton: false,
-    });
+    // Wait for the next tick to ensure the DOM element is ready
+    setTimeout(() => {
+      this.viewer = new Cesium.Viewer('cesiumContainer', {
+        terrainProvider: undefined,
+        baseLayerPicker: false,
+        geocoder: false,
+        homeButton: false,
+        sceneModePicker: false,
+        navigationHelpButton: false,
+        animation: false,
+        timeline: false,
+        fullscreenButton: false,
+      });
 
-    this.viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(34.7818, 32.0853, 100000)
-    });
+      this.viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(34.7818, 32.0853, 100000)
+      });
 
-    this.handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
-    this.handler.setInputAction((movement: any) => {
-      if (this.selectModeField && this.viewer) {
-        const cartesian = this.viewer.camera.pickEllipsoid(movement.position, this.viewer.scene.globe.ellipsoid);
-        if (cartesian) {
-          const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-          const longitude = Cesium.Math.toDegrees(cartographic.longitude);
-          const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+      this.handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
+      this.handler.setInputAction((movement: any) => {
+        if (this.selectModeField && this.viewer) {
+          const cartesian = this.viewer.camera.pickEllipsoid(movement.position, this.viewer.scene.globe.ellipsoid);
+          if (cartesian) {
+            const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+            const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            const latitude = Cesium.Math.toDegrees(cartographic.latitude);
 
-          (postal as any).publish({
-            channel: 'dynamic_form',
-            topic: 'map.locationSelected',
-            data: {
-              field: this.selectModeField,
-              location: [longitude, latitude]
-            }
-          });
-          this.selectModeField = null;
+            (postal as any).publish({
+              channel: 'dynamic_form',
+              topic: 'map.locationSelected',
+              data: {
+                field: this.selectModeField,
+                location: [longitude, latitude]
+              }
+            });
+            this.selectModeField = null;
+          }
         }
-      }
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    }, 0);
 
     this.subs.push(
       (postal as any).subscribe({
@@ -178,6 +181,7 @@ export class MapPickerComponent implements OnInit, OnDestroy {
       })
     );
   }
+
 
   ngOnDestroy() {
     this.subs.forEach(sub => sub.unsubscribe());

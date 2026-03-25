@@ -17,6 +17,7 @@ export default function EntityForm() {
   const [enumValues, setEnumValues] = useState<Record<string, {code: string, value: string}[]>>({});
   const [loading, setLoading] = useState(true);
   const [coordinateFormats, setCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>({});
+  const [selectModeField, setSelectModeField] = useState<string | null>(null);
 
   useEffect(() => {
     const sub = postal.subscribe({
@@ -33,10 +34,25 @@ export default function EntityForm() {
       }
     });
 
+    postal.publish({
+      channel: CHANNEL_NAME,
+      topic: TOPICS.COMPONENT_READY,
+      data: { type: 'form' }
+    });
+
+    return () => {
+      sub.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectModeField) return;
+
     const locationSub = postal.subscribe({
       channel: CHANNEL_NAME,
       topic: TOPICS.LOCATION_SELECTED,
       callback: (data: { field: string, location: [number, number] }) => {
+        if (data.field !== selectModeField) return;
         setFormData(prevData => {
            setCoordinateFormats(prevFormats => {
              const fmt = prevFormats[data.field] || prevFormats._default || 'UTM';
@@ -46,20 +62,12 @@ export default function EntityForm() {
            });
            return prevData;
         });
+        setSelectModeField(null);
       }
     });
 
-    postal.publish({
-      channel: CHANNEL_NAME,
-      topic: TOPICS.COMPONENT_READY,
-      data: { type: 'form' }
-    });
-
-    return () => {
-      sub.unsubscribe();
-      locationSub.unsubscribe();
-    };
-  }, []);
+    return () => locationSub.unsubscribe();
+  }, [selectModeField]);
 
   useEffect(() => {
     if (entity) {
@@ -160,10 +168,12 @@ export default function EntityForm() {
   };
 
   const handleSelectLocation = (field: string) => {
+    const isCurrentlySelecting = selectModeField === field;
+    setSelectModeField(isCurrentlySelecting ? null : field);
     postal.publish({
       channel: CHANNEL_NAME,
       topic: TOPICS.SELECT_LOCATION,
-      data: { field }
+      data: { field: isCurrentlySelecting ? null : field }
     });
   };
 
@@ -261,14 +271,14 @@ export default function EntityForm() {
                     padding: '8px',
                     borderRadius: '4px',
                     border: '1px solid #ccc',
-                    background: '#e9ecef',
+                    background: selectModeField === field.name ? 'yellow' : '#e9ecef',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}
                 >
-                  📍
+                  {selectModeField === field.name ? 'Selecting...' : '📍'}
                 </button>
               </div>
             ) : field.type === 'enum' ? (

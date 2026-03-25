@@ -19,8 +19,8 @@ let candies = [
 ];
 
 let stores = [
-  { id: '1', name: 'Candy Shop', rating: 4.5, isOpen: true },
-  { id: '2', name: 'Corner Store', rating: 3.8, isOpen: false },
+  { id: '1', name: 'Candy Shop', rating: 4.5, isOpen: true, location: '32.0853, 34.7818' },
+  { id: '2', name: 'Corner Store', rating: 3.8, isOpen: false, location: '31.7683, 35.2137' },
 ];
 
 
@@ -99,6 +99,7 @@ const typeDefs = gql`
     name: String!
     rating: Float!
     isOpen: Boolean!
+    location: String
   }
 
   type Query {
@@ -107,8 +108,8 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    createStore(name: String!, rating: Float!, isOpen: Boolean!): Store
-    updateStore(id: ID!, name: String, rating: Float, isOpen: Boolean): Store
+    createStore(name: String!, rating: Float!, isOpen: Boolean!, location: String): Store
+    updateStore(id: ID!, name: String, rating: Float, isOpen: Boolean, location: String): Store
     deleteStore(id: ID!): Boolean
   }
 `;

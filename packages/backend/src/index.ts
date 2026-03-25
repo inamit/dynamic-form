@@ -119,7 +119,13 @@ app.get('/api/data/:entity', async (req, res) => {
 
             const query = gql`${queryStr}`;
             const data = await request(ds.apiUrl, query) as any;
-            res.json(data[`${entity}s`]);
+            const items = data[`${entity}s`].map((item: any) => {
+                if (item.location && item.location.latitude && item.location.longitude) {
+                    item.location = `${item.location.latitude}, ${item.location.longitude}`;
+                }
+                return item;
+            });
+            res.json(items);
         }
     } catch (error: any) {
         console.error(error.message);
@@ -149,7 +155,11 @@ app.get('/api/data/:entity/:id', async (req, res) => {
             const query = gql`${queryStr}`;
             const variables = {id};
             const data = await request(ds.apiUrl, query, variables) as any;
-            res.json(data[entity]);
+            const item = data[entity];
+            if (item && item.location && item.location.latitude && item.location.longitude) {
+                item.location = `${item.location.latitude}, ${item.location.longitude}`;
+            }
+            res.json(item);
         }
     } catch (error: any) {
         console.error(error.message);
@@ -180,11 +190,26 @@ app.post('/api/data/:entity', async (req, res) => {
 
             const variables: Record<string, any> = {};
             config.fields.forEach((f: any) => {
-                variables[f.name] = req.body[f.name];
+                if (f.type === 'coordinate' && req.body[f.name]) {
+                    // Try to extract lat/lng based on comma parsing or mgrs fallback format handling.
+                    const parsed = req.body[f.name].split(',').map((s: string) => parseFloat(s.trim()));
+                    if (parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+                        variables[f.name] = { latitude: parsed[0], longitude: parsed[1] };
+                    } else {
+                        // Fallback handling or empty
+                        variables[f.name] = { latitude: 0, longitude: 0 };
+                    }
+                } else {
+                    variables[f.name] = req.body[f.name];
+                }
             });
 
             const data = await request(ds.apiUrl, mutation, variables) as any;
-            res.json(data[`create${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
+            const item = data[`create${entity.charAt(0).toUpperCase() + entity.slice(1)}`];
+            if (item && item.location && item.location.latitude && item.location.longitude) {
+                item.location = `${item.location.latitude}, ${item.location.longitude}`;
+            }
+            res.json(item);
         }
     } catch (error: any) {
         console.error(error.message);
@@ -216,12 +241,25 @@ app.put('/api/data/:entity/:id', async (req, res) => {
             const variables: Record<string, any> = {id};
             config.fields.forEach((f: any) => {
                 if (req.body[f.name] !== undefined) {
-                    variables[f.name] = req.body[f.name];
+                    if (f.type === 'coordinate' && req.body[f.name]) {
+                        const parsed = req.body[f.name].split(',').map((s: string) => parseFloat(s.trim()));
+                        if (parsed.length === 2 && !isNaN(parsed[0]) && !isNaN(parsed[1])) {
+                            variables[f.name] = { latitude: parsed[0], longitude: parsed[1] };
+                        } else {
+                            variables[f.name] = { latitude: 0, longitude: 0 };
+                        }
+                    } else {
+                        variables[f.name] = req.body[f.name];
+                    }
                 }
             });
 
             const data = await request(ds.apiUrl, mutation, variables) as any;
-            res.json(data[`update${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
+            const item = data[`update${entity.charAt(0).toUpperCase() + entity.slice(1)}`];
+            if (item && item.location && item.location.latitude && item.location.longitude) {
+                item.location = `${item.location.latitude}, ${item.location.longitude}`;
+            }
+            res.json(item);
         }
     } catch (error: any) {
         console.error(error.message);

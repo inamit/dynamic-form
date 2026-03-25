@@ -95,7 +95,10 @@ async function main() {
           name
           rating
           isOpen
-          location
+          location {
+            latitude
+            longitude
+          }
         }
       }
     `,
@@ -106,29 +109,38 @@ async function main() {
           name
           rating
           isOpen
-          location
+          location {
+            latitude
+            longitude
+          }
         }
       }
     `,
         create: `
-      mutation CreateStore($name: String!, $rating: Float!, $isOpen: Boolean!, $location: String) {
+      mutation CreateStore($name: String!, $rating: Float!, $isOpen: Boolean!, $location: LocationInput) {
         createStore(name: $name, rating: $rating, isOpen: $isOpen, location: $location) {
           id
           name
           rating
           isOpen
-          location
+          location {
+            latitude
+            longitude
+          }
         }
       }
     `,
         update: `
-      mutation UpdateStore($id: ID!, $name: String, $rating: Float, $isOpen: Boolean, $location: String) {
+      mutation UpdateStore($id: ID!, $name: String, $rating: Float, $isOpen: Boolean, $location: LocationInput) {
         updateStore(id: $id, name: $name, rating: $rating, isOpen: $isOpen, location: $location) {
           id
           name
           rating
           isOpen
-          location
+          location {
+            latitude
+            longitude
+          }
         }
       }
     `,

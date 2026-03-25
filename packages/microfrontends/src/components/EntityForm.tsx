@@ -5,6 +5,9 @@ const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
 import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
 import { parseCoordinate, formatCoordinate } from '../utils/coordinate.ts';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import CloseIcon from '@mui/icons-material/Close';
+import { IconButton } from '@mui/material';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -263,23 +266,32 @@ export default function EntityForm() {
                   placeholder={coordinateFormats[field.name] === 'WGS84' ? 'lat, lng' : 'UTM string'}
                   style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                 />
-                <button
-                  type="button"
-                  title="Select location from map"
+                <IconButton
+                  color={selectModeField === field.name ? 'error' : 'primary'}
+                  title={selectModeField === field.name ? 'Cancel map selection' : 'Select location from map'}
                   onClick={() => handleSelectLocation(field.name)}
-                  style={{
-                    padding: '8px',
+                  sx={{
+                    transition: 'all 0.3s ease',
+                    transform: selectModeField === field.name ? 'scale(1.1)' : 'scale(1)',
+                    backgroundColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.1)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.5)' : '#ccc',
                     borderRadius: '4px',
-                    border: '1px solid #ccc',
-                    background: selectModeField === field.name ? 'yellow' : '#e9ecef',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    padding: '8px'
                   }}
                 >
-                  {selectModeField === field.name ? 'Selecting...' : '📍'}
-                </button>
+                  {selectModeField === field.name ? (
+                    <CloseIcon sx={{
+                      animation: 'spin 0.3s linear',
+                      '@keyframes spin': { '0%': { transform: 'rotate(-90deg)' }, '100%': { transform: 'rotate(0)' } }
+                    }} />
+                  ) : (
+                    <LocationOnIcon sx={{
+                      animation: 'drop 0.3s ease-out',
+                      '@keyframes drop': { '0%': { transform: 'translateY(-10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }
+                    }} />
+                  )}
+                </IconButton>
               </div>
             ) : field.type === 'enum' ? (
               <select

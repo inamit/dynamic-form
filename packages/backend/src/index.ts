@@ -30,6 +30,7 @@ app.use(express.json());
 
 app.get('/api/config', async (req, res) => {
     try {
+        console.log('GET /api/config');
         const configs = await prisma.entityConfig.findMany({
             include: {dataSource: true, fields: true}
         });
@@ -42,19 +43,21 @@ app.get('/api/config', async (req, res) => {
 
         res.json(parsedConfigs);
     } catch (error) {
-        console.error(error);
+        console.error('Error in GET /api/config:', error);
         res.status(500).json({error: 'Failed to fetch configurations'});
     }
 });
 
 app.get('/api/config/:name', async (req, res) => {
     try {
+        console.log(`GET /api/config/${req.params.name}`);
         const config = await prisma.entityConfig.findUnique({
             where: {name: req.params.name},
             include: {dataSource: true, fields: true}
         });
 
         if (!config) {
+            console.log(`Configuration not found: ${req.params.name}`);
             return res.status(404).json({error: 'Configuration not found'});
         }
 
@@ -64,6 +67,7 @@ app.get('/api/config/:name', async (req, res) => {
             apiType: config.dataSource.apiType
         });
     } catch (error) {
+        console.error(`Error in GET /api/config/${req.params.name}:`, error);
         res.status(500).json({error: 'Failed to fetch configuration'});
     }
 });
@@ -78,11 +82,13 @@ app.post('/api/config', async (req, res) => {
 app.get('/api/enums/:enumName', async (req, res) => {
     try {
         const {enumName} = req.params;
+        console.log(`GET /api/enums/${enumName}`);
         const ds = await prisma.dataSource.findUnique({
             where: {name: 'enum'}
         });
 
         if (!ds) {
+            console.log('Enum data source not found');
             return res.status(404).json({error: 'Enum data source not found'});
         }
 
@@ -90,7 +96,7 @@ app.get('/api/enums/:enumName', async (req, res) => {
         const response = await axios.get(`${ds.apiUrl}/${enumName}`, { headers });
         res.json(response.data);
     } catch (error: any) {
-        console.error(error.message);
+        console.error(`Error in GET /api/enums/${req.params.enumName}:`, error.message);
         res.status(500).json({error: 'Failed to fetch enum values'});
     }
 });
@@ -100,15 +106,20 @@ app.get('/api/enums/:enumName', async (req, res) => {
 
 app.get('/api/data/:entity', async (req, res) => {
     const {entity} = req.params;
+    console.log(`GET /api/data/${entity}`);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},
         include: {dataSource: true, fields: true}
     });
 
-    if (!config) return res.status(404).json({error: 'Entity not found'});
+    if (!config) {
+        console.log(`Entity not found: ${entity}`);
+        return res.status(404).json({error: 'Entity not found'});
+    }
 
     try {
         const ds = config.dataSource;
+        console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
             const response = await axios.get(ds.apiUrl);
             res.json(response.data);
@@ -122,22 +133,27 @@ app.get('/api/data/:entity', async (req, res) => {
             res.json(data[`${entity}s`]);
         }
     } catch (error: any) {
-        console.error(error.message);
+        console.error(`Error in GET /api/data/${entity}:`, error.message);
         res.status(500).json({error: 'Failed to fetch data'});
     }
 });
 
 app.get('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
+    console.log(`GET /api/data/${entity}/${id}`);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},
         include: {dataSource: true, fields: true}
     });
 
-    if (!config) return res.status(404).json({error: 'Entity not found'});
+    if (!config) {
+        console.log(`Entity not found: ${entity}`);
+        return res.status(404).json({error: 'Entity not found'});
+    }
 
     try {
         const ds = config.dataSource;
+        console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
             const response = await axios.get(`${ds.apiUrl}/${id}`);
             res.json(response.data);
@@ -152,22 +168,27 @@ app.get('/api/data/:entity/:id', async (req, res) => {
             res.json(data[entity]);
         }
     } catch (error: any) {
-        console.error(error.message);
+        console.error(`Error in GET /api/data/${entity}/${id}:`, error.message);
         res.status(500).json({error: 'Failed to fetch data'});
     }
 });
 
 app.post('/api/data/:entity', async (req, res) => {
     const {entity} = req.params;
+    console.log(`POST /api/data/${entity}`, req.body);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},
         include: {dataSource: true, fields: true}
     });
 
-    if (!config) return res.status(404).json({error: 'Entity not found'});
+    if (!config) {
+        console.log(`Entity not found: ${entity}`);
+        return res.status(404).json({error: 'Entity not found'});
+    }
 
     try {
         const ds = config.dataSource;
+        console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
             const response = await axios.post(ds.apiUrl, req.body);
             res.json(response.data);
@@ -183,26 +204,32 @@ app.post('/api/data/:entity', async (req, res) => {
                 variables[f.name] = req.body[f.name];
             });
 
+            console.log(`Sending GraphQL mutation to ${ds.apiUrl}:`, queryStr, 'with variables:', variables);
             const data = await request(ds.apiUrl, mutation, variables) as any;
             res.json(data[`create${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
         }
     } catch (error: any) {
-        console.error(error.message);
+        console.error(`Error in POST /api/data/${entity}:`, error.message);
         res.status(500).json({error: 'Failed to create data'});
     }
 });
 
 app.put('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
+    console.log(`PUT /api/data/${entity}/${id}`, req.body);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},
         include: {dataSource: true, fields: true}
     });
 
-    if (!config) return res.status(404).json({error: 'Entity not found'});
+    if (!config) {
+        console.log(`Entity not found: ${entity}`);
+        return res.status(404).json({error: 'Entity not found'});
+    }
 
     try {
         const ds = config.dataSource;
+        console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
             const response = await axios.put(`${ds.apiUrl}/${id}`, req.body);
             res.json(response.data);
@@ -220,26 +247,32 @@ app.put('/api/data/:entity/:id', async (req, res) => {
                 }
             });
 
+            console.log(`Sending GraphQL mutation to ${ds.apiUrl}:`, queryStr, 'with variables:', variables);
             const data = await request(ds.apiUrl, mutation, variables) as any;
             res.json(data[`update${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
         }
     } catch (error: any) {
-        console.error(error.message);
+        console.error(`Error in PUT /api/data/${entity}/${id}:`, error.message);
         res.status(500).json({error: 'Failed to update data'});
     }
 });
 
 app.delete('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
+    console.log(`DELETE /api/data/${entity}/${id}`);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},
         include: {dataSource: true, fields: true}
     });
 
-    if (!config) return res.status(404).json({error: 'Entity not found'});
+    if (!config) {
+        console.log(`Entity not found: ${entity}`);
+        return res.status(404).json({error: 'Entity not found'});
+    }
 
     try {
         const ds = config.dataSource;
+        console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
             await axios.delete(`${ds.apiUrl}/${id}`);
             res.json({success: true});
@@ -250,11 +283,13 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
 
             const mutation = gql`${queryStr}`;
             const variables = {id};
+
+            console.log(`Sending GraphQL mutation to ${ds.apiUrl}:`, queryStr, 'with variables:', variables);
             await request(ds.apiUrl, mutation, variables);
             res.json({success: true});
         }
     } catch (error: any) {
-        console.error(error.message);
+        console.error(`Error in DELETE /api/data/${entity}/${id}:`, error.message);
         res.status(500).json({error: 'Failed to delete data'});
     }
 });

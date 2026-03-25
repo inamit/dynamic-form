@@ -10,8 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.9",
+    "@mui/material": "^7.3.9",
     "axios": "^1.13.6",
+    "mgrs": "^2.1.0",
     "postal": "^3.2.0",
+    "proj4": "^2.20.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.1"
@@ -21,6 +27,7 @@
     "@originjs/vite-plugin-federation": "^1.4.1",
     "@types/node": "^24.12.0",
     "@types/postal": "^1.0.35",
+    "@types/proj4": "^2.5.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

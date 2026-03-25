@@ -4,6 +4,9 @@ import 'postal';
 const postal = (window as any).postal;
 import EntityList from 'dynamic_form/EntityList';
 import EntityForm from 'dynamic_form/EntityForm';
+import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useState } from 'react';
 
 function ListWrapper() {
   const { entity } = useParams<{ entity: string }>();
@@ -70,6 +73,60 @@ function ListWrapper() {
   return <EntityList />;
 }
 
+function MapPicker() {
+  const [selectModeField, setSelectModeField] = useState<string | null>(null);
+
+  useEffect(() => {
+    const sub = (postal as any).subscribe({
+      channel: 'dynamic_form',
+      topic: 'map.selectLocation',
+      callback: (data: { field: string }) => {
+        setSelectModeField(data.field);
+      }
+    });
+    return () => sub.unsubscribe();
+  }, []);
+
+  const MapEvents = () => {
+    useMapEvents({
+      click(e) {
+        if (selectModeField) {
+          (postal as any).publish({
+            channel: 'dynamic_form',
+            topic: 'map.locationSelected',
+            data: {
+              field: selectModeField,
+              location: [e.latlng.lng, e.latlng.lat]
+            }
+          });
+          setSelectModeField(null);
+        }
+      }
+    });
+    return null;
+  };
+
+  return (
+    <div style={{ height: '400px', width: '100%', marginTop: '20px', position: 'relative' }}>
+      {selectModeField && (
+        <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 1000, background: 'yellow', padding: '10px', borderRadius: '4px', fontWeight: 'bold' }}>
+          Select location on map for field: {selectModeField}
+        </div>
+      )}
+      <MapContainer
+        center={[32.0853, 34.7818]}
+        zoom={13}
+        style={{ height: '100%', width: '100%', cursor: selectModeField ? 'crosshair' : 'grab' }}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapEvents />
+      </MapContainer>
+    </div>
+  );
+}
+
 function FormWrapper() {
   const { entity, id } = useParams<{ entity: string, id?: string }>();
   const navigate = useNavigate();
@@ -130,7 +187,7 @@ function FormWrapper() {
           (postal as any).publish({
             channel: 'dynamic_form',
             topic: 'entity.loadForm',
-            data: { entity, id, gridTemplate }
+            data: { entity, id, gridTemplate, defaultCoordinateFormat: 'UTM' }
           });
         }
       }
@@ -139,7 +196,7 @@ function FormWrapper() {
     (postal as any).publish({
       channel: 'dynamic_form',
       topic: 'entity.loadForm',
-      data: { entity, id, gridTemplate }
+      data: { entity, id, gridTemplate, defaultCoordinateFormat: 'UTM' }
     });
 
     return () => {
@@ -149,7 +206,16 @@ function FormWrapper() {
 
   if (!entity) return <p>No entity selected</p>;
 
-  return <EntityForm />;
+  return (
+    <div style={{ display: 'flex', gap: '20px' }}>
+      <div style={{ flex: 1 }}>
+        <EntityForm />
+      </div>
+      <div style={{ flex: 1 }}>
+        <MapPicker />
+      </div>
+    </div>
+  );
 }
 
 function App() {

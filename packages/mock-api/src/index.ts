@@ -19,8 +19,8 @@ let candies = [
 ];
 
 let stores = [
-  { id: '1', name: 'Candy Shop', rating: 4.5, isOpen: true },
-  { id: '2', name: 'Corner Store', rating: 3.8, isOpen: false },
+  { id: '1', name: 'Candy Shop', rating: 4.5, isOpen: true, location: { longitude: 34.7818, latitude: 32.0853 } },
+  { id: '2', name: 'Corner Store', rating: 3.8, isOpen: false, location: { longitude: 35.2137, latitude: 31.7683 } },
 ];
 
 
@@ -94,11 +94,17 @@ app.delete('/api/candies/:id', (req, res) => {
 // --- GRAPHQL SERVER (Store) ---
 
 const typeDefs = gql`
+  type Location {
+    longitude: Float!
+    latitude: Float!
+  }
+
   type Store {
     id: ID!
     name: String!
     rating: Float!
     isOpen: Boolean!
+    location: Location
   }
 
   type Query {
@@ -106,9 +112,14 @@ const typeDefs = gql`
     store(id: ID!): Store
   }
 
+  input LocationInput {
+    longitude: Float!
+    latitude: Float!
+  }
+
   type Mutation {
-    createStore(name: String!, rating: Float!, isOpen: Boolean!): Store
-    updateStore(id: ID!, name: String, rating: Float, isOpen: Boolean): Store
+    createStore(name: String!, rating: Float!, isOpen: Boolean!, location: LocationInput): Store
+    updateStore(id: ID!, name: String, rating: Float, isOpen: Boolean, location: LocationInput): Store
     deleteStore(id: ID!): Boolean
   }
 `;

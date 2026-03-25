@@ -1,6 +1,6 @@
 export interface EntityField {
   name: string;
-  type: 'text' | 'number' | 'checkbox' | 'enum';
+  type: 'text' | 'number' | 'checkbox' | 'enum' | 'coordinate';
   label: string;
   enumName?: string;
 }

@@ -116,11 +116,19 @@ export default function EntityList() {
           {data.map(item => (
             <tr key={item.id}>
               <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>{item.id}</td>
-              {config.fields.map(field => (
-                <td key={field.name} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                  {field.type === 'checkbox' ? (item[field.name] ? 'Yes' : 'No') : item[field.name]}
-                </td>
-              ))}
+              {config.fields.map(field => {
+                let displayValue = item[field.name];
+                if (field.type === 'checkbox') {
+                  displayValue = displayValue ? 'Yes' : 'No';
+                } else if (field.type === 'coordinate' && displayValue && typeof displayValue === 'object') {
+                  displayValue = `${displayValue.latitude.toFixed(6)}, ${displayValue.longitude.toFixed(6)}`;
+                }
+                return (
+                  <td key={field.name} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                    {displayValue}
+                  </td>
+                );
+              })}
               <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
                 <button
                   onClick={() => handleEdit(item.id)}

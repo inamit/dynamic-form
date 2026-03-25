@@ -4,6 +4,10 @@ import 'postal';
 const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
 import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
+import { parseCoordinate, formatCoordinate } from '../utils/coordinate.ts';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import CloseIcon from '@mui/icons-material/Close';
+import { IconButton } from '@mui/material';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -15,15 +19,26 @@ export default function EntityForm() {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [enumValues, setEnumValues] = useState<Record<string, {code: string, value: string}[]>>({});
   const [loading, setLoading] = useState(true);
+  const [coordinateFormats, setCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>({});
+  const [selectModeField, setSelectModeField] = useState<string | null>(null);
+
+  const [defaultValues, setDefaultValues] = useState<Record<string, any>>({});
 
   useEffect(() => {
     const sub = postal.subscribe({
       channel: CHANNEL_NAME,
       topic: TOPICS.LOAD_FORM,
-      callback: (data: { entity: string, id?: string, gridTemplate?: string }) => {
+      callback: (data: { entity: string, id?: string, gridTemplate?: string, defaultCoordinateFormat?: 'WGS84' | 'UTM', defaultValues?: Record<string, any> }) => {
         setEntity(data.entity);
         setId(data.id);
         setInjectedGridTemplate(data.gridTemplate);
+        if (data.defaultCoordinateFormat) {
+          // Will be applied to all coordinate fields when config loads
+          setCoordinateFormats(prev => ({ ...prev, _default: data.defaultCoordinateFormat! }));
+        }
+        if (data.defaultValues) {
+          setDefaultValues(data.defaultValues);
+        }
       }
     });
 
@@ -37,6 +52,30 @@ export default function EntityForm() {
       sub.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectModeField) return;
+
+    const locationSub = postal.subscribe({
+      channel: CHANNEL_NAME,
+      topic: TOPICS.LOCATION_SELECTED,
+      callback: (data: { field: string, location: [number, number] }) => {
+        if (data.field !== selectModeField) return;
+        setFormData(prevData => {
+           setCoordinateFormats(prevFormats => {
+             const fmt = prevFormats[data.field] || prevFormats._default || 'UTM';
+             const formatted = formatCoordinate(data.location[0], data.location[1], fmt);
+             setFormData(pd => ({ ...pd, [data.field]: formatted }));
+             return prevFormats;
+           });
+           return prevData;
+        });
+        setSelectModeField(null);
+      }
+    });
+
+    return () => locationSub.unsubscribe();
+  }, [selectModeField]);
 
   useEffect(() => {
     if (entity) {
@@ -67,14 +106,42 @@ export default function EntityForm() {
       await Promise.all(enumPromises);
       setEnumValues(enums);
 
+      // Initialize formats
+      const defaultFormat = coordinateFormats._default || 'UTM';
+      const formats: Record<string, 'WGS84' | 'UTM'> = { _default: defaultFormat };
+      configRes.data.fields.forEach((f: any) => {
+        if (f.type === 'coordinate') {
+          formats[f.name] = defaultFormat as 'WGS84' | 'UTM';
+        }
+      });
+      setCoordinateFormats(formats);
+
       if (currentId) {
         const dataRes = await axios.get(`${API_BASE}/data/${currentEntity}/${currentId}`);
-        setFormData(dataRes.data);
+
+        // Deserialize incoming coordinate data objects into strings for the text boxes
+        const loadedData = dataRes.data;
+        configRes.data.fields.forEach((f: any) => {
+          if (f.type === 'coordinate' && loadedData[f.name]) {
+            const loc = loadedData[f.name];
+            if (loc && typeof loc === 'object' && loc.latitude !== undefined && loc.longitude !== undefined) {
+               loadedData[f.name] = formatCoordinate(loc.longitude, loc.latitude, formats[f.name] || 'UTM');
+            }
+          }
+        });
+        setFormData(loadedData);
       } else {
         // Initialize empty form data
         const initialData: Record<string, any> = {};
         configRes.data.fields.forEach((f: any) => {
-          if (f.type === 'enum') {
+          if (defaultValues[f.name] !== undefined) {
+            if (f.type === 'coordinate' && typeof defaultValues[f.name] === 'object') {
+              const loc = defaultValues[f.name];
+              initialData[f.name] = formatCoordinate(loc.longitude, loc.latitude, formats[f.name] || 'UTM');
+            } else {
+              initialData[f.name] = defaultValues[f.name];
+            }
+          } else if (f.type === 'enum') {
             initialData[f.name] = enumValues[f.name]?.[0]?.code || '';
           } else {
             initialData[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
@@ -103,14 +170,63 @@ export default function EntityForm() {
     }));
   };
 
+  const handleCoordinateFormatChange = (field: string, format: 'WGS84' | 'UTM') => {
+    const currentVal = formData[field];
+    let newVal = currentVal;
+    if (currentVal) {
+      const parsed = parseCoordinate(currentVal);
+      if (parsed) {
+        newVal = formatCoordinate(parsed[0], parsed[1], format);
+      }
+    }
+
+    setCoordinateFormats(prev => ({
+      ...prev,
+      [field]: format
+    }));
+
+    if (newVal !== currentVal) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: newVal
+      }));
+    }
+  };
+
+  const handleSelectLocation = (field: string) => {
+    const isCurrentlySelecting = selectModeField === field;
+    setSelectModeField(isCurrentlySelecting ? null : field);
+    postal.publish({
+      channel: CHANNEL_NAME,
+      topic: TOPICS.SELECT_LOCATION,
+      data: { field: isCurrentlySelecting ? null : field }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       let response;
+
+      // Map coordinate string fields back to objects for the backend payload
+      const payload = { ...formData };
+      if (config) {
+        config.fields.forEach(f => {
+          if (f.type === 'coordinate' && payload[f.name]) {
+             const parsed = parseCoordinate(payload[f.name]);
+             if (parsed) {
+                payload[f.name] = { longitude: parsed[0], latitude: parsed[1] };
+             } else {
+                delete payload[f.name]; // Or set to null if the backend expects it
+             }
+          }
+        });
+      }
+
       if (id) {
-        response = await axios.put(`${API_BASE}/data/${entity}/${id}`, formData);
+        response = await axios.put(`${API_BASE}/data/${entity}/${id}`, payload);
       } else {
-        response = await axios.post(`${API_BASE}/data/${entity}`, formData);
+        response = await axios.post(`${API_BASE}/data/${entity}`, payload);
       }
       (postal as any).publish({
         channel: CHANNEL_NAME,
@@ -171,6 +287,51 @@ export default function EntityForm() {
                 onChange={handleChange}
                 style={{ alignSelf: 'center' }}
               />
+            ) : field.type === 'coordinate' ? (
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <select
+                  value={coordinateFormats[field.name] || 'UTM'}
+                  onChange={(e) => handleCoordinateFormatChange(field.name, e.target.value as 'WGS84' | 'UTM')}
+                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '90px' }}
+                >
+                  <option value="UTM">UTM</option>
+                  <option value="WGS84">WGS84</option>
+                </select>
+                <input
+                  type="text"
+                  name={field.name}
+                  value={formData[field.name] || ''}
+                  onChange={handleChange}
+                  placeholder={coordinateFormats[field.name] === 'WGS84' ? 'lat, lng' : 'UTM string'}
+                  style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                />
+                <IconButton
+                  color={selectModeField === field.name ? 'error' : 'primary'}
+                  title={selectModeField === field.name ? 'Cancel map selection' : 'Select location from map'}
+                  onClick={() => handleSelectLocation(field.name)}
+                  sx={{
+                    transition: 'all 0.3s ease',
+                    transform: selectModeField === field.name ? 'scale(1.1)' : 'scale(1)',
+                    backgroundColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.1)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.5)' : '#ccc',
+                    borderRadius: '4px',
+                    padding: '8px'
+                  }}
+                >
+                  {selectModeField === field.name ? (
+                    <CloseIcon sx={{
+                      animation: 'spin 0.3s linear',
+                      '@keyframes spin': { '0%': { transform: 'rotate(-90deg)' }, '100%': { transform: 'rotate(0)' } }
+                    }} />
+                  ) : (
+                    <LocationOnIcon sx={{
+                      animation: 'drop 0.3s ease-out',
+                      '@keyframes drop': { '0%': { transform: 'translateY(-10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }
+                    }} />
+                  )}
+                </IconButton>
+              </div>
             ) : field.type === 'enum' ? (
               <select
                 name={field.name}

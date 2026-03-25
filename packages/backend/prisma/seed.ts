@@ -95,6 +95,10 @@ async function main() {
           name
           rating
           isOpen
+          location {
+            latitude
+            longitude
+          }
         }
       }
     `,
@@ -105,26 +109,38 @@ async function main() {
           name
           rating
           isOpen
+          location {
+            latitude
+            longitude
+          }
         }
       }
     `,
         create: `
-      mutation CreateStore($name: String!, $rating: Float!, $isOpen: Boolean!) {
-        createStore(name: $name, rating: $rating, isOpen: $isOpen) {
+      mutation CreateStore($name: String!, $rating: Float!, $isOpen: Boolean!, $location: LocationInput) {
+        createStore(name: $name, rating: $rating, isOpen: $isOpen, location: $location) {
           id
           name
           rating
           isOpen
+          location {
+            latitude
+            longitude
+          }
         }
       }
     `,
         update: `
-      mutation UpdateStore($id: ID!, $name: String, $rating: Float, $isOpen: Boolean) {
-        updateStore(id: $id, name: $name, rating: $rating, isOpen: $isOpen) {
+      mutation UpdateStore($id: ID!, $name: String, $rating: Float, $isOpen: Boolean, $location: LocationInput) {
+        updateStore(id: $id, name: $name, rating: $rating, isOpen: $isOpen, location: $location) {
           id
           name
           rating
           isOpen
+          location {
+            latitude
+            longitude
+          }
         }
       }
     `,
@@ -148,7 +164,17 @@ async function main() {
 
     await prisma.entityConfig.upsert({
         where: {name: 'store'},
-        update: {},
+        update: {
+            fields: {
+                deleteMany: {},
+                create: [
+                    {name: 'name', type: 'text', label: 'Store Name'},
+                    {name: 'rating', type: 'number', label: 'Rating'},
+                    {name: 'isOpen', type: 'checkbox', label: 'Is Open?'},
+                    {name: 'location', type: 'coordinate', label: 'Location'},
+                ]
+            }
+        },
         create: {
             name: 'store',
             dataSourceId: storeDs.id,
@@ -157,6 +183,7 @@ async function main() {
                     {name: 'name', type: 'text', label: 'Store Name'},
                     {name: 'rating', type: 'number', label: 'Rating'},
                     {name: 'isOpen', type: 'checkbox', label: 'Is Open?'},
+                    {name: 'location', type: 'coordinate', label: 'Location'},
                 ]
             }
         },

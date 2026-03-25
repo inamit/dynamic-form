@@ -22,17 +22,22 @@ export default function EntityForm() {
   const [coordinateFormats, setCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>({});
   const [selectModeField, setSelectModeField] = useState<string | null>(null);
 
+  const [defaultValues, setDefaultValues] = useState<Record<string, any>>({});
+
   useEffect(() => {
     const sub = postal.subscribe({
       channel: CHANNEL_NAME,
       topic: TOPICS.LOAD_FORM,
-      callback: (data: { entity: string, id?: string, gridTemplate?: string, defaultCoordinateFormat?: 'WGS84' | 'UTM' }) => {
+      callback: (data: { entity: string, id?: string, gridTemplate?: string, defaultCoordinateFormat?: 'WGS84' | 'UTM', defaultValues?: Record<string, any> }) => {
         setEntity(data.entity);
         setId(data.id);
         setInjectedGridTemplate(data.gridTemplate);
         if (data.defaultCoordinateFormat) {
           // Will be applied to all coordinate fields when config loads
           setCoordinateFormats(prev => ({ ...prev, _default: data.defaultCoordinateFormat! }));
+        }
+        if (data.defaultValues) {
+          setDefaultValues(data.defaultValues);
         }
       }
     });
@@ -113,12 +118,30 @@ export default function EntityForm() {
 
       if (currentId) {
         const dataRes = await axios.get(`${API_BASE}/data/${currentEntity}/${currentId}`);
-        setFormData(dataRes.data);
+
+        // Deserialize incoming coordinate data objects into strings for the text boxes
+        const loadedData = dataRes.data;
+        configRes.data.fields.forEach((f: any) => {
+          if (f.type === 'coordinate' && loadedData[f.name]) {
+            const loc = loadedData[f.name];
+            if (loc && typeof loc === 'object' && loc.latitude !== undefined && loc.longitude !== undefined) {
+               loadedData[f.name] = formatCoordinate(loc.longitude, loc.latitude, formats[f.name] || 'UTM');
+            }
+          }
+        });
+        setFormData(loadedData);
       } else {
         // Initialize empty form data
         const initialData: Record<string, any> = {};
         configRes.data.fields.forEach((f: any) => {
-          if (f.type === 'enum') {
+          if (defaultValues[f.name] !== undefined) {
+            if (f.type === 'coordinate' && typeof defaultValues[f.name] === 'object') {
+              const loc = defaultValues[f.name];
+              initialData[f.name] = formatCoordinate(loc.longitude, loc.latitude, formats[f.name] || 'UTM');
+            } else {
+              initialData[f.name] = defaultValues[f.name];
+            }
+          } else if (f.type === 'enum') {
             initialData[f.name] = enumValues[f.name]?.[0]?.code || '';
           } else {
             initialData[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
@@ -184,10 +207,26 @@ export default function EntityForm() {
     e.preventDefault();
     try {
       let response;
+
+      // Map coordinate string fields back to objects for the backend payload
+      const payload = { ...formData };
+      if (config) {
+        config.fields.forEach(f => {
+          if (f.type === 'coordinate' && payload[f.name]) {
+             const parsed = parseCoordinate(payload[f.name]);
+             if (parsed) {
+                payload[f.name] = { longitude: parsed[0], latitude: parsed[1] };
+             } else {
+                delete payload[f.name]; // Or set to null if the backend expects it
+             }
+          }
+        });
+      }
+
       if (id) {
-        response = await axios.put(`${API_BASE}/data/${entity}/${id}`, formData);
+        response = await axios.put(`${API_BASE}/data/${entity}/${id}`, payload);
       } else {
-        response = await axios.post(`${API_BASE}/data/${entity}`, formData);
+        response = await axios.post(`${API_BASE}/data/${entity}`, payload);
       }
       (postal as any).publish({
         channel: CHANNEL_NAME,

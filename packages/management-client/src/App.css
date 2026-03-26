@@ -1,0 +1,91 @@
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: sans-serif;
+}
+
+.entity-form section {
+  margin-bottom: 30px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.entity-form h2 {
+  margin-top: 0;
+}
+
+.entity-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.entity-form input, .entity-form select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.new-datasource {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px dashed #aaa;
+}
+
+.add-field-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.field-list {
+  list-style: none;
+  padding: 0;
+}
+
+.field-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.submit-btn {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.submit-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Drag and Drop Grid */
+.grid-preview {
+  display: grid;
+  gap: 10px;
+  padding: 15px;
+  background-color: #eaeaea;
+  border: 2px dashed #999;
+  min-height: 150px;
+}
+
+.grid-item {
+  background-color: white;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: grab;
+  text-align: center;
+  user-select: none;
+}

@@ -73,7 +73,73 @@ app.get('/api/config/:name', async (req, res) => {
 });
 
 app.post('/api/config', async (req, res) => {
-    res.status(501).json({error: 'Creating endpoints via config dynamically disabled for now.'});
+    try {
+        console.log('POST /api/config', req.body);
+        const { name, dataSource, fields, gridTemplate } = req.body;
+
+        if (!name || !dataSource || !fields) {
+            return res.status(400).json({error: 'Missing required fields: name, dataSource, or fields'});
+        }
+
+        let dsId;
+
+        if (dataSource.id) {
+            // Link to existing data source
+            dsId = dataSource.id;
+        } else {
+            // Create a new data source
+            if (!dataSource.name || !dataSource.apiUrl) {
+                return res.status(400).json({error: 'Missing required fields for new data source: name, apiUrl'});
+            }
+            const newDs = await prisma.dataSource.create({
+                data: {
+                    name: dataSource.name,
+                    apiUrl: dataSource.apiUrl,
+                    apiType: dataSource.apiType || 'REST',
+                    headers: dataSource.headers ? JSON.stringify(dataSource.headers) : null,
+                    endpointsQueries: dataSource.endpointsQueries ? JSON.stringify(dataSource.endpointsQueries) : null
+                }
+            });
+            dsId = newDs.id;
+        }
+
+        const newConfig = await prisma.entityConfig.create({
+            data: {
+                name,
+                dataSourceId: dsId,
+                gridTemplate: gridTemplate || null,
+                fields: {
+                    create: fields.map((f: any) => ({
+                        name: f.name,
+                        type: f.type,
+                        label: f.label,
+                        enumName: f.enumName || null
+                    }))
+                }
+            },
+            include: { dataSource: true, fields: true }
+        });
+
+        res.json({
+            ...newConfig,
+            apiUrl: newConfig.dataSource.apiUrl,
+            apiType: newConfig.dataSource.apiType
+        });
+    } catch (error: any) {
+        console.error('Error in POST /api/config:', error);
+        res.status(500).json({error: 'Failed to create configuration: ' + error.message});
+    }
+});
+
+app.get('/api/datasource', async (req, res) => {
+    try {
+        console.log('GET /api/datasource');
+        const dataSources = await prisma.dataSource.findMany();
+        res.json(dataSources);
+    } catch (error) {
+        console.error('Error in GET /api/datasource:', error);
+        res.status(500).json({error: 'Failed to fetch data sources'});
+    }
 });
 
 

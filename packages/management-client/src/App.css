@@ -1,3 +1,48 @@
+:root {
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --section-border: #ccc;
+  --input-bg: #ffffff;
+  --input-border: #ccc;
+  --input-text: #333;
+  --new-ds-bg: #f9f9f9;
+  --new-ds-border: #aaa;
+  --btn-bg: #007bff;
+  --btn-hover: #0056b3;
+  --btn-text: #ffffff;
+  --grid-bg: #f0f0f0;
+  --grid-border: #ccc;
+  --item-bg: white;
+  --item-border: #ccc;
+  --code-bg: #eee;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --section-border: #444;
+    --input-bg: #2c2c2c;
+    --input-border: #555;
+    --input-text: #fff;
+    --new-ds-bg: #1e1e1e;
+    --new-ds-border: #666;
+    --btn-bg: #375a7f;
+    --btn-hover: #2b4764;
+    --btn-text: #ffffff;
+    --grid-bg: #1e1e1e;
+    --grid-border: #666;
+    --item-bg: #2a2a2a;
+    --item-border: #444;
+    --code-bg: #2a2a2a;
+  }
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
 .app-container {
   max-width: 800px;
   margin: 0 auto;
@@ -8,7 +53,7 @@
 .entity-form section {
   margin-bottom: 30px;
   padding: 15px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--section-border);
   border-radius: 5px;
 }
 
@@ -22,18 +67,21 @@
   font-weight: bold;
 }
 
-.entity-form input, .entity-form select {
+.entity-form input, .entity-form select, .entity-form textarea {
   width: 100%;
   padding: 8px;
   margin-bottom: 10px;
   box-sizing: border-box;
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
 }
 
 .new-datasource {
   margin-top: 15px;
   padding: 10px;
-  background-color: #f9f9f9;
-  border: 1px dashed #aaa;
+  background-color: var(--new-ds-bg);
+  border: 1px dashed var(--new-ds-border);
 }
 
 .add-field-form {
@@ -58,8 +106,8 @@
   display: block;
   width: 100%;
   padding: 15px;
-  background-color: #007bff;
-  color: white;
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
   border: none;
   font-size: 16px;
   cursor: pointer;
@@ -67,7 +115,25 @@
 }
 
 .submit-btn:hover {
-  background-color: #0056b3;
+  background-color: var(--btn-hover);
+}
+
+button {
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+pre {
+  background: var(--code-bg);
+  padding: 10px;
+  white-space: pre-wrap;
 }
 
 /* Drag and Drop Grid */

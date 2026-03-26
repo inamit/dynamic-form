@@ -26,6 +26,7 @@ function App() {
   const [newDsName, setNewDsName] = useState('');
   const [newDsApiUrl, setNewDsApiUrl] = useState('');
   const [newDsApiType, setNewDsApiType] = useState('REST');
+  const [newDsEndpointsQueries, setNewDsEndpointsQueries] = useState('');
 
   const [fields, setFields] = useState<Field[]>([]);
   const [newFieldName, setNewFieldName] = useState('');
@@ -78,7 +79,8 @@ function App() {
       dataSource: selectedDsId === 'new' ? {
         name: newDsName,
         apiUrl: newDsApiUrl,
-        apiType: newDsApiType
+        apiType: newDsApiType,
+        endpointsQueries: newDsEndpointsQueries ? JSON.parse(newDsEndpointsQueries) : undefined
       } : { id: selectedDsId },
       fields: fields.map(({id, ...rest}) => rest),
       gridTemplate
@@ -139,6 +141,102 @@ function App() {
                   <option value="GRAPHQL">GraphQL</option>
                 </select>
               </div>
+              {newDsApiType === 'GRAPHQL' && (
+                <div>
+                  <button type="button" onClick={async () => {
+                    try {
+                      if (!newDsApiUrl) {
+                        alert("API URL is required for introspection.");
+                        return;
+                      }
+                      const query = `
+                        query IntrospectionQuery {
+                          __schema {
+                            queryType { name }
+                            mutationType { name }
+                            types {
+                              ...FullType
+                            }
+                          }
+                        }
+                        fragment FullType on __Type {
+                          kind
+                          name
+                          fields(includeDeprecated: true) {
+                            name
+                            type {
+                              ...TypeRef
+                            }
+                          }
+                        }
+                        fragment TypeRef on __Type {
+                          kind
+                          name
+                          ofType {
+                            kind
+                            name
+                            ofType {
+                              kind
+                              name
+                            }
+                          }
+                        }
+                      `;
+                      const res = await axios.post(newDsApiUrl, { query });
+                      const types = res.data.data.__schema.types;
+                      const rootQueryName = res.data.data.__schema.queryType?.name || 'Query';
+                      const queryType = types.find((t: any) => t.name === rootQueryName);
+
+                      if (queryType && queryType.fields) {
+                        // find a field that returns a list (likely our list query)
+                        const listFields = queryType.fields.filter((f: any) => f.type.kind === 'LIST' || (f.type.kind === 'NON_NULL' && f.type.ofType?.kind === 'LIST'));
+                        if (listFields.length > 0) {
+                          // just grab the first one as an example, and find its scalar fields to prepopulate
+                          const targetTypeName = listFields[0].type.ofType?.name || listFields[0].type.ofType?.ofType?.name;
+                          const targetType = types.find((t: any) => t.name === targetTypeName);
+                          if (targetType && targetType.fields) {
+                            const newExtractedFields = targetType.fields
+                              .filter((f: any) => {
+                                // Simple mapping for standard scalars
+                                const tName = f.type.name || f.type.ofType?.name;
+                                return ['String', 'Int', 'Float', 'Boolean', 'ID'].includes(tName);
+                              })
+                              .map((f: any) => {
+                                const tName = f.type.name || f.type.ofType?.name;
+                                let typeStr = 'text';
+                                if (tName === 'Int' || tName === 'Float') typeStr = 'number';
+                                if (tName === 'Boolean') typeStr = 'checkbox';
+                                return {
+                                  name: f.name,
+                                  type: typeStr,
+                                  label: f.name.charAt(0).toUpperCase() + f.name.slice(1),
+                                  id: `field-${f.name}-${Date.now()}`
+                                };
+                              });
+                            setFields([...fields, ...newExtractedFields]);
+                            alert(`Found and added ${newExtractedFields.length} fields from GraphQL type ${targetTypeName}`);
+                          }
+                        }
+                      }
+                    } catch(err) {
+                      console.error("Introspection failed:", err);
+                      alert("Introspection failed. See console.");
+                    }
+                  }}>
+                    Introspect GraphQL & Extract Fields
+                  </button>
+                </div>
+              )}
+              <div>
+                <label>Endpoints/Queries (JSON format):</label>
+                <textarea
+                  value={newDsEndpointsQueries}
+                  onChange={e => setNewDsEndpointsQueries(e.target.value)}
+                  placeholder='{"list": "query...", "get": "query...", "create": "mutation...", "update": "mutation...", "delete": "mutation..."}'
+                  rows={4}
+                  style={{ width: '100%', boxSizing: 'border-box', marginTop: '5px' }}
+                />
+              </div>
             </div>
           )}
         </section>
@@ -178,9 +276,9 @@ function App() {
               <input type="number" min="1" max="4" value={columns} onChange={e => setColumns(Number(e.target.value))} />
             </div>
             <GridPreview
-              fields={fields}
+              fields={fields as any}
               columns={columns}
-              onFieldsReorder={setFields}
+              onFieldsChange={(newFields) => setFields(newFields as Field[])}
               onGridTemplateChange={setGridTemplate}
             />
             <div style={{marginTop: '15px'}}>

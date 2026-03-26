@@ -9,6 +9,7 @@ import {request, gql} from 'graphql-request';
 import {PrismaPg} from "@prisma/adapter-pg";
 
 const app = express();
+import setupManagementRoutes from "./management.js";
 
 let prisma: any;
 
@@ -25,6 +26,7 @@ if (process.env.NODE_ENV === 'production' || process.env.USE_REAL_POSTGRES === '
 
 app.use(cors());
 app.use(express.json());
+setupManagementRoutes(app, prisma);
 
 // --- CONFIGURATION ENDPOINTS ---
 

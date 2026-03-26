@@ -267,16 +267,16 @@ export default function EntityForm() {
   }
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', background: '#f9f9f9', padding: '20px', borderRadius: '8px' }}>
-      <h2 style={{ textAlign: 'center' }}>{id ? `Edit ${entity}` : `Create ${entity}`}</h2>
+    <div style={{ maxWidth: '600px', margin: '0 auto', background: 'var(--bg)', color: 'var(--text)', padding: '20px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+      <h2 style={{ textAlign: 'center', color: 'var(--text-h)' }}>{id ? `Edit ${entity}` : `Create ${entity}`}</h2>
       <form onSubmit={handleSubmit} style={
         isGrid
-          ? { display: 'grid', gridTemplateAreas: effectiveGridTemplate, gap: '15px' }
-          : { display: 'flex', flexDirection: 'column', gap: '15px' }
+          ? { display: 'grid', gridTemplateAreas: effectiveGridTemplate, gap: '20px' }
+          : { display: 'flex', flexDirection: 'column', gap: '20px' }
       }>
         {config.fields.filter(field => !isGrid || validGridAreas.has(field.name)).map(field => (
           <div key={field.name} style={{ display: 'flex', flexDirection: 'column', gridArea: field.name }}>
-            <label style={{ fontWeight: 'bold', marginBottom: '5px', textAlign: 'center' }}>
+            <label style={{ fontWeight: '500', marginBottom: '8px', textAlign: 'left', color: 'var(--text-h)', fontSize: '14px' }}>
               {field.label}
             </label>
             {field.type === 'checkbox' ? (
@@ -285,14 +285,14 @@ export default function EntityForm() {
                 name={field.name}
                 checked={formData[field.name] || false}
                 onChange={handleChange}
-                style={{ alignSelf: 'center' }}
+                style={{ alignSelf: 'flex-start' }}
               />
             ) : field.type === 'coordinate' ? (
-              <div style={{ display: 'flex', gap: '5px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <select
                   value={coordinateFormats[field.name] || 'UTM'}
                   onChange={(e) => handleCoordinateFormatChange(field.name, e.target.value as 'WGS84' | 'UTM')}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '90px' }}
+                  style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', width: '100px', outline: 'none' }}
                 >
                   <option value="UTM">UTM</option>
                   <option value="WGS84">WGS84</option>
@@ -303,7 +303,7 @@ export default function EntityForm() {
                   value={formData[field.name] || ''}
                   onChange={handleChange}
                   placeholder={coordinateFormats[field.name] === 'WGS84' ? 'lat, lng' : 'UTM string'}
-                  style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                  style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', outline: 'none' }}
                 />
                 <IconButton
                   color={selectModeField === field.name ? 'error' : 'primary'}
@@ -311,12 +311,13 @@ export default function EntityForm() {
                   onClick={() => handleSelectLocation(field.name)}
                   sx={{
                     transition: 'all 0.3s ease',
-                    transform: selectModeField === field.name ? 'scale(1.1)' : 'scale(1)',
+                    transform: selectModeField === field.name ? 'scale(1.05)' : 'scale(1)',
                     backgroundColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.1)' : 'transparent',
                     border: '1px solid',
-                    borderColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.5)' : '#ccc',
-                    borderRadius: '4px',
-                    padding: '8px'
+                    borderColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.5)' : 'var(--border)',
+                    borderRadius: '6px',
+                    padding: '8px',
+                    color: selectModeField === field.name ? 'inherit' : 'var(--text)'
                   }}
                 >
                   {selectModeField === field.name ? (
@@ -337,7 +338,7 @@ export default function EntityForm() {
                 name={field.name}
                 value={formData[field.name] || ''}
                 onChange={handleChange}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', outline: 'none' }}
               >
                 {enumValues[field.name]?.map((opt: any) => (
                   <option key={opt.code} value={opt.code}>{opt.value}</option>
@@ -349,23 +350,23 @@ export default function EntityForm() {
                 name={field.name}
                 value={formData[field.name] || ''}
                 onChange={handleChange}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', outline: 'none' }}
               />
             )}
           </div>
         ))}
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '10px', gridColumn: isGrid ? '1 / -1' : undefined }}>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '10px', gridColumn: isGrid ? '1 / -1' : undefined, justifyContent: 'flex-start' }}>
           <button
             type="submit"
-            style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            style={{ padding: '10px 24px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}
           >
             Save
           </button>
           <button
             type="button"
             onClick={handleCancel}
-            style={{ padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            style={{ padding: '10px 24px', background: 'transparent', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}
           >
             Cancel
           </button>

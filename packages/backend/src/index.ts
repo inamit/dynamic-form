@@ -82,6 +82,12 @@ app.post('/api/config', async (req, res) => {
 app.get('/api/enums/:enumName', async (req, res) => {
     try {
         const {enumName} = req.params;
+
+        // Prevent path traversal
+        if (enumName.includes('/') || enumName.includes('..')) {
+            return res.status(400).json({error: 'Invalid enumName'});
+        }
+
         console.log(`GET /api/enums/${enumName}`);
         const ds = await prisma.dataSource.findUnique({
             where: {name: 'enum'}
@@ -140,6 +146,12 @@ app.get('/api/data/:entity', async (req, res) => {
 
 app.get('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
+
+    // Prevent path traversal
+    if (id.includes('/') || id.includes('..')) {
+        return res.status(400).json({error: 'Invalid id'});
+    }
+
     console.log(`GET /api/data/${entity}/${id}`);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},
@@ -216,6 +228,12 @@ app.post('/api/data/:entity', async (req, res) => {
 
 app.put('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
+
+    // Prevent path traversal
+    if (id.includes('/') || id.includes('..')) {
+        return res.status(400).json({error: 'Invalid id'});
+    }
+
     console.log(`PUT /api/data/${entity}/${id}`, req.body);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},
@@ -259,6 +277,12 @@ app.put('/api/data/:entity/:id', async (req, res) => {
 
 app.delete('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
+
+    // Prevent path traversal
+    if (id.includes('/') || id.includes('..')) {
+        return res.status(400).json({error: 'Invalid id'});
+    }
+
     console.log(`DELETE /api/data/${entity}/${id}`);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},

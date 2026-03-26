@@ -54,6 +54,7 @@ export default function EntityList() {
                 <TableCell>{e.fields?.length || 0}</TableCell>
                 <TableCell>
                   <Button component={Link} to={`/entities/${e.id}`} size="small" color="primary">Edit</Button>
+                  <Button size="small" color="secondary" onClick={() => window.open(`http://localhost:5174/?entity=${e.name}`, '_blank')}>Preview</Button>
                   <Button size="small" color="error" onClick={() => handleDelete(e.id)}>Delete</Button>
                 </TableCell>
               </TableRow>

@@ -74,17 +74,17 @@ function SortableItem(props: { item: GridItem; field: Field; onChangeSpan: (id: 
 
 export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Props) {
   const [items, setItems] = useState<GridItem[]>([]);
-  const [maxColumns, setMaxColumns] = useState<number>(12);
+  const [maxColumns, setMaxColumns] = useState<number>(3);
 
   useEffect(() => {
     let parsed: GridItem[] = [];
-    let cols = 12;
+    let cols = 3;
     try {
       if (gridTemplate) {
         const data = JSON.parse(gridTemplate);
         if (data.items) {
           parsed = data.items;
-          cols = data.columns || 12;
+          cols = data.columns || 3;
         } else if (Array.isArray(data)) {
           parsed = data;
         }
@@ -100,7 +100,7 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
     const updatedItems = parsed.filter(i => fieldNames.has(i.id));
     fields.forEach(f => {
       if (!layoutNames.has(f.name)) {
-        updatedItems.push({ id: f.name, colSpan: 12, rowSpan: 1 });
+        updatedItems.push({ id: f.name, colSpan: Math.min(cols, 1), rowSpan: 1 });
       }
     });
 
@@ -137,9 +137,17 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
   };
 
   const handleMaxColumnsChange = (e: any) => {
-      const val = Math.max(1, parseInt(e.target.value) || 12);
+      const val = Math.max(1, parseInt(e.target.value) || 3);
       setMaxColumns(val);
-      onLayoutChange(JSON.stringify({ columns: val, items }));
+
+      setItems((currentItems) => {
+          const clampedItems = currentItems.map(item => ({
+              ...item,
+              colSpan: Math.min(item.colSpan, val)
+          }));
+          onLayoutChange(JSON.stringify({ columns: val, items: clampedItems }));
+          return clampedItems;
+      });
   };
 
   return (

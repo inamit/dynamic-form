@@ -28,6 +28,9 @@ function App() {
   const [newDsApiType, setNewDsApiType] = useState('REST');
   const [newDsEndpointsQueries, setNewDsEndpointsQueries] = useState('');
 
+  const [gqlSchema, setGqlSchema] = useState<any>(null);
+  const [gqlMappings, setGqlMappings] = useState<Record<string, string>>({});
+
   const [fields, setFields] = useState<Field[]>([]);
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldType, setNewFieldType] = useState('text');
@@ -142,7 +145,7 @@ function App() {
                 </select>
               </div>
               {newDsApiType === 'GRAPHQL' && (
-                <div>
+                <div style={{ padding: '10px', backgroundColor: 'var(--grid-bg)', border: '1px solid var(--grid-border)', marginBottom: '10px', borderRadius: '5px' }}>
                   <button type="button" onClick={async () => {
                     try {
                       if (!newDsApiUrl) {
@@ -164,6 +167,10 @@ function App() {
                           name
                           fields(includeDeprecated: true) {
                             name
+                            args {
+                              name
+                              type { ...TypeRef }
+                            }
                             type {
                               ...TypeRef
                             }
@@ -178,53 +185,112 @@ function App() {
                             ofType {
                               kind
                               name
+                              ofType {
+                                kind
+                                name
+                              }
                             }
                           }
                         }
                       `;
                       const res = await axios.post(newDsApiUrl, { query });
                       const types = res.data.data.__schema.types;
-                      const rootQueryName = res.data.data.__schema.queryType?.name || 'Query';
-                      const queryType = types.find((t: any) => t.name === rootQueryName);
+                      const queryTypeName = res.data.data.__schema.queryType?.name || 'Query';
+                      const mutationTypeName = res.data.data.__schema.mutationType?.name || 'Mutation';
 
-                      if (queryType && queryType.fields) {
-                        // find a field that returns a list (likely our list query)
-                        const listFields = queryType.fields.filter((f: any) => f.type.kind === 'LIST' || (f.type.kind === 'NON_NULL' && f.type.ofType?.kind === 'LIST'));
-                        if (listFields.length > 0) {
-                          // just grab the first one as an example, and find its scalar fields to prepopulate
-                          const targetTypeName = listFields[0].type.ofType?.name || listFields[0].type.ofType?.ofType?.name;
-                          const targetType = types.find((t: any) => t.name === targetTypeName);
-                          if (targetType && targetType.fields) {
-                            const newExtractedFields = targetType.fields
-                              .filter((f: any) => {
-                                // Simple mapping for standard scalars
-                                const tName = f.type.name || f.type.ofType?.name;
-                                return ['String', 'Int', 'Float', 'Boolean', 'ID'].includes(tName);
-                              })
-                              .map((f: any) => {
-                                const tName = f.type.name || f.type.ofType?.name;
-                                let typeStr = 'text';
-                                if (tName === 'Int' || tName === 'Float') typeStr = 'number';
-                                if (tName === 'Boolean') typeStr = 'checkbox';
-                                return {
-                                  name: f.name,
-                                  type: typeStr,
-                                  label: f.name.charAt(0).toUpperCase() + f.name.slice(1),
-                                  id: `field-${f.name}-${Date.now()}`
-                                };
-                              });
-                            setFields([...fields, ...newExtractedFields]);
-                            alert(`Found and added ${newExtractedFields.length} fields from GraphQL type ${targetTypeName}`);
-                          }
-                        }
-                      }
+                      const queries = types.find((t: any) => t.name === queryTypeName)?.fields || [];
+                      const mutations = types.find((t: any) => t.name === mutationTypeName)?.fields || [];
+                      const objectTypes = types.filter((t: any) => t.kind === 'OBJECT' && !t.name.startsWith('__') && t.name !== queryTypeName && t.name !== mutationTypeName);
+
+                      setGqlSchema({ queries, mutations, objectTypes, types });
+                      alert('Introspection successful. You can now map operations and select types for fields.');
                     } catch(err) {
                       console.error("Introspection failed:", err);
                       alert("Introspection failed. See console.");
                     }
                   }}>
-                    Introspect GraphQL & Extract Fields
+                    Introspect GraphQL
                   </button>
+
+                  {gqlSchema && (
+                    <div style={{ marginTop: '15px' }}>
+                      <h4>Map Operations to Queries/Mutations</h4>
+                      {['list', 'get', 'create', 'update', 'delete'].map(op => (
+                        <div key={op} style={{ marginBottom: '5px' }}>
+                          <label style={{ display: 'inline-block', width: '80px', textTransform: 'capitalize' }}>{op}:</label>
+                          <select
+                            value={gqlMappings[op] || ''}
+                            onChange={e => {
+                              const operationName = e.target.value;
+                              setGqlMappings(prev => ({ ...prev, [op]: operationName }));
+                              if (!operationName) return;
+
+                              const isQuery = ['list', 'get'].includes(op);
+                              const opData = (isQuery ? gqlSchema.queries : gqlSchema.mutations).find((m: any) => m.name === operationName);
+                              if (opData) {
+                                const argsStr = opData.args && opData.args.length > 0
+                                  ? `(${opData.args.map((a: any) => `$${a.name}: ${a.type.name || a.type.ofType?.name || a.type.ofType?.ofType?.name || 'String'}${a.type.kind==='NON_NULL' || a.type.ofType?.kind === 'NON_NULL' ? '!' : ''}`).join(', ')})`
+                                  : '';
+                                const callArgsStr = opData.args && opData.args.length > 0
+                                  ? `(${opData.args.map((a: any) => `${a.name}: $${a.name}`).join(', ')})`
+                                  : '';
+
+                                const queryStr = `${isQuery ? 'query' : 'mutation'} ${argsStr} {\n  ${operationName}${callArgsStr} {\n    id\n  }\n}`;
+                                try {
+                                  const currentJson = newDsEndpointsQueries ? JSON.parse(newDsEndpointsQueries) : {};
+                                  currentJson[op] = queryStr;
+                                  setNewDsEndpointsQueries(JSON.stringify(currentJson, null, 2));
+                                } catch (err) {
+                                  setNewDsEndpointsQueries(JSON.stringify({ [op]: queryStr }, null, 2));
+                                }
+                              }
+                            }}
+                          >
+                            <option value="">-- Select {['list', 'get'].includes(op) ? 'Query' : 'Mutation'} --</option>
+                            {(['list', 'get'].includes(op) ? gqlSchema.queries : gqlSchema.mutations).map((m: any) => (
+                              <option key={m.name} value={m.name}>{m.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+
+                      <h4 style={{ marginTop: '15px' }}>Generate Fields from Type</h4>
+                      <div>
+                        <select onChange={e => {
+                          const typeName = e.target.value;
+                          if (typeName) {
+                            const t = gqlSchema.objectTypes.find((x: any) => x.name === typeName);
+                            if (t && t.fields) {
+                              const newExtractedFields = t.fields
+                                .filter((f: any) => {
+                                  const tName = f.type.name || f.type.ofType?.name || f.type.ofType?.ofType?.name;
+                                  return ['String', 'Int', 'Float', 'Boolean', 'ID'].includes(tName);
+                                })
+                                .map((f: any) => {
+                                  const tName = f.type.name || f.type.ofType?.name || f.type.ofType?.ofType?.name;
+                                  let typeStr = 'text';
+                                  if (tName === 'Int' || tName === 'Float') typeStr = 'number';
+                                  if (tName === 'Boolean') typeStr = 'checkbox';
+                                  return {
+                                    name: f.name,
+                                    type: typeStr,
+                                    label: f.name.charAt(0).toUpperCase() + f.name.slice(1),
+                                    id: `field-${f.name}-${Date.now()}`
+                                  };
+                                });
+                              setFields(prev => [...prev, ...newExtractedFields]);
+                            }
+                            e.target.value = '';
+                          }
+                        }}>
+                          <option value="">-- Select Type to Add Fields --</option>
+                          {gqlSchema.objectTypes.map((t: any) => (
+                             <option key={t.name} value={t.name}>{t.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <div>

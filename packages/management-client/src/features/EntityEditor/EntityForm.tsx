@@ -41,10 +41,10 @@ export default function EntityForm() {
 
   const fetchEntity = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/api/config/${id}`);
+      const res = await axios.get(`http://localhost:3001/api/config/id/${id}`);
       setFormData(res.data);
     } catch (e: any) {
-      setError(e.message);
+      setError(e.response?.data?.error || e.message);
     }
   };
 

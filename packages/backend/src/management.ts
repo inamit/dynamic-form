@@ -42,6 +42,26 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         }
     });
 
+    // Get config by ID
+    app.get('/api/config/id/:id', async (req, res) => {
+        try {
+            const config = await prisma.entityConfig.findUnique({
+                where: { id: parseInt(req.params.id) },
+                include: { dataSource: true, fields: true }
+            });
+            if (!config) {
+                return res.status(404).json({ error: 'Configuration not found' });
+            }
+            res.json({
+                ...config,
+                apiUrl: config.dataSource.apiUrl,
+                apiType: config.dataSource.apiType
+            });
+        } catch (e: any) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
     // Create a new config
     app.post('/api/config/new', async (req, res) => {
         const { name, dataSourceId, gridTemplate, fields } = req.body;

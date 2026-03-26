@@ -76,18 +76,130 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
   const [items, setItems] = useState<GridItem[]>([]);
   const [maxColumns, setMaxColumns] = useState<number>(3);
 
+  // Helper to convert CSS grid-template-areas string back to item configurations.
+  // We assume items are ordered by their first appearance in the grid.
+  const parseGridTemplateAreas = (templateString: string): { items: GridItem[], columns: number } => {
+    const lines = templateString.split('\n').map(l => l.trim()).filter(l => l);
+    if (lines.length === 0) return { items: [], columns: 3 };
+
+    let cols = 0;
+    const itemMap = new Map<string, { id: string, startCol: number, endCol: number, startRow: number, endRow: number }>();
+
+    lines.forEach((line, rowIndex) => {
+      // Remove leading and trailing quotes
+      const cleanedLine = line.replace(/^['"]|['"]$/g, '').trim();
+      const cells = cleanedLine.split(/\s+/);
+      cols = Math.max(cols, cells.length);
+
+      cells.forEach((cell, colIndex) => {
+        if (cell === '.') return;
+        if (!itemMap.has(cell)) {
+          itemMap.set(cell, { id: cell, startCol: colIndex, endCol: colIndex, startRow: rowIndex, endRow: rowIndex });
+        } else {
+          const stats = itemMap.get(cell)!;
+          stats.endCol = Math.max(stats.endCol, colIndex);
+          stats.endRow = Math.max(stats.endRow, rowIndex);
+        }
+      });
+    });
+
+    const parsedItems: GridItem[] = Array.from(itemMap.values())
+        .sort((a, b) => {
+            if (a.startRow !== b.startRow) return a.startRow - b.startRow;
+            return a.startCol - b.startCol;
+        })
+        .map(stats => ({
+            id: stats.id,
+            colSpan: stats.endCol - stats.startCol + 1,
+            rowSpan: stats.endRow - stats.startRow + 1
+        }));
+
+    return { items: parsedItems, columns: cols || 3 };
+  };
+
+  // Helper to convert GridItem array into a CSS grid-template-areas string
+  const generateGridTemplateAreas = (gridItems: GridItem[], columns: number): string => {
+    if (gridItems.length === 0) return "";
+
+    // We simulate placing items in a grid.
+    const grid: string[][] = [];
+
+    let currentRow = 0;
+    let currentCol = 0;
+
+    const expandGrid = (row: number) => {
+      while (grid.length <= row) {
+        grid.push(new Array(columns).fill('.'));
+      }
+    };
+
+    gridItems.forEach(item => {
+      let placed = false;
+      while (!placed) {
+        expandGrid(currentRow);
+
+        let canPlace = true;
+        // Check bounds
+        if (currentCol + item.colSpan > columns) {
+            canPlace = false;
+        } else {
+            // Check overlaps
+            for (let r = currentRow; r < currentRow + item.rowSpan; r++) {
+                expandGrid(r);
+                for (let c = currentCol; c < currentCol + item.colSpan; c++) {
+                    if (grid[r][c] !== '.') {
+                        canPlace = false;
+                        break;
+                    }
+                }
+                if (!canPlace) break;
+            }
+        }
+
+        if (canPlace) {
+            for (let r = currentRow; r < currentRow + item.rowSpan; r++) {
+                for (let c = currentCol; c < currentCol + item.colSpan; c++) {
+                    grid[r][c] = item.id;
+                }
+            }
+            placed = true;
+            currentCol += item.colSpan;
+            if (currentCol >= columns) {
+                currentCol = 0;
+                currentRow++;
+            }
+        } else {
+            currentCol++;
+            if (currentCol >= columns) {
+                currentCol = 0;
+                currentRow++;
+            }
+        }
+      }
+    });
+
+    return grid.map(row => `"${row.join(' ')}"`).join('\n');
+  };
+
   useEffect(() => {
     let parsed: GridItem[] = [];
     let cols = 3;
     try {
       if (gridTemplate) {
-        const data = JSON.parse(gridTemplate);
-        if (data.items) {
-          parsed = data.items;
-          cols = data.columns || 3;
-        } else if (Array.isArray(data)) {
-          parsed = data;
-        }
+          if (gridTemplate.includes('"')) {
+             const result = parseGridTemplateAreas(gridTemplate);
+             parsed = result.items;
+             cols = result.columns;
+          } else {
+             // Fallback for old json data during dev if needed
+             const data = JSON.parse(gridTemplate);
+             if (data.items) {
+               parsed = data.items;
+               cols = data.columns || 3;
+             } else if (Array.isArray(data)) {
+               parsed = data;
+             }
+          }
       }
     } catch (e) { }
 
@@ -104,9 +216,12 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
       }
     });
 
-    if (JSON.stringify(updatedItems) !== JSON.stringify(parsed) && updatedItems.length > 0) {
-      setItems(updatedItems);
-      onLayoutChange(JSON.stringify({ columns: maxColumns, items: updatedItems }));
+    const currentGeneratedTemplate = generateGridTemplateAreas(updatedItems, cols);
+
+    // Only update external state if our resolved internal template strings differ
+    if (gridTemplate !== currentGeneratedTemplate && updatedItems.length > 0) {
+        setItems(updatedItems);
+        onLayoutChange(currentGeneratedTemplate);
     } else if (items.length === 0 && updatedItems.length > 0) {
       setItems(updatedItems);
     } else if (parsed.length > 0 && items.length === 0) {
@@ -122,7 +237,7 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
         const oldIndex = items.findIndex((i) => i.id === active.id);
         const newIndex = items.findIndex((i) => i.id === over?.id);
         const newItems = arrayMove(items, oldIndex, newIndex);
-        onLayoutChange(JSON.stringify({ columns: maxColumns, items: newItems }));
+        onLayoutChange(generateGridTemplateAreas(newItems, maxColumns));
         return newItems;
       });
     }
@@ -131,7 +246,7 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
   const handleChangeSpan = (id: string, colSpan: number, rowSpan: number) => {
     setItems((items) => {
       const newItems = items.map(i => i.id === id ? { ...i, colSpan, rowSpan } : i);
-      onLayoutChange(JSON.stringify({ columns: maxColumns, items: newItems }));
+      onLayoutChange(generateGridTemplateAreas(newItems, maxColumns));
       return newItems;
     });
   };
@@ -145,7 +260,7 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
               ...item,
               colSpan: Math.min(item.colSpan, val)
           }));
-          onLayoutChange(JSON.stringify({ columns: val, items: clampedItems }));
+          onLayoutChange(generateGridTemplateAreas(clampedItems, val));
           return clampedItems;
       });
   };

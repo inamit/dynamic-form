@@ -123,11 +123,16 @@ export default function EntityForm() {
 
       <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600 }}>
         <TextField label="Name" name="name" value={formData.name} onChange={handleChange} required />
-        <TextField select label="Data Source" name="dataSourceId" value={formData.dataSourceId} onChange={handleChange} required>
-          {dataSources.map((ds) => (
-            <MenuItem key={ds.id} value={ds.id}>{ds.name} ({ds.apiType})</MenuItem>
-          ))}
-        </TextField>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField select label="Data Source" name="dataSourceId" value={formData.dataSourceId} onChange={handleChange} required sx={{ flexGrow: 1 }}>
+            {dataSources.map((ds) => (
+              <MenuItem key={ds.id} value={ds.id}>{ds.name} ({ds.apiType})</MenuItem>
+            ))}
+          </TextField>
+          <Button variant="outlined" onClick={() => navigate('/data-sources/new')} sx={{ whiteSpace: 'nowrap' }}>
+            New Data Source
+          </Button>
+        </Box>
       </Paper>
 
       {selectedDataSource && selectedDataSource.apiType === 'GRAPHQL' && (

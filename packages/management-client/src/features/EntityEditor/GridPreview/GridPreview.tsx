@@ -18,14 +18,13 @@ interface GridItem {
   colSpan: number;
   rowSpan: number;
 }
-
 interface Props {
   fields: Field[];
   gridTemplate: string;
   onLayoutChange: (template: string) => void;
 }
 
-function SortableItem(props: { item: GridItem; field: Field; onChangeSpan: (id: string, col: number, row: number) => void }) {
+function SortableItem(props: { item: GridItem; field: Field; onChangeSpan: (id: string, col: number, row: number) => void; maxColumns: number }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: props.item.id });
 
   const style = {
@@ -39,29 +38,33 @@ function SortableItem(props: { item: GridItem; field: Field; onChangeSpan: (id: 
     <Paper
       ref={setNodeRef}
       style={style}
-      sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, backgroundColor: 'grey.100', cursor: 'grab' }}
+      sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, backgroundColor: 'grey.100', cursor: 'grab', position: 'relative' }}
     >
+      <Box sx={{ position: 'absolute', right: 0, bottom: 0, opacity: 0.1, pointerEvents: 'none' }}>
+         <Typography variant="h1" sx={{ fontSize: '4rem', lineHeight: 1 }}>{props.item.rowSpan}</Typography>
+      </Box>
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} {...attributes} {...listeners}>
         <Typography variant="subtitle2" noWrap>{props.field.label}</Typography>
         <Typography variant="caption" color="text.secondary">[{props.field.type}]</Typography>
       </Box>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', zIndex: 1 }}>
         <Typography variant="caption">Cols:</Typography>
         <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, Math.max(1, props.item.colSpan - 1), props.item.rowSpan)}>
           <RemoveIcon fontSize="small" />
         </IconButton>
         <Typography variant="caption">{props.item.colSpan}</Typography>
-        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, Math.min(12, props.item.colSpan + 1), props.item.rowSpan)}>
+        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, Math.min(props.maxColumns, props.item.colSpan + 1), props.item.rowSpan)}>
           <AddIcon fontSize="small" />
         </IconButton>
       </Box>
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', zIndex: 1 }}>
         <Typography variant="caption">Rows:</Typography>
-        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, Math.max(1, props.item.rowSpan - 1), props.item.colSpan)}>
+        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, props.item.colSpan, Math.max(1, props.item.rowSpan - 1))}>
           <RemoveIcon fontSize="small" />
         </IconButton>
         <Typography variant="caption">{props.item.rowSpan}</Typography>
-        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, props.item.rowSpan + 1, props.item.colSpan)}>
+        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, props.item.colSpan, props.item.rowSpan + 1)}>
           <AddIcon fontSize="small" />
         </IconButton>
       </Box>
@@ -71,14 +74,24 @@ function SortableItem(props: { item: GridItem; field: Field; onChangeSpan: (id: 
 
 export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Props) {
   const [items, setItems] = useState<GridItem[]>([]);
+  const [maxColumns, setMaxColumns] = useState<number>(12);
 
   useEffect(() => {
     let parsed: GridItem[] = [];
+    let cols = 12;
     try {
       if (gridTemplate) {
-        parsed = JSON.parse(gridTemplate);
+        const data = JSON.parse(gridTemplate);
+        if (data.items) {
+          parsed = data.items;
+          cols = data.columns || 12;
+        } else if (Array.isArray(data)) {
+          parsed = data;
+        }
       }
     } catch (e) { }
+
+    setMaxColumns(cols);
 
     // Sync fields with layout items
     const fieldNames = new Set(fields.map(f => f.name));
@@ -93,7 +106,7 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
 
     if (JSON.stringify(updatedItems) !== JSON.stringify(parsed) && updatedItems.length > 0) {
       setItems(updatedItems);
-      onLayoutChange(JSON.stringify(updatedItems));
+      onLayoutChange(JSON.stringify({ columns: maxColumns, items: updatedItems }));
     } else if (items.length === 0 && updatedItems.length > 0) {
       setItems(updatedItems);
     } else if (parsed.length > 0 && items.length === 0) {
@@ -109,7 +122,7 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
         const oldIndex = items.findIndex((i) => i.id === active.id);
         const newIndex = items.findIndex((i) => i.id === over?.id);
         const newItems = arrayMove(items, oldIndex, newIndex);
-        onLayoutChange(JSON.stringify(newItems));
+        onLayoutChange(JSON.stringify({ columns: maxColumns, items: newItems }));
         return newItems;
       });
     }
@@ -118,20 +131,30 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
   const handleChangeSpan = (id: string, colSpan: number, rowSpan: number) => {
     setItems((items) => {
       const newItems = items.map(i => i.id === id ? { ...i, colSpan, rowSpan } : i);
-      onLayoutChange(JSON.stringify(newItems));
+      onLayoutChange(JSON.stringify({ columns: maxColumns, items: newItems }));
       return newItems;
     });
   };
 
+  const handleMaxColumnsChange = (e: any) => {
+      const val = Math.max(1, parseInt(e.target.value) || 12);
+      setMaxColumns(val);
+      onLayoutChange(JSON.stringify({ columns: val, items }));
+  };
+
   return (
     <Box sx={{ width: '100%' }}>
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Typography variant="body2">Max Columns:</Typography>
+        <input type="number" value={maxColumns} onChange={handleMaxColumnsChange} style={{ width: 60 }} />
+      </Box>
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 2, minHeight: 200, p: 2, border: '1px dashed grey' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${maxColumns}, 1fr)`, gap: 2, minHeight: 200, p: 2, border: '1px dashed grey' }}>
             {items.map(item => {
               const field = fields.find(f => f.name === item.id);
               if (!field) return null;
-              return <SortableItem key={item.id} item={item} field={field} onChangeSpan={handleChangeSpan} />;
+              return <SortableItem key={item.id} item={item} field={field} onChangeSpan={handleChangeSpan} maxColumns={maxColumns} />;
             })}
           </Box>
         </SortableContext>

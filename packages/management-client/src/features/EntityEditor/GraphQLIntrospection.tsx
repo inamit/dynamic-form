@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button, Typography, Checkbox, FormControlLabel, Select, MenuItem, Paper, FormControl, InputLabel } from '@mui/material';
+import { Box, Button, Typography, Checkbox, FormControlLabel, Select, MenuItem, Paper, FormControl, InputLabel, TextField } from '@mui/material';
 import axios from 'axios';
 
 interface Props {
@@ -84,7 +84,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                         const newSelected = { ...selectedFields };
                         if (e.target.checked) {
                           newSelected[fieldPath] = {
-                            name: fieldPath,
+                            name: field.name,
                             label: field.description || field.name,
                             type: isObject ? 'object' : 'text',
                             targetType: isObject ? baseType.name : null
@@ -99,24 +99,41 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                   label={`${field.name} (${baseType.name}) - ${field.description || ''}`}
                 />
 
+                  {isSelected && (
+                    <TextField
+                      size="small"
+                      label="Label"
+                      value={selectedFields[fieldPath]?.label || field.description || field.name}
+                      onChange={(e) => {
+                        const newSelected = { ...selectedFields };
+                        if (newSelected[fieldPath]) {
+                          newSelected[fieldPath].label = e.target.value;
+                          setSelectedFields(newSelected);
+                        }
+                      }}
+                    />
+                  )}
+
                 <FormControl size="small" sx={{ minWidth: 120 }}>
                   <InputLabel>Type</InputLabel>
                   <Select
-                    value={selectedFields[fieldPath]?.targetType || (isObject ? baseType.name : 'primitive')}
+                      value={selectedFields[fieldPath]?.targetType || (isObject ? 'text' : 'text')}
                     label="Type"
-                    disabled={!isObject || !isSelected}
+                      disabled={!isSelected}
                     onChange={(e) => {
                       const newSelected = { ...selectedFields };
                       if (newSelected[fieldPath]) {
                         newSelected[fieldPath].targetType = e.target.value;
+                          newSelected[fieldPath].type = e.target.value;
                         setSelectedFields(newSelected);
                       }
                     }}
                   >
-                    <MenuItem value="primitive">Primitive</MenuItem>
-                    {isObject && schema.types.filter((t: any) => t.kind === 'OBJECT').map((t: any) => (
-                      <MenuItem key={t.name} value={t.name}>{t.name}</MenuItem>
-                    ))}
+                      <MenuItem value="text">Text</MenuItem>
+                      <MenuItem value="number">Number</MenuItem>
+                      <MenuItem value="checkbox">Checkbox</MenuItem>
+                      <MenuItem value="enum">Enum</MenuItem>
+                      <MenuItem value="coordinate">Coordinate</MenuItem>
                   </Select>
                 </FormControl>
 

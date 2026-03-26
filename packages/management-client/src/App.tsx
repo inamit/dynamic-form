@@ -167,6 +167,7 @@ function App() {
                           name
                           fields(includeDeprecated: true) {
                             name
+                            description
                             args {
                               name
                               type { ...TypeRef }
@@ -254,36 +255,42 @@ function App() {
                         </div>
                       ))}
 
-                      <h4 style={{ marginTop: '15px' }}>Generate Fields from Type</h4>
+                      <h4 style={{ marginTop: '15px' }}>Generate Fields from Type Tree</h4>
                       <div>
                         <select onChange={e => {
                           const typeName = e.target.value;
                           if (typeName) {
-                            const t = gqlSchema.objectTypes.find((x: any) => x.name === typeName);
-                            if (t && t.fields) {
-                              const newExtractedFields = t.fields
-                                .filter((f: any) => {
-                                  const tName = f.type.name || f.type.ofType?.name || f.type.ofType?.ofType?.name;
-                                  return ['String', 'Int', 'Float', 'Boolean', 'ID'].includes(tName);
-                                })
-                                .map((f: any) => {
-                                  const tName = f.type.name || f.type.ofType?.name || f.type.ofType?.ofType?.name;
+                            const extractFields = (tName: string, prefix = ''): Field[] => {
+                              const t = gqlSchema.objectTypes.find((x: any) => x.name === tName);
+                              if (!t || !t.fields) return [];
+                              let extracted: Field[] = [];
+                              t.fields.forEach((f: any) => {
+                                const fTypeName = f.type.name || f.type.ofType?.name || f.type.ofType?.ofType?.name;
+                                const isObject = gqlSchema.objectTypes.some((x: any) => x.name === fTypeName);
+
+                                if (['String', 'Int', 'Float', 'Boolean', 'ID'].includes(fTypeName)) {
                                   let typeStr = 'text';
-                                  if (tName === 'Int' || tName === 'Float') typeStr = 'number';
-                                  if (tName === 'Boolean') typeStr = 'checkbox';
-                                  return {
-                                    name: f.name,
+                                  if (fTypeName === 'Int' || fTypeName === 'Float') typeStr = 'number';
+                                  if (fTypeName === 'Boolean') typeStr = 'checkbox';
+                                  extracted.push({
+                                    name: prefix + f.name,
                                     type: typeStr,
-                                    label: f.name.charAt(0).toUpperCase() + f.name.slice(1),
-                                    id: `field-${f.name}-${Date.now()}`
-                                  };
-                                });
-                              setFields(prev => [...prev, ...newExtractedFields]);
-                            }
+                                    label: f.description || (f.name.charAt(0).toUpperCase() + f.name.slice(1)),
+                                    id: `field-${prefix}${f.name}-${Date.now()}`
+                                  });
+                                } else if (isObject) {
+                                  extracted = extracted.concat(extractFields(fTypeName, `${prefix}${f.name}.`));
+                                }
+                              });
+                              return extracted;
+                            };
+
+                            const newExtractedFields = extractFields(typeName);
+                            setFields(prev => [...prev, ...newExtractedFields]);
                             e.target.value = '';
                           }
                         }}>
-                          <option value="">-- Select Type to Add Fields --</option>
+                          <option value="">-- Select Root Type to Add Fields Tree --</option>
                           {gqlSchema.objectTypes.map((t: any) => (
                              <option key={t.name} value={t.name}>{t.name}</option>
                           ))}

@@ -218,14 +218,15 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
 
     const currentGeneratedTemplate = generateGridTemplateAreas(updatedItems, cols);
 
-    // Only update external state if our resolved internal template strings differ
+    // Always sync internal items state with updated layout fields when they change externally.
+    // If the template string needs cleaning up, update it too.
     if (gridTemplate !== currentGeneratedTemplate && updatedItems.length > 0) {
         setItems(updatedItems);
         onLayoutChange(currentGeneratedTemplate);
-    } else if (items.length === 0 && updatedItems.length > 0) {
-      setItems(updatedItems);
-    } else if (parsed.length > 0 && items.length === 0) {
-        setItems(parsed);
+    } else {
+        // If template string is in sync, we STILL need to make sure `items` matches `updatedItems`.
+        // Otherwise, resizing an item could use stale `items` state.
+        setItems(updatedItems);
     }
   }, [fields, gridTemplate]);
 

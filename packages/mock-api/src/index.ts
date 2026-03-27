@@ -40,6 +40,46 @@ app.get('/api/enums/:enumName', (req, res) => {
   }
 });
 
+// Schemas
+app.get('/api/schema/:entityName', (req, res) => {
+  const { entityName } = req.params;
+  if (entityName === 'person') {
+    res.json({
+      type: 'object',
+      required: ['firstName', 'age'],
+      properties: {
+        firstName: { type: 'string', minLength: 2, maxLength: 50, pattern: '^[A-Za-z ]+$' },
+        age: { type: 'number', minimum: 0, maximum: 120 },
+        isActive: { type: 'boolean' },
+        status: { type: 'string' }
+      }
+    });
+  } else if (entityName === 'candy') {
+    res.json({
+      type: 'object',
+      required: ['name', 'price'],
+      properties: {
+        name: { type: 'string', minLength: 1, maxLength: 100 },
+        price: { type: 'number', minimum: 0 },
+        isVegan: { type: 'boolean' }
+      }
+    });
+  } else if (entityName === 'store') {
+    res.json({
+      type: 'object',
+      required: ['name', 'rating'],
+      properties: {
+        name: { type: 'string', minLength: 1, maxLength: 200 },
+        rating: { type: 'number', minimum: 0, maximum: 5 },
+        isOpen: { type: 'boolean' },
+        location: { type: 'object' }
+      }
+    });
+  } else {
+    res.status(404).json({ error: 'Schema not found' });
+  }
+});
+
 // Person
 app.get('/api/persons', (req, res) => res.json(persons));
 app.get('/api/persons/:id', (req, res) => {

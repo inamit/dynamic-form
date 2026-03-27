@@ -5,9 +5,7 @@ const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
 import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
 import { parseCoordinate, formatCoordinate } from '../utils/coordinate.ts';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import CloseIcon from '@mui/icons-material/Close';
-import { IconButton } from '@mui/material';
+import { DynamicField } from '@dynamic-form/shared-ui';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -16,10 +14,10 @@ export default function EntityForm() {
   const [id, setId] = useState<string | undefined>(undefined);
   const [injectedGridTemplate, setInjectedGridTemplate] = useState<string | undefined>(undefined);
   const [injectedPresetId, setInjectedPresetId] = useState<number | undefined>(undefined);
+  const [activePresetId, setActivePresetId] = useState<number | undefined>(undefined);
   const [hidePresetSelector, setHidePresetSelector] = useState<boolean>(false);
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const [enumValues, setEnumValues] = useState<Record<string, {code: string, value: string}[]>>({});
   const [loading, setLoading] = useState(true);
   const [coordinateFormats, setCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>({});
   const [selectModeField, setSelectModeField] = useState<string | null>(null);
@@ -37,6 +35,7 @@ export default function EntityForm() {
         setId(data.id);
         setInjectedGridTemplate(data.gridTemplate);
         setInjectedPresetId(data.presetId);
+        setActivePresetId(data.presetId);
         setHidePresetSelector(data.hidePresetSelector || false);
         if (data.defaultCoordinateFormat) {
           // Will be applied to all coordinate fields when config loads
@@ -108,20 +107,6 @@ export default function EntityForm() {
         setSchema(null);
       }
 
-      const enums: Record<string, {code: string, value: string}[]> = {};
-      const enumPromises = configRes.data.fields
-          .filter((f: any) => f.type === 'enum' && f.enumName)
-          .map(async (f: any) => {
-            try {
-              const res = await axios.get(`${API_BASE}/enums/${f.enumName}`);
-              enums[f.name] = res.data;
-            } catch (err) {
-              console.error(`Failed to fetch enum ${f.enumName}`, err);
-            }
-          });
-
-      await Promise.all(enumPromises);
-      setEnumValues(enums);
 
       // Initialize formats
       const defaultFormat = coordinateFormats._default || 'UTM';
@@ -148,18 +133,38 @@ export default function EntityForm() {
         });
         setFormData(loadedData);
       } else {
+        // Determine the initial active preset to get default values
+        let presetDefaultValues: Record<string, any> = {};
+        if (!currentId) {
+            let initialPresetId = injectedPresetId || configRes.data.defaultPresetId;
+            if (initialPresetId && configRes.data.presets) {
+                const p = configRes.data.presets.find((p: any) => p.id === initialPresetId);
+                if (p && p.defaultValues) {
+                    presetDefaultValues = p.defaultValues;
+                }
+            } else if (!initialPresetId && configRes.data.presets && configRes.data.presets.length > 0) {
+                 const p = configRes.data.presets[0];
+                 if (p && p.defaultValues) {
+                     presetDefaultValues = p.defaultValues;
+                 }
+            }
+        }
+
+        // Form loaded default values take precedence over preset default values
+        const mergedDefaults = { ...presetDefaultValues, ...defaultValues };
+
         // Initialize empty form data
         const initialData: Record<string, any> = {};
         configRes.data.fields.forEach((f: any) => {
-          if (defaultValues[f.name] !== undefined) {
-            if (f.type === 'coordinate' && typeof defaultValues[f.name] === 'object') {
-              const loc = defaultValues[f.name];
+          if (mergedDefaults[f.name] !== undefined) {
+            if (f.type === 'coordinate' && typeof mergedDefaults[f.name] === 'object') {
+              const loc = mergedDefaults[f.name];
               initialData[f.name] = formatCoordinate(loc.longitude, loc.latitude, formats[f.name] || 'UTM');
             } else {
-              initialData[f.name] = defaultValues[f.name];
+              initialData[f.name] = mergedDefaults[f.name];
             }
           } else if (f.type === 'enum') {
-            initialData[f.name] = enumValues[f.name]?.[0]?.code || '';
+            initialData[f.name] = ''; // Selection is deferred or initialized by the dropdown itself
           } else {
             initialData[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
           }
@@ -215,24 +220,6 @@ export default function EntityForm() {
     return '';
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    const newValue = type === 'checkbox' ? checked : (type === 'number' ? Number(value) : value);
-
-    setFormData(prev => ({
-      ...prev,
-      [name]: newValue
-    }));
-
-    if (schema) {
-      const error = validateField(name, newValue, schema);
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: error
-      }));
-    }
-  };
 
   const handleCoordinateFormatChange = (field: string, format: 'WGS84' | 'UTM') => {
     const currentVal = formData[field];
@@ -335,15 +322,15 @@ export default function EntityForm() {
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
 
   let effectiveGridTemplate = injectedGridTemplate;
-  let activePresetId = injectedPresetId;
+  let currentActivePresetId = activePresetId;
 
   if (!effectiveGridTemplate) {
-      if (activePresetId && config.presets) {
-          const preset = config.presets.find(p => p.id === activePresetId);
+      if (currentActivePresetId && config.presets) {
+          const preset = config.presets.find(p => p.id === currentActivePresetId);
           if (preset) effectiveGridTemplate = preset.gridTemplate;
       } else if (config.defaultPresetId && config.presets) {
-          activePresetId = config.defaultPresetId as number;
-          const preset = config.presets.find(p => p.id === activePresetId);
+          currentActivePresetId = config.defaultPresetId as number;
+          const preset = config.presets.find(p => p.id === currentActivePresetId);
           if (preset) effectiveGridTemplate = preset.gridTemplate;
       } else {
           effectiveGridTemplate = config.gridTemplate; // Fallback to old field
@@ -369,8 +356,35 @@ export default function EntityForm() {
           <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
              <label style={{ fontWeight: 'bold' }}>Layout Preset:</label>
              <select
-                value={activePresetId || ''}
-                onChange={(e) => setInjectedPresetId(Number(e.target.value))}
+                value={currentActivePresetId || ''}
+                onChange={(e) => {
+                  const newPresetId = Number(e.target.value);
+                  setActivePresetId(newPresetId);
+                  const newPreset = config.presets?.find(p => p.id === newPresetId);
+                  if (newPreset && !id) {
+                    // When in create mode and changing the preset, override fields with default values
+                    const presetDefaults = newPreset.defaultValues || {};
+                    const mergedDefaults = { ...presetDefaults, ...defaultValues };
+                    setFormData(prev => {
+                      const updated = { ...prev };
+                      config.fields.forEach(f => {
+                         if (mergedDefaults[f.name] !== undefined) {
+                            if (f.type === 'coordinate' && typeof mergedDefaults[f.name] === 'object') {
+                               const loc = mergedDefaults[f.name];
+                               updated[f.name] = formatCoordinate(loc.longitude, loc.latitude, coordinateFormats[f.name] || 'UTM');
+                            } else {
+                               updated[f.name] = mergedDefaults[f.name];
+                            }
+                         } else if (f.type === 'enum') {
+                            updated[f.name] = ''; // Reset empty value
+                         } else {
+                            updated[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
+                         }
+                      });
+                      return updated;
+                    });
+                  }
+                }}
                 style={{ padding: '5px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
              >
                 {config.presets.map((preset) => (
@@ -391,91 +405,20 @@ export default function EntityForm() {
 
           return (
           <div key={field.name} style={{ display: 'flex', flexDirection: 'column', gridArea: field.name }}>
-            <label style={{ fontWeight: '500', marginBottom: '8px', textAlign: 'left', color: 'var(--text-h)', fontSize: '14px' }}>
-              {field.label} {isRequired && <span style={{ color: 'red' }}>*</span>}
-            </label>
-            {field.type === 'checkbox' ? (
-              <input
-                type="checkbox"
-                name={field.name}
-                checked={formData[field.name] || false}
-                onChange={handleChange}
-                style={{ alignSelf: 'flex-start' }}
-              />
-            ) : field.type === 'coordinate' ? (
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <select
-                  value={coordinateFormats[field.name] || 'UTM'}
-                  onChange={(e) => handleCoordinateFormatChange(field.name, e.target.value as 'WGS84' | 'UTM')}
-                  style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', width: '100px', outline: 'none' }}
-                >
-                  <option value="UTM">UTM</option>
-                  <option value="WGS84">WGS84</option>
-                </select>
-                <input
-                  type="text"
-                  name={field.name}
-                  value={formData[field.name] || ''}
-                  onChange={handleChange}
-                  placeholder={coordinateFormats[field.name] === 'WGS84' ? 'lat, lng' : 'UTM string'}
-                  style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', outline: 'none' }}
-                />
-                <IconButton
-                  color={selectModeField === field.name ? 'error' : 'primary'}
-                  title={selectModeField === field.name ? 'Cancel map selection' : 'Select location from map'}
-                  onClick={() => handleSelectLocation(field.name)}
-                  sx={{
-                    transition: 'all 0.3s ease',
-                    transform: selectModeField === field.name ? 'scale(1.05)' : 'scale(1)',
-                    backgroundColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.1)' : 'transparent',
-                    border: '1px solid',
-                    borderColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.5)' : 'var(--border)',
-                    borderRadius: '6px',
-                    padding: '8px',
-                    color: selectModeField === field.name ? 'inherit' : 'var(--text)'
-                  }}
-                >
-                  {selectModeField === field.name ? (
-                    <CloseIcon sx={{
-                      animation: 'spin 0.3s linear',
-                      '@keyframes spin': { '0%': { transform: 'rotate(-90deg)' }, '100%': { transform: 'rotate(0)' } }
-                    }} />
-                  ) : (
-                    <LocationOnIcon sx={{
-                      animation: 'drop 0.3s ease-out',
-                      '@keyframes drop': { '0%': { transform: 'translateY(-10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }
-                    }} />
-                  )}
-                </IconButton>
-              </div>
-            ) : field.type === 'enum' ? (
-              <select
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={handleChange}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', outline: 'none' }}
-              >
-                {enumValues[field.name]?.map((opt: any) => (
-                  <option key={opt.code} value={opt.code}>{opt.value}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type={field.type}
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={handleChange}
-                style={{
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: errorMsg ? '1px solid red' : '1px solid var(--border)',
-                  background: 'transparent',
-                  color: 'var(--text)',
-                  outline: 'none'
-                }}
-              />
-            )}
-            {errorMsg && <span style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>{errorMsg}</span>}
+            <DynamicField
+              field={field}
+              value={formData[field.name]}
+              onChange={(name, value) => {
+                 setFormData(prev => ({ ...prev, [name]: value }));
+              }}
+              errorMsg={errorMsg}
+              isRequired={isRequired}
+              apiBaseUrl={API_BASE}
+              coordinateFormat={coordinateFormats[field.name]}
+              onCoordinateFormatChange={handleCoordinateFormatChange}
+              isSelectMode={selectModeField === field.name}
+              onSelectLocation={handleSelectLocation}
+            />
           </div>
         )})}
 

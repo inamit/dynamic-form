@@ -66,7 +66,11 @@ app.get('/api/config/:name', async (req, res) => {
         res.json({
             ...config,
             apiUrl: config.dataSource.apiUrl,
-            apiType: config.dataSource.apiType
+            apiType: config.dataSource.apiType,
+            presets: config.presets?.map((p: any) => ({
+                ...p,
+                defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
+            }))
         });
     } catch (error) {
         console.error(`Error in GET /api/config/${req.params.name}:`, error);

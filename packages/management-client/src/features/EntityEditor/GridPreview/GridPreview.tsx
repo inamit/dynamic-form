@@ -6,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Box, Paper, Typography, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import { DynamicField } from '@dynamic-form/shared-ui';
 
 interface Field {
   name: string;
@@ -21,10 +22,19 @@ interface GridItem {
 interface Props {
   fields: Field[];
   gridTemplate: string;
+  defaultValues?: Record<string, any>;
   onLayoutChange: (template: string) => void;
+  onDefaultValueChange?: (fieldName: string, value: any) => void;
 }
 
-function SortableItem(props: { item: GridItem; field: Field; onChangeSpan: (id: string, col: number, row: number) => void; maxColumns: number }) {
+function SortableItem(props: {
+  item: GridItem;
+  field: Field;
+  defaultValue?: any;
+  onChangeSpan: (id: string, col: number, row: number) => void;
+  onDefaultValueChange?: (id: string, value: any) => void;
+  maxColumns: number
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: props.item.id });
 
   const style = {
@@ -68,11 +78,21 @@ function SortableItem(props: { item: GridItem; field: Field; onChangeSpan: (id: 
           <AddIcon fontSize="small" />
         </IconButton>
       </Box>
+      {props.onDefaultValueChange && (
+        <Box sx={{ zIndex: 1, mt: 1 }} onPointerDown={(e) => e.stopPropagation()}>
+          <DynamicField
+            field={props.field}
+            value={props.defaultValue}
+            apiBaseUrl="http://localhost:3001/api"
+            onChange={(name, value) => props.onDefaultValueChange!(name, value)}
+          />
+        </Box>
+      )}
     </Paper>
   );
 }
 
-export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Props) {
+export default function GridPreview({ fields, gridTemplate, defaultValues, onLayoutChange, onDefaultValueChange }: Props) {
   const [items, setItems] = useState<GridItem[]>([]);
   const [maxColumns, setMaxColumns] = useState<number>(3);
 
@@ -278,7 +298,17 @@ export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Pr
             {items.map(item => {
               const field = fields.find(f => f.name === item.id);
               if (!field) return null;
-              return <SortableItem key={item.id} item={item} field={field} onChangeSpan={handleChangeSpan} maxColumns={maxColumns} />;
+              return (
+                <SortableItem
+                  key={item.id}
+                  item={item}
+                  field={field}
+                  defaultValue={defaultValues?.[item.id]}
+                  onChangeSpan={handleChangeSpan}
+                  onDefaultValueChange={onDefaultValueChange}
+                  maxColumns={maxColumns}
+                />
+              );
             })}
           </Box>
         </SortableContext>

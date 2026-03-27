@@ -55,7 +55,11 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
             res.json({
                 ...config,
                 apiUrl: config.dataSource.apiUrl,
-                apiType: config.dataSource.apiType
+                apiType: config.dataSource.apiType,
+                presets: config.presets?.map((p: any) => ({
+                    ...p,
+                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
+                }))
             });
         } catch (e: any) {
             res.status(500).json({ error: e.message });
@@ -75,7 +79,11 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                         create: fields
                     },
                     presets: {
-                        create: presets || []
+                        create: (presets || []).map((p: any) => ({
+                            name: p.name,
+                            gridTemplate: p.gridTemplate,
+                            defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
+                        }))
                     }
                 },
                 include: { fields: true, presets: true }
@@ -98,7 +106,13 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                 });
             }
 
-            res.json(finalConfig);
+            res.json({
+                ...finalConfig,
+                presets: finalConfig.presets.map((p) => ({
+                    ...p,
+                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
+                }))
+            });
         } catch (e: any) {
             res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
         }
@@ -123,7 +137,11 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                         create: fields
                     },
                     presets: {
-                        create: presets || []
+                        create: (presets || []).map((p: any) => ({
+                            name: p.name,
+                            gridTemplate: p.gridTemplate,
+                            defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
+                        }))
                     }
                 },
                 include: { fields: true, presets: true }
@@ -148,7 +166,13 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                 include: { fields: true, presets: true }
             });
 
-            res.json(finalConfig);
+            res.json({
+                ...finalConfig,
+                presets: finalConfig.presets.map((p) => ({
+                    ...p,
+                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
+                }))
+            });
         } catch (e: any) {
             res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
         }

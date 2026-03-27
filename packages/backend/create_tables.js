@@ -40,10 +40,13 @@ CREATE TABLE IF NOT EXISTS "Preset" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "gridTemplate" TEXT NOT NULL,
+    "defaultValues" TEXT,
     "entityConfigId" INTEGER NOT NULL,
 
     CONSTRAINT "Preset_pkey" PRIMARY KEY ("id")
 );
+
+ALTER TABLE "Preset" ADD COLUMN IF NOT EXISTS "defaultValues" TEXT;
 
 ALTER TABLE "Preset" ADD CONSTRAINT "Preset_entityConfigId_fkey" FOREIGN KEY ("entityConfigId") REFERENCES "EntityConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

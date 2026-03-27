@@ -9,6 +9,7 @@ export interface Preset {
   id: number | string;
   name: string;
   gridTemplate: string;
+  defaultValues?: Record<string, any>;
 }
 
 export interface EntityConfig {

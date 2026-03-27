@@ -112,7 +112,8 @@ export default function EntityForm() {
         presets: formData.presets.map((p: any) => {
             const presetPayload: any = {
                 name: p.name,
-                gridTemplate: p.gridTemplate
+                gridTemplate: p.gridTemplate,
+                defaultValues: p.defaultValues
             };
             // Only send id if it's a number (from DB), not for new ones
             if (typeof p.id === 'number') {

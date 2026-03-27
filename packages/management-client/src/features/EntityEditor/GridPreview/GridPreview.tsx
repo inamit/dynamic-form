@@ -3,7 +3,7 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Box, Paper, Typography, IconButton, TextField } from '@mui/material';
+import { Box, Paper, Typography, IconButton, TextField, Checkbox, FormControlLabel } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 
@@ -79,21 +79,39 @@ function SortableItem(props: {
       </Box>
       {props.onDefaultValueChange && (
         <Box sx={{ zIndex: 1, mt: 1 }} onPointerDown={(e) => e.stopPropagation()}>
-          <TextField
-            size="small"
-            label="Default Value"
-            variant="outlined"
-            fullWidth
-            value={props.defaultValue !== undefined ? String(props.defaultValue) : ''}
-            onChange={(e) => props.onDefaultValueChange!(props.item.id, e.target.value)}
-            onKeyDown={(e) => e.stopPropagation()}
-            InputProps={{
-              style: { fontSize: '0.75rem', backgroundColor: 'white' }
-            }}
-            InputLabelProps={{
-              style: { fontSize: '0.75rem' }
-            }}
-          />
+          {props.field.type === 'checkbox' ? (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={props.defaultValue === true}
+                  onChange={(e) => props.onDefaultValueChange!(props.item.id, e.target.checked)}
+                />
+              }
+              label={<Typography variant="caption">Default True</Typography>}
+              sx={{ m: 0 }}
+            />
+          ) : (
+            <TextField
+              size="small"
+              label="Default Value"
+              variant="outlined"
+              fullWidth
+              type={props.field.type === 'number' ? 'number' : 'text'}
+              value={props.defaultValue !== undefined ? String(props.defaultValue) : ''}
+              onChange={(e) => {
+                const val = props.field.type === 'number' ? Number(e.target.value) : e.target.value;
+                props.onDefaultValueChange!(props.item.id, val);
+              }}
+              onKeyDown={(e) => e.stopPropagation()}
+              InputProps={{
+                style: { fontSize: '0.75rem', backgroundColor: 'white' }
+              }}
+              InputLabelProps={{
+                style: { fontSize: '0.75rem' }
+              }}
+            />
+          )}
         </Box>
       )}
     </Paper>

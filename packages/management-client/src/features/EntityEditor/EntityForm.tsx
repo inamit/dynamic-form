@@ -4,7 +4,6 @@ import { TextField, Button, Typography, MenuItem, Box, Alert, Paper } from '@mui
 import axios from 'axios';
 import GraphQLIntrospection from './GraphQLIntrospection';
 import FieldManager from './FieldManager';
-import GridPreview from './GridPreview/GridPreview';
 import PresetsManager from './PresetsManager';
 
 export default function EntityForm() {

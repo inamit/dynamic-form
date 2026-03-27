@@ -10,6 +10,7 @@ interface Preset {
   id?: number | string;
   name: string;
   gridTemplate: string;
+  defaultValues?: Record<string, any>;
 }
 
 interface Props {
@@ -28,7 +29,7 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
 
   const currentPreset = presets[selectedTab];
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
   };
 
@@ -62,7 +63,8 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
       newPresets.push({
         id: newPresetId,
         name: presetName,
-        gridTemplate: '' // default empty template, handled by grid preview
+        gridTemplate: '', // default empty template, handled by grid preview
+        defaultValues: {}
       });
       setSelectedTab(newPresets.length - 1);
 
@@ -106,6 +108,13 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
   const handleLayoutChange = (newTemplate: string) => {
     const newPresets = [...presets];
     newPresets[selectedTab].gridTemplate = newTemplate;
+    onChange(newPresets, defaultPresetId);
+  };
+
+  const handleDefaultValueChange = (fieldName: string, value: any) => {
+    const newPresets = [...presets];
+    const currentDefValues = newPresets[selectedTab].defaultValues || {};
+    newPresets[selectedTab].defaultValues = { ...currentDefValues, [fieldName]: value };
     onChange(newPresets, defaultPresetId);
   };
 
@@ -233,7 +242,9 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
               <GridPreview
                 fields={fields.filter(f => isTemplateEmpty || activeFieldsSet.has(f.name))}
                 gridTemplate={currentPreset.gridTemplate}
+                defaultValues={currentPreset.defaultValues}
                 onLayoutChange={handleLayoutChange}
+                onDefaultValueChange={handleDefaultValueChange}
               />
             </Box>
           )}

@@ -16,6 +16,7 @@ export default function EntityForm() {
   const [id, setId] = useState<string | undefined>(undefined);
   const [injectedGridTemplate, setInjectedGridTemplate] = useState<string | undefined>(undefined);
   const [injectedPresetId, setInjectedPresetId] = useState<number | undefined>(undefined);
+  const [activePresetId, setActivePresetId] = useState<number | undefined>(undefined);
   const [hidePresetSelector, setHidePresetSelector] = useState<boolean>(false);
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -37,6 +38,7 @@ export default function EntityForm() {
         setId(data.id);
         setInjectedGridTemplate(data.gridTemplate);
         setInjectedPresetId(data.presetId);
+        setActivePresetId(data.presetId);
         setHidePresetSelector(data.hidePresetSelector || false);
         if (data.defaultCoordinateFormat) {
           // Will be applied to all coordinate fields when config loads
@@ -148,15 +150,35 @@ export default function EntityForm() {
         });
         setFormData(loadedData);
       } else {
+        // Determine the initial active preset to get default values
+        let presetDefaultValues: Record<string, any> = {};
+        if (!currentId) {
+            let initialPresetId = injectedPresetId || configRes.data.defaultPresetId;
+            if (initialPresetId && configRes.data.presets) {
+                const p = configRes.data.presets.find((p: any) => p.id === initialPresetId);
+                if (p && p.defaultValues) {
+                    presetDefaultValues = p.defaultValues;
+                }
+            } else if (!initialPresetId && configRes.data.presets && configRes.data.presets.length > 0) {
+                 const p = configRes.data.presets[0];
+                 if (p && p.defaultValues) {
+                     presetDefaultValues = p.defaultValues;
+                 }
+            }
+        }
+
+        // Form loaded default values take precedence over preset default values
+        const mergedDefaults = { ...presetDefaultValues, ...defaultValues };
+
         // Initialize empty form data
         const initialData: Record<string, any> = {};
         configRes.data.fields.forEach((f: any) => {
-          if (defaultValues[f.name] !== undefined) {
-            if (f.type === 'coordinate' && typeof defaultValues[f.name] === 'object') {
-              const loc = defaultValues[f.name];
+          if (mergedDefaults[f.name] !== undefined) {
+            if (f.type === 'coordinate' && typeof mergedDefaults[f.name] === 'object') {
+              const loc = mergedDefaults[f.name];
               initialData[f.name] = formatCoordinate(loc.longitude, loc.latitude, formats[f.name] || 'UTM');
             } else {
-              initialData[f.name] = defaultValues[f.name];
+              initialData[f.name] = mergedDefaults[f.name];
             }
           } else if (f.type === 'enum') {
             initialData[f.name] = enumValues[f.name]?.[0]?.code || '';
@@ -335,15 +357,15 @@ export default function EntityForm() {
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
 
   let effectiveGridTemplate = injectedGridTemplate;
-  let activePresetId = injectedPresetId;
+  let currentActivePresetId = activePresetId;
 
   if (!effectiveGridTemplate) {
-      if (activePresetId && config.presets) {
-          const preset = config.presets.find(p => p.id === activePresetId);
+      if (currentActivePresetId && config.presets) {
+          const preset = config.presets.find(p => p.id === currentActivePresetId);
           if (preset) effectiveGridTemplate = preset.gridTemplate;
       } else if (config.defaultPresetId && config.presets) {
-          activePresetId = config.defaultPresetId as number;
-          const preset = config.presets.find(p => p.id === activePresetId);
+          currentActivePresetId = config.defaultPresetId as number;
+          const preset = config.presets.find(p => p.id === currentActivePresetId);
           if (preset) effectiveGridTemplate = preset.gridTemplate;
       } else {
           effectiveGridTemplate = config.gridTemplate; // Fallback to old field
@@ -369,8 +391,35 @@ export default function EntityForm() {
           <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
              <label style={{ fontWeight: 'bold' }}>Layout Preset:</label>
              <select
-                value={activePresetId || ''}
-                onChange={(e) => setInjectedPresetId(Number(e.target.value))}
+                value={currentActivePresetId || ''}
+                onChange={(e) => {
+                  const newPresetId = Number(e.target.value);
+                  setActivePresetId(newPresetId);
+                  const newPreset = config.presets?.find(p => p.id === newPresetId);
+                  if (newPreset && !id) {
+                    // Apply new preset default values immediately (only for new records usually, but doing it in general if they switch layout before saving)
+                    const presetDefaults = newPreset.defaultValues || {};
+                    const mergedDefaults = { ...presetDefaults, ...defaultValues };
+                    setFormData(prev => {
+                      const updated = { ...prev };
+                      config.fields.forEach(f => {
+                         if (mergedDefaults[f.name] !== undefined) {
+                            if (f.type === 'coordinate' && typeof mergedDefaults[f.name] === 'object') {
+                               const loc = mergedDefaults[f.name];
+                               updated[f.name] = formatCoordinate(loc.longitude, loc.latitude, coordinateFormats[f.name] || 'UTM');
+                            } else {
+                               updated[f.name] = mergedDefaults[f.name];
+                            }
+                         } else if (f.type === 'enum') {
+                            updated[f.name] = enumValues[f.name]?.[0]?.code || '';
+                         } else {
+                            updated[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
+                         }
+                      });
+                      return updated;
+                    });
+                  }
+                }}
                 style={{ padding: '5px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
              >
                 {config.presets.map((preset) => (

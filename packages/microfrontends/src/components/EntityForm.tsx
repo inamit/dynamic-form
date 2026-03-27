@@ -15,7 +15,8 @@ export default function EntityForm() {
   const [entity, setEntity] = useState<string | null>(null);
   const [id, setId] = useState<string | undefined>(undefined);
   const [injectedGridTemplate, setInjectedGridTemplate] = useState<string | undefined>(undefined);
-  const [injectedPresetId, setInjectedPresetId] = useState<number | string | undefined>(undefined);
+  const [injectedPresetId, setInjectedPresetId] = useState<number | undefined>(undefined);
+  const [hidePresetSelector, setHidePresetSelector] = useState<boolean>(false);
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [enumValues, setEnumValues] = useState<Record<string, {code: string, value: string}[]>>({});
@@ -31,11 +32,12 @@ export default function EntityForm() {
     const sub = postal.subscribe({
       channel: CHANNEL_NAME,
       topic: TOPICS.LOAD_FORM,
-      callback: (data: { entity: string, id?: string, gridTemplate?: string, presetId?: number | string, defaultCoordinateFormat?: 'WGS84' | 'UTM', defaultValues?: Record<string, any> }) => {
+      callback: (data: { entity: string, id?: string, gridTemplate?: string, presetId?: number, hidePresetSelector?: boolean, defaultCoordinateFormat?: 'WGS84' | 'UTM', defaultValues?: Record<string, any> }) => {
         setEntity(data.entity);
         setId(data.id);
         setInjectedGridTemplate(data.gridTemplate);
         setInjectedPresetId(data.presetId);
+        setHidePresetSelector(data.hidePresetSelector || false);
         if (data.defaultCoordinateFormat) {
           // Will be applied to all coordinate fields when config loads
           setCoordinateFormats(prev => ({ ...prev, _default: data.defaultCoordinateFormat! }));
@@ -333,13 +335,15 @@ export default function EntityForm() {
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
 
   let effectiveGridTemplate = injectedGridTemplate;
+  let activePresetId = injectedPresetId;
 
   if (!effectiveGridTemplate) {
-      if (injectedPresetId && config.presets) {
-          const preset = config.presets.find(p => String(p.id) === String(injectedPresetId));
+      if (activePresetId && config.presets) {
+          const preset = config.presets.find(p => p.id === activePresetId);
           if (preset) effectiveGridTemplate = preset.gridTemplate;
       } else if (config.defaultPresetId && config.presets) {
-          const preset = config.presets.find(p => String(p.id) === String(config.defaultPresetId));
+          activePresetId = config.defaultPresetId as number;
+          const preset = config.presets.find(p => p.id === activePresetId);
           if (preset) effectiveGridTemplate = preset.gridTemplate;
       } else {
           effectiveGridTemplate = config.gridTemplate; // Fallback to old field
@@ -360,6 +364,22 @@ export default function EntityForm() {
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', background: 'var(--bg)', color: 'var(--text)', padding: '20px', borderRadius: '8px', border: '1px solid var(--border)' }}>
       <h2 style={{ textAlign: 'center', color: 'var(--text-h)' }}>{id ? `Edit ${entity}` : `Create ${entity}`}</h2>
+
+      {!hidePresetSelector && config.presets && config.presets.length > 0 && !injectedGridTemplate && (
+          <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+             <label style={{ fontWeight: 'bold' }}>Layout Preset:</label>
+             <select
+                value={activePresetId || ''}
+                onChange={(e) => setInjectedPresetId(Number(e.target.value))}
+                style={{ padding: '5px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+             >
+                {config.presets.map((preset) => (
+                    <option key={preset.id} value={preset.id}>{preset.name}</option>
+                ))}
+             </select>
+          </div>
+      )}
+
       <form onSubmit={handleSubmit} style={
         isGrid
           ? { display: 'grid', gridTemplateAreas: effectiveGridTemplate, gap: '20px' }

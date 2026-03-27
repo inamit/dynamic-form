@@ -16,10 +16,11 @@ interface Props {
   fields: any[];
   presets: Preset[];
   defaultPresetId: number | string;
+  schemaRequired?: string[];
   onChange: (presets: Preset[], defaultPresetId: number | string) => void;
 }
 
-export default function PresetsManager({ fields, presets, defaultPresetId, onChange }: Props) {
+export default function PresetsManager({ fields, presets, defaultPresetId, schemaRequired = [], onChange }: Props) {
   const [selectedTab, setSelectedTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
@@ -57,18 +58,12 @@ export default function PresetsManager({ fields, presets, defaultPresetId, onCha
       newPresets[editingPresetIndex].name = presetName;
     } else {
       // Add new preset
-      const newPresetId = `temp-${Date.now()}`;
+      const newPresetId = undefined; // backend will assign ID on create
       newPresets.push({
-        id: newPresetId,
         name: presetName,
         gridTemplate: '' // default empty template, handled by grid preview
       });
       setSelectedTab(newPresets.length - 1);
-
-      // If it's the first one, make it default
-      if (newPresets.length === 1) {
-          newDefaultId = newPresetId;
-      }
     }
 
     onChange(newPresets, newDefaultId);
@@ -135,6 +130,8 @@ export default function PresetsManager({ fields, presets, defaultPresetId, onCha
 
   const toggleField = (fieldName: string) => {
      if (!currentPreset) return;
+     if (schemaRequired.includes(fieldName)) return; // Don't allow toggling required fields
+
      let newTemplate = currentPreset.gridTemplate;
 
      if (isTemplateEmpty) {
@@ -202,20 +199,24 @@ export default function PresetsManager({ fields, presets, defaultPresetId, onCha
               <Box sx={{ mb: 3 }}>
                 <Typography variant="subtitle2" gutterBottom>Active Fields for Preset "{currentPreset.name}"</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Click a field to toggle it on or off for this preset.
+                  Click a field to toggle it on or off for this preset. Required fields cannot be hidden.
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     {fields.map(f => {
                         const isActive = isTemplateEmpty || activeFieldsSet.has(f.name);
+                      const isRequired = schemaRequired.includes(f.name);
                         return (
-                            <Chip
-                                key={f.name}
-                                label={f.label || f.name}
-                                color={isActive ? "primary" : "default"}
-                                variant={isActive ? "filled" : "outlined"}
-                                onClick={() => toggleField(f.name)}
-                                sx={{ cursor: 'pointer' }}
-                            />
+                          <Tooltip key={f.name} title={isRequired ? "Required field cannot be hidden" : ""}>
+                              <Chip
+                                  label={f.label || f.name}
+                                  color={isActive ? "primary" : "default"}
+                                  variant={isActive ? "filled" : "outlined"}
+                                  onClick={() => toggleField(f.name)}
+                                  sx={{ cursor: isRequired ? 'not-allowed' : 'pointer' }}
+                                  onDelete={isRequired ? undefined : undefined} // just visual cue
+                                  icon={isRequired ? <StarIcon fontSize="small"/> : undefined}
+                              />
+                          </Tooltip>
                         );
                     })}
                 </Box>

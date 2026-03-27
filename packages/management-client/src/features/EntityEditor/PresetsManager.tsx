@@ -58,12 +58,18 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
       newPresets[editingPresetIndex].name = presetName;
     } else {
       // Add new preset
-      const newPresetId = undefined; // backend will assign ID on create
+      const newPresetId = `temp-${Date.now()}`; // Frontend-only ID
       newPresets.push({
+        id: newPresetId,
         name: presetName,
         gridTemplate: '' // default empty template, handled by grid preview
       });
       setSelectedTab(newPresets.length - 1);
+
+      // Make default if it's the only one
+      if (newPresets.length === 1) {
+          newDefaultId = newPresetId;
+      }
     }
 
     onChange(newPresets, newDefaultId);

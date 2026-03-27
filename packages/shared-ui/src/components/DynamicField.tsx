@@ -17,6 +17,7 @@ export interface DynamicFieldProps {
   errorMsg?: string;
   isRequired?: boolean;
   enumValues?: { code: string; value: string }[];
+  apiBaseUrl?: string; // If provided, the field will attempt to fetch enum values dynamically
   coordinateFormat?: 'WGS84' | 'UTM';
   onCoordinateFormatChange?: (fieldName: string, format: 'WGS84' | 'UTM') => void;
   isSelectMode?: boolean;
@@ -29,12 +30,30 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   onChange,
   errorMsg,
   isRequired,
-  enumValues = [],
+  enumValues: propEnumValues,
+  apiBaseUrl,
   coordinateFormat = 'UTM',
   onCoordinateFormatChange,
   isSelectMode,
   onSelectLocation
 }) => {
+  const [fetchedEnumValues, setFetchedEnumValues] = React.useState<{ code: string; value: string }[]>([]);
+
+  React.useEffect(() => {
+    if (field.type === 'enum' && field.enumName && apiBaseUrl && !propEnumValues) {
+      fetch(`${apiBaseUrl}/enums/${field.enumName}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setFetchedEnumValues(data);
+          }
+        })
+        .catch(err => console.error(`Failed to fetch enum ${field.enumName}`, err));
+    }
+  }, [field.type, field.enumName, apiBaseUrl, propEnumValues]);
+
+  const enumValues = propEnumValues || fetchedEnumValues;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     let val: any = e.target.value;
     if (field.type === 'number') {

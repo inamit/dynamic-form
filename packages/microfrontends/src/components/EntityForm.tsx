@@ -18,7 +18,6 @@ export default function EntityForm() {
   const [hidePresetSelector, setHidePresetSelector] = useState<boolean>(false);
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
-  const [enumValues, setEnumValues] = useState<Record<string, {code: string, value: string}[]>>({});
   const [loading, setLoading] = useState(true);
   const [coordinateFormats, setCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>({});
   const [selectModeField, setSelectModeField] = useState<string | null>(null);
@@ -108,20 +107,6 @@ export default function EntityForm() {
         setSchema(null);
       }
 
-      const enums: Record<string, {code: string, value: string}[]> = {};
-      const enumPromises = configRes.data.fields
-          .filter((f: any) => f.type === 'enum' && f.enumName)
-          .map(async (f: any) => {
-            try {
-              const res = await axios.get(`${API_BASE}/enums/${f.enumName}`);
-              enums[f.name] = res.data;
-            } catch (err) {
-              console.error(`Failed to fetch enum ${f.enumName}`, err);
-            }
-          });
-
-      await Promise.all(enumPromises);
-      setEnumValues(enums);
 
       // Initialize formats
       const defaultFormat = coordinateFormats._default || 'UTM';
@@ -179,7 +164,7 @@ export default function EntityForm() {
               initialData[f.name] = mergedDefaults[f.name];
             }
           } else if (f.type === 'enum') {
-            initialData[f.name] = enumValues[f.name]?.[0]?.code || '';
+            initialData[f.name] = ''; // Selection is deferred or initialized by the dropdown itself
           } else {
             initialData[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
           }
@@ -377,7 +362,7 @@ export default function EntityForm() {
                   setActivePresetId(newPresetId);
                   const newPreset = config.presets?.find(p => p.id === newPresetId);
                   if (newPreset && !id) {
-                    // Apply new preset default values immediately (only for new records usually, but doing it in general if they switch layout before saving)
+                    // When in create mode and changing the preset, override fields with default values
                     const presetDefaults = newPreset.defaultValues || {};
                     const mergedDefaults = { ...presetDefaults, ...defaultValues };
                     setFormData(prev => {
@@ -391,7 +376,7 @@ export default function EntityForm() {
                                updated[f.name] = mergedDefaults[f.name];
                             }
                          } else if (f.type === 'enum') {
-                            updated[f.name] = enumValues[f.name]?.[0]?.code || '';
+                            updated[f.name] = ''; // Reset empty value
                          } else {
                             updated[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
                          }
@@ -428,7 +413,7 @@ export default function EntityForm() {
               }}
               errorMsg={errorMsg}
               isRequired={isRequired}
-              enumValues={enumValues[field.name]}
+              apiBaseUrl={API_BASE}
               coordinateFormat={coordinateFormats[field.name]}
               onCoordinateFormatChange={handleCoordinateFormatChange}
               isSelectMode={selectModeField === field.name}

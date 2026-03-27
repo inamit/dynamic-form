@@ -1,0 +1,287 @@
+import { useState, useEffect } from "react";
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Box, Paper, Typography, IconButton } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+
+interface Field {
+  name: string;
+  type: string;
+  label: string;
+}
+
+interface GridItem {
+  id: string;
+  colSpan: number;
+  rowSpan: number;
+}
+interface Props {
+  fields: Field[];
+  gridTemplate: string;
+  onLayoutChange: (template: string) => void;
+}
+
+function SortableItem(props: { item: GridItem; field: Field; onChangeSpan: (id: string, col: number, row: number) => void; maxColumns: number }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: props.item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    gridColumn: `span ${props.item.colSpan}`,
+    gridRow: `span ${props.item.rowSpan}`,
+  };
+
+  return (
+    <Paper
+      ref={setNodeRef}
+      style={style}
+      sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, backgroundColor: 'grey.100', cursor: 'grab', position: 'relative' }}
+    >
+      <Box sx={{ position: 'absolute', right: 0, bottom: 0, opacity: 0.1, pointerEvents: 'none' }}>
+         <Typography variant="h1" sx={{ fontSize: '4rem', lineHeight: 1 }}>{props.item.rowSpan}</Typography>
+      </Box>
+
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} {...attributes} {...listeners}>
+        <Typography variant="subtitle2" noWrap>{props.field.label}</Typography>
+        <Typography variant="caption" color="text.secondary">[{props.field.type}]</Typography>
+      </Box>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', zIndex: 1 }}>
+        <Typography variant="caption">Cols:</Typography>
+        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, Math.max(1, props.item.colSpan - 1), props.item.rowSpan)}>
+          <RemoveIcon fontSize="small" />
+        </IconButton>
+        <Typography variant="caption">{props.item.colSpan}</Typography>
+        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, Math.min(props.maxColumns, props.item.colSpan + 1), props.item.rowSpan)}>
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </Box>
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', zIndex: 1 }}>
+        <Typography variant="caption">Rows:</Typography>
+        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, props.item.colSpan, Math.max(1, props.item.rowSpan - 1))}>
+          <RemoveIcon fontSize="small" />
+        </IconButton>
+        <Typography variant="caption">{props.item.rowSpan}</Typography>
+        <IconButton size="small" onClick={() => props.onChangeSpan(props.item.id, props.item.colSpan, props.item.rowSpan + 1)}>
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </Box>
+    </Paper>
+  );
+}
+
+export default function GridPreview({ fields, gridTemplate, onLayoutChange }: Props) {
+  const [items, setItems] = useState<GridItem[]>([]);
+  const [maxColumns, setMaxColumns] = useState<number>(3);
+
+  // Helper to convert CSS grid-template-areas string back to item configurations.
+  // We assume items are ordered by their first appearance in the grid.
+  const parseGridTemplateAreas = (templateString: string): { items: GridItem[], columns: number } => {
+    const lines = templateString.split('\n').map(l => l.trim()).filter(l => l);
+    if (lines.length === 0) return { items: [], columns: 3 };
+
+    let cols = 0;
+    const itemMap = new Map<string, { id: string, startCol: number, endCol: number, startRow: number, endRow: number }>();
+
+    lines.forEach((line, rowIndex) => {
+      // Remove leading and trailing quotes
+      const cleanedLine = line.replace(/^['"]|['"]$/g, '').trim();
+      const cells = cleanedLine.split(/\s+/);
+      cols = Math.max(cols, cells.length);
+
+      cells.forEach((cell, colIndex) => {
+        if (cell === '.') return;
+        if (!itemMap.has(cell)) {
+          itemMap.set(cell, { id: cell, startCol: colIndex, endCol: colIndex, startRow: rowIndex, endRow: rowIndex });
+        } else {
+          const stats = itemMap.get(cell)!;
+          stats.endCol = Math.max(stats.endCol, colIndex);
+          stats.endRow = Math.max(stats.endRow, rowIndex);
+        }
+      });
+    });
+
+    const parsedItems: GridItem[] = Array.from(itemMap.values())
+        .sort((a, b) => {
+            if (a.startRow !== b.startRow) return a.startRow - b.startRow;
+            return a.startCol - b.startCol;
+        })
+        .map(stats => ({
+            id: stats.id,
+            colSpan: stats.endCol - stats.startCol + 1,
+            rowSpan: stats.endRow - stats.startRow + 1
+        }));
+
+    return { items: parsedItems, columns: cols || 3 };
+  };
+
+  // Helper to convert GridItem array into a CSS grid-template-areas string
+  const generateGridTemplateAreas = (gridItems: GridItem[], columns: number): string => {
+    if (gridItems.length === 0) return "";
+
+    // We simulate placing items in a grid.
+    const grid: string[][] = [];
+
+    let currentRow = 0;
+    let currentCol = 0;
+
+    const expandGrid = (row: number) => {
+      while (grid.length <= row) {
+        grid.push(new Array(columns).fill('.'));
+      }
+    };
+
+    gridItems.forEach(item => {
+      let placed = false;
+      while (!placed) {
+        expandGrid(currentRow);
+
+        let canPlace = true;
+        // Check bounds
+        if (currentCol + item.colSpan > columns) {
+            canPlace = false;
+        } else {
+            // Check overlaps
+            for (let r = currentRow; r < currentRow + item.rowSpan; r++) {
+                expandGrid(r);
+                for (let c = currentCol; c < currentCol + item.colSpan; c++) {
+                    if (grid[r][c] !== '.') {
+                        canPlace = false;
+                        break;
+                    }
+                }
+                if (!canPlace) break;
+            }
+        }
+
+        if (canPlace) {
+            for (let r = currentRow; r < currentRow + item.rowSpan; r++) {
+                for (let c = currentCol; c < currentCol + item.colSpan; c++) {
+                    grid[r][c] = item.id;
+                }
+            }
+            placed = true;
+            currentCol += item.colSpan;
+            if (currentCol >= columns) {
+                currentCol = 0;
+                currentRow++;
+            }
+        } else {
+            currentCol++;
+            if (currentCol >= columns) {
+                currentCol = 0;
+                currentRow++;
+            }
+        }
+      }
+    });
+
+    return grid.map(row => `"${row.join(' ')}"`).join('\n');
+  };
+
+  useEffect(() => {
+    let parsed: GridItem[] = [];
+    let cols = 3;
+    try {
+      if (gridTemplate) {
+          if (gridTemplate.includes('"')) {
+             const result = parseGridTemplateAreas(gridTemplate);
+             parsed = result.items;
+             cols = result.columns;
+          } else {
+             // Fallback for old json data during dev if needed
+             const data = JSON.parse(gridTemplate);
+             if (data.items) {
+               parsed = data.items;
+               cols = data.columns || 3;
+             } else if (Array.isArray(data)) {
+               parsed = data;
+             }
+          }
+      }
+    } catch (e) { }
+
+    setMaxColumns(cols);
+
+    // Sync fields with layout items
+    const fieldNames = new Set(fields.map(f => f.name));
+    const layoutNames = new Set(parsed.map(i => i.id));
+
+    const updatedItems = parsed.filter(i => fieldNames.has(i.id));
+    fields.forEach(f => {
+      if (!layoutNames.has(f.name)) {
+        updatedItems.push({ id: f.name, colSpan: Math.min(cols, 1), rowSpan: 1 });
+      }
+    });
+
+    const currentGeneratedTemplate = generateGridTemplateAreas(updatedItems, cols);
+
+    // Only update external state if our resolved internal template strings differ
+    if (gridTemplate !== currentGeneratedTemplate && updatedItems.length > 0) {
+        setItems(updatedItems);
+        onLayoutChange(currentGeneratedTemplate);
+    } else if (items.length === 0 && updatedItems.length > 0) {
+      setItems(updatedItems);
+    } else if (parsed.length > 0 && items.length === 0) {
+        setItems(parsed);
+    }
+  }, [fields, gridTemplate]);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setItems((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over?.id);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        onLayoutChange(generateGridTemplateAreas(newItems, maxColumns));
+        return newItems;
+      });
+    }
+  };
+
+  const handleChangeSpan = (id: string, colSpan: number, rowSpan: number) => {
+    setItems((items) => {
+      const newItems = items.map(i => i.id === id ? { ...i, colSpan, rowSpan } : i);
+      onLayoutChange(generateGridTemplateAreas(newItems, maxColumns));
+      return newItems;
+    });
+  };
+
+  const handleMaxColumnsChange = (e: any) => {
+      const val = Math.max(1, parseInt(e.target.value) || 3);
+      setMaxColumns(val);
+
+      setItems((currentItems) => {
+          const clampedItems = currentItems.map(item => ({
+              ...item,
+              colSpan: Math.min(item.colSpan, val)
+          }));
+          onLayoutChange(generateGridTemplateAreas(clampedItems, val));
+          return clampedItems;
+      });
+  };
+
+  return (
+    <Box sx={{ width: '100%' }}>
+      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Typography variant="body2">Max Columns:</Typography>
+        <input type="number" value={maxColumns} onChange={handleMaxColumnsChange} style={{ width: 60 }} />
+      </Box>
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${maxColumns}, 1fr)`, gap: 2, minHeight: 200, p: 2, border: '1px dashed grey' }}>
+            {items.map(item => {
+              const field = fields.find(f => f.name === item.id);
+              if (!field) return null;
+              return <SortableItem key={item.id} item={item} field={field} onChangeSpan={handleChangeSpan} maxColumns={maxColumns} />;
+            })}
+          </Box>
+        </SortableContext>
+      </DndContext>
+    </Box>
+  );
+}

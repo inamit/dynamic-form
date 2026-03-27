@@ -5,9 +5,7 @@ const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
 import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
 import { parseCoordinate, formatCoordinate } from '../utils/coordinate.ts';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import CloseIcon from '@mui/icons-material/Close';
-import { IconButton } from '@mui/material';
+import { DynamicField } from '@dynamic-form/shared-ui';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -237,24 +235,6 @@ export default function EntityForm() {
     return '';
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    const newValue = type === 'checkbox' ? checked : (type === 'number' ? Number(value) : value);
-
-    setFormData(prev => ({
-      ...prev,
-      [name]: newValue
-    }));
-
-    if (schema) {
-      const error = validateField(name, newValue, schema);
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: error
-      }));
-    }
-  };
 
   const handleCoordinateFormatChange = (field: string, format: 'WGS84' | 'UTM') => {
     const currentVal = formData[field];
@@ -440,91 +420,20 @@ export default function EntityForm() {
 
           return (
           <div key={field.name} style={{ display: 'flex', flexDirection: 'column', gridArea: field.name }}>
-            <label style={{ fontWeight: '500', marginBottom: '8px', textAlign: 'left', color: 'var(--text-h)', fontSize: '14px' }}>
-              {field.label} {isRequired && <span style={{ color: 'red' }}>*</span>}
-            </label>
-            {field.type === 'checkbox' ? (
-              <input
-                type="checkbox"
-                name={field.name}
-                checked={formData[field.name] || false}
-                onChange={handleChange}
-                style={{ alignSelf: 'flex-start' }}
-              />
-            ) : field.type === 'coordinate' ? (
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <select
-                  value={coordinateFormats[field.name] || 'UTM'}
-                  onChange={(e) => handleCoordinateFormatChange(field.name, e.target.value as 'WGS84' | 'UTM')}
-                  style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', width: '100px', outline: 'none' }}
-                >
-                  <option value="UTM">UTM</option>
-                  <option value="WGS84">WGS84</option>
-                </select>
-                <input
-                  type="text"
-                  name={field.name}
-                  value={formData[field.name] || ''}
-                  onChange={handleChange}
-                  placeholder={coordinateFormats[field.name] === 'WGS84' ? 'lat, lng' : 'UTM string'}
-                  style={{ flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', outline: 'none' }}
-                />
-                <IconButton
-                  color={selectModeField === field.name ? 'error' : 'primary'}
-                  title={selectModeField === field.name ? 'Cancel map selection' : 'Select location from map'}
-                  onClick={() => handleSelectLocation(field.name)}
-                  sx={{
-                    transition: 'all 0.3s ease',
-                    transform: selectModeField === field.name ? 'scale(1.05)' : 'scale(1)',
-                    backgroundColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.1)' : 'transparent',
-                    border: '1px solid',
-                    borderColor: selectModeField === field.name ? 'rgba(211, 47, 47, 0.5)' : 'var(--border)',
-                    borderRadius: '6px',
-                    padding: '8px',
-                    color: selectModeField === field.name ? 'inherit' : 'var(--text)'
-                  }}
-                >
-                  {selectModeField === field.name ? (
-                    <CloseIcon sx={{
-                      animation: 'spin 0.3s linear',
-                      '@keyframes spin': { '0%': { transform: 'rotate(-90deg)' }, '100%': { transform: 'rotate(0)' } }
-                    }} />
-                  ) : (
-                    <LocationOnIcon sx={{
-                      animation: 'drop 0.3s ease-out',
-                      '@keyframes drop': { '0%': { transform: 'translateY(-10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }
-                    }} />
-                  )}
-                </IconButton>
-              </div>
-            ) : field.type === 'enum' ? (
-              <select
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={handleChange}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', outline: 'none' }}
-              >
-                {enumValues[field.name]?.map((opt: any) => (
-                  <option key={opt.code} value={opt.code}>{opt.value}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type={field.type}
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={handleChange}
-                style={{
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: errorMsg ? '1px solid red' : '1px solid var(--border)',
-                  background: 'transparent',
-                  color: 'var(--text)',
-                  outline: 'none'
-                }}
-              />
-            )}
-            {errorMsg && <span style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>{errorMsg}</span>}
+            <DynamicField
+              field={field}
+              value={formData[field.name]}
+              onChange={(name, value) => {
+                 setFormData(prev => ({ ...prev, [name]: value }));
+              }}
+              errorMsg={errorMsg}
+              isRequired={isRequired}
+              enumValues={enumValues[field.name]}
+              coordinateFormat={coordinateFormats[field.name]}
+              onCoordinateFormatChange={handleCoordinateFormatChange}
+              isSelectMode={selectModeField === field.name}
+              onSelectLocation={handleSelectLocation}
+            />
           </div>
         )})}
 

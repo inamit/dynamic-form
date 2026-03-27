@@ -21,7 +21,7 @@ export default function DataSourceForm() {
     if (isEdit) {
       const fetchData = async () => {
         try {
-          const res = await axios.get('http://localhost:3001/api/data-sources');
+          const res = await axios.get(`${(window as any).env.API_BASE_URL}/data-sources`);
           const ds = res.data.find((d: any) => d.id === Number(id));
           if (ds) setFormData(ds);
         } catch (e: any) {
@@ -40,9 +40,9 @@ export default function DataSourceForm() {
     e.preventDefault();
     try {
       if (isEdit) {
-        await axios.put(`http://localhost:3001/api/data-sources/${id}`, formData);
+        await axios.put(`${(window as any).env.API_BASE_URL}/data-sources/${id}`, formData);
       } else {
-        await axios.post('http://localhost:3001/api/data-sources', formData);
+        await axios.post(`${(window as any).env.API_BASE_URL}/data-sources`, formData);
       }
       navigate('/data-sources');
     } catch (e: any) {

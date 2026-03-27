@@ -37,7 +37,7 @@ export default function EntityForm() {
 
   useEffect(() => {
     if (formData.schemaName) {
-        axios.get(`http://localhost:3001/api/schema/${formData.schemaName}`)
+        axios.get(`${(window as any).env.API_BASE_URL}/schema/${formData.schemaName}`)
             .then(res => setSchemaDef(res.data))
             .catch(e => console.error("Failed to load schema definition", e));
     } else {
@@ -47,7 +47,7 @@ export default function EntityForm() {
 
   const fetchSchemas = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/schemas');
+      const res = await axios.get(`${(window as any).env.API_BASE_URL}/schemas`);
       setAvailableSchemas(res.data);
     } catch (e) {
       console.error("Failed to fetch schemas", e);
@@ -56,7 +56,7 @@ export default function EntityForm() {
 
   const fetchDataSources = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/data-sources');
+      const res = await axios.get(`${(window as any).env.API_BASE_URL}/data-sources`);
       setDataSources(res.data);
     } catch (e: any) {
       setError(e.message);
@@ -65,7 +65,7 @@ export default function EntityForm() {
 
   const fetchEntity = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/api/config/id/${id}`);
+      const res = await axios.get(`${(window as any).env.API_BASE_URL}/config/id/${id}`);
 
       const config = res.data;
       if (!config.presets || config.presets.length === 0) {
@@ -131,9 +131,9 @@ export default function EntityForm() {
       };
 
       if (isEdit) {
-        await axios.put(`http://localhost:3001/api/config/${id}`, payload);
+        await axios.put(`${(window as any).env.API_BASE_URL}/config/${id}`, payload);
       } else {
-        await axios.post('http://localhost:3001/api/config/new', payload);
+        await axios.post(`${(window as any).env.API_BASE_URL}/config/new`, payload);
       }
 
       // If we configured new operations via GraphQL introspection, update the DataSource
@@ -152,7 +152,7 @@ export default function EntityForm() {
             endpointsQueries: JSON.stringify(builtQueries)
          };
 
-         await axios.put(`http://localhost:3001/api/data-sources/${selectedDataSource.id}`, updatedDataSource);
+         await axios.put(`${(window as any).env.API_BASE_URL}/data-sources/${selectedDataSource.id}`, updatedDataSource);
       }
 
       navigate('/entities');

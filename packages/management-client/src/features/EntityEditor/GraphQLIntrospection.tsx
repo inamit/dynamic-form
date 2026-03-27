@@ -32,7 +32,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('http://localhost:3001/api/introspect', {
+      const res = await axios.post(`${(window as any).env.API_BASE_URL}/introspect`, {
         url: dataSourceUrl,
         headers: dataSourceHeaders
       });

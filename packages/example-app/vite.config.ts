@@ -9,7 +9,7 @@ export default defineConfig({
     federation({
       name: 'example_app',
       remotes: {
-        dynamic_form: 'http://localhost:5001/assets/remoteEntry.js'
+        dynamic_form: '${process.env.MFE_URL || "http://localhost:5001"}/assets/remoteEntry.js'
       },
       shared: ['react', 'react-dom', 'react-router-dom', 'axios']
     })

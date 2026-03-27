@@ -6,14 +6,34 @@ The microfrontend provides a script named `./WebComponents` that automatically r
 
 ## 1. Prerequisites
 
-First, ensure `postal.js` and `lodash.js` are included globally in your host application's `index.html`.
+First, ensure `postal.js` and `lodash.js` are included globally in your host application's `index.html`. You can add them via CDNs:
 
 ```html
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/postal.js/2.0.5/postal.min.js"></script>
 ```
 
-## 2. Dynamic Import Helper
+Alternatively, you can install them via npm and import them into your global styles or build configuration depending on your setup:
+
+```bash
+npm install postal lodash
+```
+
+## 2. Standalone vs Modules
+
+The examples below use **Standalone Components** introduced in Angular 14. If you are using traditional `NgModule` architecture, the concepts are the same, but instead of using `standalone: true`, you will declare your wrapper components and add `CUSTOM_ELEMENTS_SCHEMA` inside your module's `@NgModule` decorator:
+
+```typescript
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+
+@NgModule({
+  declarations: [EntityListComponent, EntityFormComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+})
+export class AppModule { }
+```
+
+## 3. Dynamic Import Helper
 
 Since Angular doesn't natively use Vite Module Federation in the same way React does, we need a helper to dynamically inject the microfrontend's script tag and load the remote module at runtime.
 
@@ -64,7 +84,7 @@ export async function loadWebComponents() {
 }
 ```
 
-## 3. Entity List Integration
+## 4. Entity List Integration
 
 Create an Angular component to wrap the `<mfe-entity-list>` custom element. You must add the `CUSTOM_ELEMENTS_SCHEMA` to tell Angular not to throw errors about unknown HTML tags.
 
@@ -146,7 +166,7 @@ export class EntityListComponent implements OnInit, OnDestroy {
 }
 ```
 
-## 4. Entity Form Integration
+## 5. Entity Form Integration
 
 Similarly, create an Angular component for the `<mfe-entity-form>` web component to handle creating and editing forms.
 

@@ -9,9 +9,11 @@ All communication occurs on the `dynamic_form` postal channel.
 const postal = window.postal;
 ```
 
-## Host to Microfrontend Events
+## Host Publishing Commands
 
 These events are published by your host application to instruct the microfrontend to perform an action.
+
+<chapter title="List Commands" id="list-commands">
 
 ### `entity.loadList`
 Instructs the `<mfe-entity-list>` (or `EntityList` React component) to load a list of entities.
@@ -27,6 +29,9 @@ postal.publish({
   data: { entity: 'person' }
 });
 ```
+</chapter>
+
+<chapter title="Form Commands" id="form-commands">
 
 ### `entity.loadForm`
 Instructs the `<mfe-entity-form>` (or `EntityForm` React component) to load the form for creating or editing an entity.
@@ -65,10 +70,13 @@ postal.publish({
   }
 });
 ```
+</chapter>
 
-## Microfrontend to Host Events
+## Microfrontend Publishing Events
 
 These events are published by the microfrontend to notify your host application of an action or state change.
+
+<chapter title="Lifecycle Events" id="lifecycle-events">
 
 ### `entity.ready`
 Fired when the microfrontend component has mounted and is ready to receive commands. This is crucial because the host application might try to send a command (like `entity.loadList`) before the microfrontend is fully loaded.
@@ -88,6 +96,9 @@ postal.subscribe({
   }
 });
 ```
+</chapter>
+
+<chapter title="List Events" id="list-events">
 
 ### `entity.create`
 Fired from the EntityList component when the user clicks the "Create New" button. The host application should listen for this and navigate to the form creation route.
@@ -101,6 +112,9 @@ Fired from the EntityList component when the user clicks the "Edit" button on a 
 **Payload:**
 - `entity` (string): The name of the entity.
 - `id` (string | number): The ID of the entity to edit.
+</chapter>
+
+<chapter title="Form Events" id="form-events">
 
 ### `entity.saved`
 Fired from the EntityForm component when the user successfully saves a form.
@@ -126,3 +140,5 @@ Fired from the EntityForm component when the user clicks the location picker but
 
 **Payload:**
 - `field` (string): The name of the field that requires a location.
+
+</chapter>

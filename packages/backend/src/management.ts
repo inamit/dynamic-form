@@ -64,13 +64,14 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     // Create a new config
     app.post('/api/config/new', async (req, res) => {
-        const { name, dataSourceId, gridTemplate, fields } = req.body;
+        const { name, dataSourceId, gridTemplate, schemaName, fields } = req.body;
         try {
             const config = await prisma.entityConfig.create({
                 data: {
                     name,
                     dataSourceId,
                     gridTemplate,
+                    schemaName,
                     fields: {
                         create: fields
                     }
@@ -85,7 +86,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     // Configs Update
     app.put('/api/config/:id', async (req, res) => {
-        const { name, dataSourceId, gridTemplate, fields } = req.body;
+        const { name, dataSourceId, gridTemplate, schemaName, fields } = req.body;
         const id = parseInt(req.params.id);
 
         try {
@@ -97,6 +98,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                     name,
                     dataSourceId,
                     gridTemplate,
+                    schemaName,
                     fields: {
                         create: fields
                     }

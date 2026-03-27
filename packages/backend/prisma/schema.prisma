@@ -27,6 +27,7 @@ model EntityConfig {
   dataSource   DataSource @relation(fields: [dataSourceId], references: [id])
   fields       Field[]
   gridTemplate String?
+  schemaName   String?
 }
 
 model Field {
@@ -35,7 +36,6 @@ model Field {
   type           String       // "text", "number", "checkbox", "enum"
   label          String
   enumName       String?
-  schemaName     String?
   entityConfigId Int
   entityConfig   EntityConfig @relation(fields: [entityConfigId], references: [id], onDelete: Cascade)
 

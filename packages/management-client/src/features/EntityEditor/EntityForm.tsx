@@ -12,11 +12,13 @@ export default function EntityForm() {
   const isEdit = Boolean(id);
   const [error, setError] = useState('');
   const [dataSources, setDataSources] = useState<any[]>([]);
+  const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
 
   const [formData, setFormData] = useState<any>({
     name: '',
     dataSourceId: '',
     gridTemplate: '',
+    schemaName: '',
     fields: []
   });
 
@@ -25,10 +27,20 @@ export default function EntityForm() {
 
   useEffect(() => {
     fetchDataSources();
+    fetchSchemas();
     if (isEdit) {
       fetchEntity();
     }
   }, [id, isEdit]);
+
+  const fetchSchemas = async () => {
+    try {
+      const res = await axios.get('http://localhost:3001/api/schemas');
+      setAvailableSchemas(res.data);
+    } catch (e) {
+      console.error("Failed to fetch schemas", e);
+    }
+  };
 
   const fetchDataSources = async () => {
     try {
@@ -77,12 +89,12 @@ export default function EntityForm() {
         name: formData.name,
         dataSourceId: Number(formData.dataSourceId),
         gridTemplate: formData.gridTemplate,
+        schemaName: formData.schemaName || null,
         fields: formData.fields.map((f: any) => ({
           name: f.name,
           type: f.type,
           label: f.label,
-          enumName: f.enumName || null,
-          schemaName: f.schemaName || null
+          enumName: f.enumName || null
         }))
       };
 
@@ -124,6 +136,18 @@ export default function EntityForm() {
 
       <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600 }}>
         <TextField label="Name" name="name" value={formData.name} onChange={handleChange} required />
+        <TextField
+          select
+          label="Schema Name"
+          name="schemaName"
+          value={formData.schemaName || ''}
+          onChange={handleChange}
+        >
+          <MenuItem value=""><em>None</em></MenuItem>
+          {availableSchemas.map((s) => (
+            <MenuItem key={s} value={s}>{s}</MenuItem>
+          ))}
+        </TextField>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <TextField select label="Data Source" name="dataSourceId" value={formData.dataSourceId} onChange={handleChange} required sx={{ flexGrow: 1 }}>
             {dataSources.map((ds) => (

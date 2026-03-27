@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Box, Button, Typography, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
-import axios from 'axios';
 
 interface Field {
   name: string;
   type: string;
   label: string;
   enumName?: string;
-  schemaName?: string;
 }
 
 interface Props {
@@ -16,26 +14,12 @@ interface Props {
 }
 
 export default function FieldManager({ fields, onFieldsChange }: Props) {
-  const [newField, setNewField] = useState<Field>({ name: '', type: 'text', label: '', enumName: '', schemaName: '' });
-  const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetchSchemas();
-  }, []);
-
-  const fetchSchemas = async () => {
-    try {
-      const res = await axios.get('http://localhost:3001/api/schemas');
-      setAvailableSchemas(res.data);
-    } catch (e) {
-      console.error("Failed to fetch schemas", e);
-    }
-  };
+  const [newField, setNewField] = useState<Field>({ name: '', type: 'text', label: '', enumName: '' });
 
   const handleAddField = () => {
     if (newField.name && newField.label) {
       onFieldsChange([...fields, newField]);
-      setNewField({ name: '', type: 'text', label: '', enumName: '', schemaName: '' });
+      setNewField({ name: '', type: 'text', label: '', enumName: '' });
     }
   };
 
@@ -82,19 +66,6 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
             size="small"
           />
         )}
-        <TextField
-          select
-          label="Schema Name"
-          value={newField.schemaName || ''}
-          onChange={(e) => setNewField({ ...newField, schemaName: e.target.value })}
-          size="small"
-          sx={{ minWidth: 120 }}
-        >
-          <MenuItem value=""><em>None</em></MenuItem>
-          {availableSchemas.map((s) => (
-            <MenuItem key={s} value={s}>{s}</MenuItem>
-          ))}
-        </TextField>
         <Button variant="contained" onClick={handleAddField}>Add Manually</Button>
       </Box>
 
@@ -105,7 +76,6 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
               <TableCell>Name</TableCell>
               <TableCell>Label</TableCell>
               <TableCell>Type</TableCell>
-              <TableCell>Schema</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -115,7 +85,6 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
                 <TableCell>{f.name}</TableCell>
                 <TableCell>{f.label}</TableCell>
                 <TableCell>{f.type}</TableCell>
-                <TableCell>{f.schemaName || '-'}</TableCell>
                 <TableCell>
                   <Button size="small" color="error" onClick={() => handleRemoveField(i)}>Remove</Button>
                 </TableCell>

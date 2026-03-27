@@ -96,7 +96,7 @@ export default function EntityForm() {
 
       try {
         // Fallback to currentEntity if schemaName is null/missing (for older configurations or the current mock hardcode endpoints structure)
-        const schemaName = configRes.data.fields?.[0]?.schemaName || currentEntity;
+        const schemaName = configRes.data.schemaName || currentEntity;
         const schemaRes = await axios.get(`${API_BASE}/schema/${schemaName}`);
         setSchema(schemaRes.data);
       } catch (err) {

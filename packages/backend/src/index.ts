@@ -112,6 +112,12 @@ app.get('/api/enums/:enumName', async (req, res) => {
 
 app.get('/api/data/:entity', async (req, res) => {
     const {entity} = req.params;
+
+    // Prevent path traversal
+    if (entity.includes('/') || entity.includes('..')) {
+        return res.status(400).json({error: 'Invalid entity'});
+    }
+
     console.log(`GET /api/data/${entity}`);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},
@@ -148,6 +154,9 @@ app.get('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
 
     // Prevent path traversal
+    if (entity.includes('/') || entity.includes('..')) {
+        return res.status(400).json({error: 'Invalid entity'});
+    }
     if (id.includes('/') || id.includes('..')) {
         return res.status(400).json({error: 'Invalid id'});
     }
@@ -187,6 +196,12 @@ app.get('/api/data/:entity/:id', async (req, res) => {
 
 app.post('/api/data/:entity', async (req, res) => {
     const {entity} = req.params;
+
+    // Prevent path traversal
+    if (entity.includes('/') || entity.includes('..')) {
+        return res.status(400).json({error: 'Invalid entity'});
+    }
+
     console.log(`POST /api/data/${entity}`, req.body);
     const config = await prisma.entityConfig.findUnique({
         where: {name: entity},
@@ -230,6 +245,9 @@ app.put('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
 
     // Prevent path traversal
+    if (entity.includes('/') || entity.includes('..')) {
+        return res.status(400).json({error: 'Invalid entity'});
+    }
     if (id.includes('/') || id.includes('..')) {
         return res.status(400).json({error: 'Invalid id'});
     }
@@ -279,6 +297,9 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
 
     // Prevent path traversal
+    if (entity.includes('/') || entity.includes('..')) {
+        return res.status(400).json({error: 'Invalid entity'});
+    }
     if (id.includes('/') || id.includes('..')) {
         return res.status(400).json({error: 'Invalid id'});
     }

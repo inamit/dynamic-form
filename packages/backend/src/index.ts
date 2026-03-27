@@ -81,7 +81,7 @@ app.post('/api/config', async (req, res) => {
 
 // --- SCHEMA ENDPOINTS ---
 
-app.get('/api/schema/:entityName', async (req, res) => {
+app.get(':entityName', async (req, res) => {
     try {
         const {entityName} = req.params;
 
@@ -90,7 +90,7 @@ app.get('/api/schema/:entityName', async (req, res) => {
             return res.status(400).json({error: 'Invalid entityName'});
         }
 
-        console.log(`GET /api/schema/${entityName}`);
+        console.log(`GET ${entityName}`);
 
         // Since schema is exposed by the mock API on /api/schema
         // and we don't have a specific data source configured for it,
@@ -112,7 +112,7 @@ app.get('/api/schema/:entityName', async (req, res) => {
         const response = await axios.get(`${schemaApiUrl}/${entityName}`, { headers });
         res.json(response.data);
     } catch (error: any) {
-        console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
+        console.error(`Error in GET ${req.params.entityName}:`, error.message);
         res.status(500).json({error: 'Failed to fetch schema'});
     }
 });

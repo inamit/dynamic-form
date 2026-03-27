@@ -175,9 +175,14 @@ function FormWrapper() {
     if (!entity) return;
 
     let gridTemplate: string | undefined;
+    let presetId: string | number | undefined;
+
+    // As a demonstration, if entity is candy, we pass explicit gridTemplate.
     if (entity === 'candy') {
       gridTemplate = '"name price" "isVegan ."';
     }
+
+    // (If we knew a preset ID, we could pass `presetId` here instead.)
 
     const subReady = (postal as any).subscribe({
       channel: 'dynamic_form',
@@ -187,7 +192,7 @@ function FormWrapper() {
           (postal as any).publish({
             channel: 'dynamic_form',
             topic: 'entity.loadForm',
-            data: { entity, id, gridTemplate, defaultCoordinateFormat: 'UTM' }
+            data: { entity, id, gridTemplate, presetId, defaultCoordinateFormat: 'UTM' }
           });
         }
       }
@@ -196,7 +201,7 @@ function FormWrapper() {
     (postal as any).publish({
       channel: 'dynamic_form',
       topic: 'entity.loadForm',
-      data: { entity, id, gridTemplate, defaultCoordinateFormat: 'UTM' }
+      data: { entity, id, gridTemplate, presetId, defaultCoordinateFormat: 'UTM' }
     });
 
     return () => {

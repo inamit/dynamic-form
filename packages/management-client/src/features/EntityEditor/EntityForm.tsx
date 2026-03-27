@@ -5,6 +5,7 @@ import axios from 'axios';
 import GraphQLIntrospection from './GraphQLIntrospection';
 import FieldManager from './FieldManager';
 import GridPreview from './GridPreview/GridPreview';
+import PresetsManager from './PresetsManager';
 
 export default function EntityForm() {
   const { id } = useParams();
@@ -13,13 +14,15 @@ export default function EntityForm() {
   const [error, setError] = useState('');
   const [dataSources, setDataSources] = useState<any[]>([]);
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
+  const [schemaDef, setSchemaDef] = useState<any>(null);
 
   const [formData, setFormData] = useState<any>({
     name: '',
     dataSourceId: '',
-    gridTemplate: '',
     schemaName: '',
-    fields: []
+    fields: [],
+    presets: [{ name: 'Default', gridTemplate: '' }],
+    defaultPresetId: null
   });
 
   // Track operations if they get updated from Introspection
@@ -32,6 +35,16 @@ export default function EntityForm() {
       fetchEntity();
     }
   }, [id, isEdit]);
+
+  useEffect(() => {
+    if (formData.schemaName) {
+        axios.get(`http://localhost:3001/api/schema/${formData.schemaName}`)
+            .then(res => setSchemaDef(res.data))
+            .catch(e => console.error("Failed to load schema definition", e));
+    } else {
+        setSchemaDef(null);
+    }
+  }, [formData.schemaName]);
 
   const fetchSchemas = async () => {
     try {
@@ -54,7 +67,15 @@ export default function EntityForm() {
   const fetchEntity = async () => {
     try {
       const res = await axios.get(`http://localhost:3001/api/config/id/${id}`);
-      setFormData(res.data);
+
+      const config = res.data;
+      if (!config.presets || config.presets.length === 0) {
+          // Backward compatibility if presets are missing
+          config.presets = [{ name: 'Default', gridTemplate: config.gridTemplate || '' }];
+          config.defaultPresetId = null;
+      }
+
+      setFormData(config);
     } catch (e: any) {
       setError(e.response?.data?.error || e.message);
     }
@@ -88,8 +109,19 @@ export default function EntityForm() {
       const payload = {
         name: formData.name,
         dataSourceId: Number(formData.dataSourceId),
-        gridTemplate: formData.gridTemplate,
         schemaName: formData.schemaName || null,
+        presets: formData.presets.map((p: any) => {
+            const presetPayload: any = {
+                name: p.name,
+                gridTemplate: p.gridTemplate
+            };
+            // Only send id if it's a number (from DB), not for new ones
+            if (typeof p.id === 'number') {
+                presetPayload.id = p.id;
+            }
+            return presetPayload;
+        }),
+        defaultPresetId: formData.defaultPresetId,
         fields: formData.fields.map((f: any) => ({
           name: f.name,
           type: f.type,
@@ -175,14 +207,13 @@ export default function EntityForm() {
         <FieldManager fields={formData.fields} onFieldsChange={(fields) => setFormData({ ...formData, fields })} />
       </Paper>
 
-      <Paper sx={{ p: 2, minHeight: 400 }}>
-        <Typography variant="h6" gutterBottom>Grid Layout Preview</Typography>
-        <GridPreview
-          fields={formData.fields}
-          gridTemplate={formData.gridTemplate}
-          onLayoutChange={(gridTemplate) => setFormData({ ...formData, gridTemplate })}
-        />
-      </Paper>
+      <PresetsManager
+        fields={formData.fields}
+        presets={formData.presets}
+        defaultPresetId={formData.defaultPresetId}
+        schemaRequired={schemaDef?.required || []}
+        onChange={(presets, defaultPresetId) => setFormData({ ...formData, presets, defaultPresetId })}
+      />
 
       <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
         <Button variant="contained" onClick={handleSubmit}>Save Entity</Button>

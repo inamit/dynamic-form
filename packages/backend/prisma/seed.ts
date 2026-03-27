@@ -30,13 +30,12 @@ async function main() {
         }
     });
 
-    await prisma.entityConfig.upsert({
+    const personConfig = await prisma.entityConfig.upsert({
         where: {name: 'person'},
         update: {},
         create: {
             name: 'person',
             dataSourceId: personDs.id,
-            gridTemplate: '"firstName lastName" "status isActive"',
             fields: {
                 create: [
                     {name: 'firstName', type: 'text', label: 'First Name'},
@@ -44,9 +43,22 @@ async function main() {
                     {name: 'isActive', type: 'checkbox', label: 'Active'},
                     {name: 'status', type: 'enum', label: 'Status', enumName: 'person-status'},
                 ]
+            },
+            presets: {
+                create: [
+                    { name: 'Default', gridTemplate: '"firstName lastName" "status isActive"' }
+                ]
             }
         },
+        include: { presets: true }
     });
+
+    if (personConfig.presets && personConfig.presets.length > 0) {
+        await prisma.entityConfig.update({
+            where: { id: personConfig.id },
+            data: { defaultPresetId: personConfig.presets[0].id }
+        });
+    }
 
     // Enum DataSource
     await prisma.dataSource.upsert({
@@ -70,7 +82,7 @@ async function main() {
         }
     });
 
-    await prisma.entityConfig.upsert({
+    const candyConfig = await prisma.entityConfig.upsert({
         where: {name: 'candy'},
         update: {},
         create: {
@@ -82,9 +94,22 @@ async function main() {
                     {name: 'price', type: 'number', label: 'Price ($)'},
                     {name: 'isVegan', type: 'checkbox', label: 'Is Vegan?'},
                 ]
+            },
+            presets: {
+                create: [
+                    { name: 'Default', gridTemplate: '"name price isVegan"' }
+                ]
             }
         },
+        include: { presets: true }
     });
+
+    if (candyConfig.presets && candyConfig.presets.length > 0) {
+        await prisma.entityConfig.update({
+            where: { id: candyConfig.id },
+            data: { defaultPresetId: candyConfig.presets[0].id }
+        });
+    }
 
     // GraphQL DataSource for Stores
     const storeQueries = {
@@ -162,7 +187,7 @@ async function main() {
         }
     });
 
-    await prisma.entityConfig.upsert({
+    const storeConfig = await prisma.entityConfig.upsert({
         where: {name: 'store'},
         update: {
             fields: {
@@ -185,9 +210,22 @@ async function main() {
                     {name: 'isOpen', type: 'checkbox', label: 'Is Open?'},
                     {name: 'location', type: 'coordinate', label: 'Location'},
                 ]
+            },
+            presets: {
+                create: [
+                    { name: 'Default', gridTemplate: '"name rating" "isOpen location"' }
+                ]
             }
         },
+        include: { presets: true }
     });
+
+    if (storeConfig.presets && storeConfig.presets.length > 0) {
+        await prisma.entityConfig.update({
+            where: { id: storeConfig.id },
+            data: { defaultPresetId: storeConfig.presets[0].id }
+        });
+    }
 
     console.log('Database seeded with configurations!');
 }

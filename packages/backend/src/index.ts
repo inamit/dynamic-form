@@ -55,7 +55,7 @@ app.get('/api/config/:name', async (req, res) => {
         console.log(`GET /api/config/${req.params.name}`);
         const config = await prisma.entityConfig.findUnique({
             where: {name: req.params.name},
-            include: {dataSource: true, fields: true}
+            include: {dataSource: true, fields: true, presets: true}
         });
 
         if (!config) {

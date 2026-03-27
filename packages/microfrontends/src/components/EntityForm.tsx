@@ -21,6 +21,8 @@ export default function EntityForm() {
   const [loading, setLoading] = useState(true);
   const [coordinateFormats, setCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>({});
   const [selectModeField, setSelectModeField] = useState<string | null>(null);
+  const [schema, setSchema] = useState<any>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const [defaultValues, setDefaultValues] = useState<Record<string, any>>({});
 
@@ -87,9 +89,20 @@ export default function EntityForm() {
 
   const fetchConfigAndData = async (currentEntity: string, currentId?: string) => {
     setLoading(true);
+    setValidationErrors({});
     try {
       const configRes = await axios.get(`${API_BASE}/config/${currentEntity}`);
       setConfig(configRes.data);
+
+      try {
+        // Fallback to currentEntity if schemaName is null/missing (for older configurations or the current mock hardcode endpoints structure)
+        const schemaName = configRes.data.schemaName || currentEntity;
+        const schemaRes = await axios.get(`${API_BASE}/schema/${schemaName}`);
+        setSchema(schemaRes.data);
+      } catch (err) {
+        console.error(`Failed to fetch schema for ${currentEntity}`, err);
+        setSchema(null);
+      }
 
       const enums: Record<string, {code: string, value: string}[]> = {};
       const enumPromises = configRes.data.fields
@@ -161,13 +174,60 @@ export default function EntityForm() {
     }
   };
 
+  const validateField = (name: string, value: any, currentSchema: any) => {
+    if (!currentSchema || !currentSchema.properties || !currentSchema.properties[name]) return '';
+
+    const rules = currentSchema.properties[name];
+    const isRequired = currentSchema.required?.includes(name);
+
+    if (isRequired && (value === undefined || value === null || value === '')) {
+      return 'This field is required';
+    }
+
+    if (value === undefined || value === null || value === '') return '';
+
+    if (rules.type === 'string' && typeof value === 'string') {
+      if (rules.minLength !== undefined && value.length < rules.minLength) {
+        return `Minimum length is ${rules.minLength}`;
+      }
+      if (rules.maxLength !== undefined && value.length > rules.maxLength) {
+        return `Maximum length is ${rules.maxLength}`;
+      }
+      if (rules.pattern !== undefined) {
+        const regex = new window.RegExp(rules.pattern);
+        if (!regex.test(value)) {
+          return `Does not match the required pattern`;
+        }
+      }
+    } else if (rules.type === 'number' && typeof value === 'number') {
+      if (rules.minimum !== undefined && value < rules.minimum) {
+        return `Minimum value is ${rules.minimum}`;
+      }
+      if (rules.maximum !== undefined && value > rules.maximum) {
+        return `Maximum value is ${rules.maximum}`;
+      }
+    }
+
+    return '';
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
+    const newValue = type === 'checkbox' ? checked : (type === 'number' ? Number(value) : value);
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : (type === 'number' ? Number(value) : value)
+      [name]: newValue
     }));
+
+    if (schema) {
+      const error = validateField(name, newValue, schema);
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: error
+      }));
+    }
   };
 
   const handleCoordinateFormatChange = (field: string, format: 'WGS84' | 'UTM') => {
@@ -205,6 +265,22 @@ export default function EntityForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate all fields before submit
+    if (schema) {
+      const newErrors: Record<string, string> = {};
+      let hasErrors = false;
+      config?.fields.forEach(f => {
+        const error = validateField(f.name, formData[f.name], schema);
+        if (error) {
+          newErrors[f.name] = error;
+          hasErrors = true;
+        }
+      });
+      setValidationErrors(newErrors);
+      if (hasErrors) return;
+    }
+
     try {
       let response;
 
@@ -274,10 +350,14 @@ export default function EntityForm() {
           ? { display: 'grid', gridTemplateAreas: effectiveGridTemplate, gap: '20px' }
           : { display: 'flex', flexDirection: 'column', gap: '20px' }
       }>
-        {config.fields.filter(field => !isGrid || validGridAreas.has(field.name)).map(field => (
+        {config.fields.filter(field => !isGrid || validGridAreas.has(field.name)).map(field => {
+          const isRequired = schema?.required?.includes(field.name);
+          const errorMsg = validationErrors[field.name];
+
+          return (
           <div key={field.name} style={{ display: 'flex', flexDirection: 'column', gridArea: field.name }}>
             <label style={{ fontWeight: '500', marginBottom: '8px', textAlign: 'left', color: 'var(--text-h)', fontSize: '14px' }}>
-              {field.label}
+              {field.label} {isRequired && <span style={{ color: 'red' }}>*</span>}
             </label>
             {field.type === 'checkbox' ? (
               <input
@@ -350,11 +430,19 @@ export default function EntityForm() {
                 name={field.name}
                 value={formData[field.name] || ''}
                 onChange={handleChange}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', outline: 'none' }}
+                style={{
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: errorMsg ? '1px solid red' : '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text)',
+                  outline: 'none'
+                }}
               />
             )}
+            {errorMsg && <span style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>{errorMsg}</span>}
           </div>
-        ))}
+        )})}
 
         <div style={{ display: 'flex', gap: '12px', marginTop: '10px', gridColumn: isGrid ? '1 / -1' : undefined, justifyContent: 'flex-start' }}>
           <button

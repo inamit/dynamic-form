@@ -47,7 +47,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         try {
             const config = await prisma.entityConfig.findUnique({
                 where: { id: parseInt(req.params.id) },
-                include: { dataSource: true, fields: true }
+                include: { dataSource: true, fields: true, presets: true }
             });
             if (!config) {
                 return res.status(404).json({ error: 'Configuration not found' });
@@ -64,21 +64,41 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     // Create a new config
     app.post('/api/config/new', async (req, res) => {
-        const { name, dataSourceId, gridTemplate, schemaName, fields } = req.body;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId } = req.body;
         try {
             const config = await prisma.entityConfig.create({
                 data: {
                     name,
                     dataSourceId,
-                    gridTemplate,
                     schemaName,
                     fields: {
                         create: fields
+                    },
+                    presets: {
+                        create: presets || []
                     }
                 },
-                include: { fields: true }
+                include: { fields: true, presets: true }
             });
-            res.json(config);
+
+            let finalConfig = config;
+            if (defaultPresetId) {
+                // If an ID was explicitly provided, try to use it (unlikely on create though)
+                finalConfig = await prisma.entityConfig.update({
+                    where: { id: config.id },
+                    data: { defaultPresetId },
+                    include: { fields: true, presets: true }
+                });
+            } else if (config.presets.length > 0) {
+                // Set the first preset as default
+                finalConfig = await prisma.entityConfig.update({
+                    where: { id: config.id },
+                    data: { defaultPresetId: config.presets[0].id },
+                    include: { fields: true, presets: true }
+                });
+            }
+
+            res.json(finalConfig);
         } catch (e: any) {
             res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
         }
@@ -86,26 +106,49 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     // Configs Update
     app.put('/api/config/:id', async (req, res) => {
-        const { name, dataSourceId, gridTemplate, schemaName, fields } = req.body;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId } = req.body;
         const id = parseInt(req.params.id);
 
         try {
             await prisma.field.deleteMany({ where: { entityConfigId: id } });
+            await prisma.preset.deleteMany({ where: { entityConfigId: id } });
 
             const config = await prisma.entityConfig.update({
                 where: { id },
                 data: {
                     name,
                     dataSourceId,
-                    gridTemplate,
                     schemaName,
                     fields: {
                         create: fields
+                    },
+                    presets: {
+                        create: presets || []
                     }
                 },
-                include: { fields: true }
+                include: { fields: true, presets: true }
             });
-            res.json(config);
+
+            let newDefaultPresetId = null;
+            if (defaultPresetId) {
+                // Front end passed a default preset ID. It might be an old ID or just an index.
+                // Actually, the simplest way is to match by name (since we recreate them).
+                const selectedPresetName = presets.find((p: any) => p.id === defaultPresetId)?.name;
+                if (selectedPresetName) {
+                    newDefaultPresetId = config.presets.find((p: any) => p.name === selectedPresetName)?.id;
+                }
+            }
+            if (!newDefaultPresetId && config.presets.length > 0) {
+                 newDefaultPresetId = config.presets[0].id;
+            }
+
+            const finalConfig = await prisma.entityConfig.update({
+                where: { id },
+                data: { defaultPresetId: newDefaultPresetId },
+                include: { fields: true, presets: true }
+            });
+
+            res.json(finalConfig);
         } catch (e: any) {
             res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
         }
@@ -113,8 +156,10 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.delete('/api/config/:id', async (req, res) => {
         try {
-            await prisma.field.deleteMany({ where: { entityConfigId: parseInt(req.params.id) } });
-            await prisma.entityConfig.delete({ where: { id: parseInt(req.params.id) } });
+            const id = parseInt(req.params.id);
+            await prisma.field.deleteMany({ where: { entityConfigId: id } });
+            await prisma.preset.deleteMany({ where: { entityConfigId: id } });
+            await prisma.entityConfig.delete({ where: { id } });
             res.json({ success: true });
         } catch (e: any) {
             res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });

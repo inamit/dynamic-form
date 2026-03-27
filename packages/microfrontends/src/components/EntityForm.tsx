@@ -15,6 +15,7 @@ export default function EntityForm() {
   const [entity, setEntity] = useState<string | null>(null);
   const [id, setId] = useState<string | undefined>(undefined);
   const [injectedGridTemplate, setInjectedGridTemplate] = useState<string | undefined>(undefined);
+  const [injectedPresetId, setInjectedPresetId] = useState<number | string | undefined>(undefined);
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [enumValues, setEnumValues] = useState<Record<string, {code: string, value: string}[]>>({});
@@ -30,10 +31,11 @@ export default function EntityForm() {
     const sub = postal.subscribe({
       channel: CHANNEL_NAME,
       topic: TOPICS.LOAD_FORM,
-      callback: (data: { entity: string, id?: string, gridTemplate?: string, defaultCoordinateFormat?: 'WGS84' | 'UTM', defaultValues?: Record<string, any> }) => {
+      callback: (data: { entity: string, id?: string, gridTemplate?: string, presetId?: number | string, defaultCoordinateFormat?: 'WGS84' | 'UTM', defaultValues?: Record<string, any> }) => {
         setEntity(data.entity);
         setId(data.id);
         setInjectedGridTemplate(data.gridTemplate);
+        setInjectedPresetId(data.presetId);
         if (data.defaultCoordinateFormat) {
           // Will be applied to all coordinate fields when config loads
           setCoordinateFormats(prev => ({ ...prev, _default: data.defaultCoordinateFormat! }));
@@ -330,7 +332,20 @@ export default function EntityForm() {
   if (loading) return <div>Loading...</div>;
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
 
-  const effectiveGridTemplate = injectedGridTemplate || config.gridTemplate;
+  let effectiveGridTemplate = injectedGridTemplate;
+
+  if (!effectiveGridTemplate) {
+      if (injectedPresetId && config.presets) {
+          const preset = config.presets.find(p => String(p.id) === String(injectedPresetId));
+          if (preset) effectiveGridTemplate = preset.gridTemplate;
+      } else if (config.defaultPresetId && config.presets) {
+          const preset = config.presets.find(p => String(p.id) === String(config.defaultPresetId));
+          if (preset) effectiveGridTemplate = preset.gridTemplate;
+      } else {
+          effectiveGridTemplate = config.gridTemplate; // Fallback to old field
+      }
+  }
+
   const isGrid = !!effectiveGridTemplate;
 
   // Extract all valid grid areas from the template so we can hide fields not in the template

@@ -5,6 +5,12 @@ export interface EntityField {
   enumName?: string;
 }
 
+export interface Preset {
+  id: number | string;
+  name: string;
+  gridTemplate: string;
+}
+
 export interface EntityConfig {
   id: number;
   name: string;
@@ -12,4 +18,6 @@ export interface EntityConfig {
   apiType: 'REST' | 'GRAPHQL';
   fields: EntityField[];
   gridTemplate?: string;
+  presets?: Preset[];
+  defaultPresetId?: number | string;
 }

@@ -15,25 +15,34 @@ model DataSource {
   name             String         @unique
   apiUrl           String
   apiType          String         @default("REST") // "REST" or "GRAPHQL"
-  headers          String?        // JSON string of headers
-  endpointsQueries String?        // JSON string containing map of operation -> endpoint/query
+  headers          String? // JSON string of headers
+  endpointsQueries String? // JSON string containing map of operation -> endpoint/query
   entityConfigs    EntityConfig[]
 }
 
 model EntityConfig {
-  id           Int        @id @default(autoincrement())
-  name         String     @unique
-  dataSourceId Int
-  dataSource   DataSource @relation(fields: [dataSourceId], references: [id])
-  fields       Field[]
-  gridTemplate String?
-  schemaName   String?
+  id              Int        @id @default(autoincrement())
+  name            String     @unique
+  dataSourceId    Int
+  dataSource      DataSource @relation(fields: [dataSourceId], references: [id])
+  fields          Field[]
+  presets         Preset[]
+  defaultPresetId Int?
+  schemaName      String?
+}
+
+model Preset {
+  id             Int          @id @default(autoincrement())
+  name           String
+  gridTemplate   String
+  entityConfigId Int
+  entityConfig   EntityConfig @relation(fields: [entityConfigId], references: [id], onDelete: Cascade)
 }
 
 model Field {
   id             Int          @id @default(autoincrement())
   name           String
-  type           String       // "text", "number", "checkbox", "enum"
+  type           String // "text", "number", "checkbox", "enum"
   label          String
   enumName       String?
   entityConfigId Int

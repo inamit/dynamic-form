@@ -5,6 +5,7 @@ import axios from 'axios';
 import GraphQLIntrospection from './GraphQLIntrospection';
 import FieldManager from './FieldManager';
 import GridPreview from './GridPreview/GridPreview';
+import PresetsManager from './PresetsManager';
 
 export default function EntityForm() {
   const { id } = useParams();
@@ -17,9 +18,10 @@ export default function EntityForm() {
   const [formData, setFormData] = useState<any>({
     name: '',
     dataSourceId: '',
-    gridTemplate: '',
     schemaName: '',
-    fields: []
+    fields: [],
+    presets: [{ id: -1, name: 'Default', gridTemplate: '' }],
+    defaultPresetId: -1
   });
 
   // Track operations if they get updated from Introspection
@@ -54,7 +56,15 @@ export default function EntityForm() {
   const fetchEntity = async () => {
     try {
       const res = await axios.get(`http://localhost:3001/api/config/id/${id}`);
-      setFormData(res.data);
+
+      const config = res.data;
+      if (!config.presets || config.presets.length === 0) {
+          // Backward compatibility if presets are missing
+          config.presets = [{ id: -1, name: 'Default', gridTemplate: config.gridTemplate || '' }];
+          config.defaultPresetId = -1;
+      }
+
+      setFormData(config);
     } catch (e: any) {
       setError(e.response?.data?.error || e.message);
     }
@@ -88,8 +98,13 @@ export default function EntityForm() {
       const payload = {
         name: formData.name,
         dataSourceId: Number(formData.dataSourceId),
-        gridTemplate: formData.gridTemplate,
         schemaName: formData.schemaName || null,
+        presets: formData.presets.map((p: any) => ({
+            name: p.name,
+            gridTemplate: p.gridTemplate,
+            id: p.id
+        })),
+        defaultPresetId: formData.defaultPresetId,
         fields: formData.fields.map((f: any) => ({
           name: f.name,
           type: f.type,
@@ -175,14 +190,12 @@ export default function EntityForm() {
         <FieldManager fields={formData.fields} onFieldsChange={(fields) => setFormData({ ...formData, fields })} />
       </Paper>
 
-      <Paper sx={{ p: 2, minHeight: 400 }}>
-        <Typography variant="h6" gutterBottom>Grid Layout Preview</Typography>
-        <GridPreview
-          fields={formData.fields}
-          gridTemplate={formData.gridTemplate}
-          onLayoutChange={(gridTemplate) => setFormData({ ...formData, gridTemplate })}
-        />
-      </Paper>
+      <PresetsManager
+        fields={formData.fields}
+        presets={formData.presets}
+        defaultPresetId={formData.defaultPresetId}
+        onChange={(presets, defaultPresetId) => setFormData({ ...formData, presets, defaultPresetId })}
+      />
 
       <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
         <Button variant="contained" onClick={handleSubmit}>Save Entity</Button>

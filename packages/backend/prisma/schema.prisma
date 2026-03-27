@@ -35,6 +35,7 @@ model Field {
   type           String       // "text", "number", "checkbox", "enum"
   label          String
   enumName       String?
+  schemaName     String?
   entityConfigId Int
   entityConfig   EntityConfig @relation(fields: [entityConfigId], references: [id], onDelete: Cascade)
 

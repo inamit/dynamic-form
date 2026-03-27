@@ -81,7 +81,8 @@ export default function EntityForm() {
           name: f.name,
           type: f.type,
           label: f.label,
-          enumName: f.enumName || null
+          enumName: f.enumName || null,
+          schemaName: f.schemaName || null
         }))
       };
 

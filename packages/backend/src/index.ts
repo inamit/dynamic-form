@@ -81,7 +81,30 @@ app.post('/api/config', async (req, res) => {
 
 // --- SCHEMA ENDPOINTS ---
 
-app.get(':entityName', async (req, res) => {
+app.get('/api/schemas', async (req, res) => {
+    try {
+        console.log(`GET /api/schemas`);
+
+        const ds = await prisma.dataSource.findUnique({
+            where: {name: 'enum'}
+        });
+
+        if (!ds) {
+            console.log('Enum/Schema data source not found');
+            return res.status(404).json({error: 'Data source not found'});
+        }
+
+        const schemasApiUrl = ds.apiUrl.replace('/enums', '/schemas');
+        const headers = ds.headers ? JSON.parse(ds.headers) : {};
+        const response = await axios.get(schemasApiUrl, { headers });
+        res.json(response.data);
+    } catch (error: any) {
+        console.error(`Error in GET /api/schemas:`, error.message);
+        res.status(500).json({error: 'Failed to fetch schemas list'});
+    }
+});
+
+app.get('/api/schema/:entityName', async (req, res) => {
     try {
         const {entityName} = req.params;
 
@@ -90,7 +113,7 @@ app.get(':entityName', async (req, res) => {
             return res.status(400).json({error: 'Invalid entityName'});
         }
 
-        console.log(`GET ${entityName}`);
+        console.log(`GET /api/schema/${entityName}`);
 
         // Since schema is exposed by the mock API on /api/schema
         // and we don't have a specific data source configured for it,
@@ -112,7 +135,7 @@ app.get(':entityName', async (req, res) => {
         const response = await axios.get(`${schemaApiUrl}/${entityName}`, { headers });
         res.json(response.data);
     } catch (error: any) {
-        console.error(`Error in GET ${req.params.entityName}:`, error.message);
+        console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
         res.status(500).json({error: 'Failed to fetch schema'});
     }
 });

@@ -12,7 +12,7 @@ export default function EntityList() {
 
   const fetchEntities = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/config');
+      const res = await axios.get(`${(window as any).env.API_BASE_URL}/config`);
       setEntities(res.data);
     } catch (e) {
       console.error(e);
@@ -21,7 +21,7 @@ export default function EntityList() {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:3001/api/config/${id}`);
+      await axios.delete(`${(window as any).env.API_BASE_URL}/config/${id}`);
       fetchEntities();
     } catch (e) {
       console.error(e);
@@ -54,7 +54,7 @@ export default function EntityList() {
                 <TableCell>{e.fields?.length || 0}</TableCell>
                 <TableCell>
                   <Button component={Link} to={`/entities/${e.id}`} size="small" color="primary">Edit</Button>
-                  <Button size="small" color="secondary" onClick={() => window.open(`http://localhost:5174/?entity=${e.name}`, '_blank')}>Preview</Button>
+                  <Button size="small" color="secondary" onClick={() => window.open(`${(window as any).env.PREVIEW_URL}/?entity=${e.name}`, '_blank')}>Preview</Button>
                   <Button size="small" color="error" onClick={() => handleDelete(e.id)}>Delete</Button>
                 </TableCell>
               </TableRow>

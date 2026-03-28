@@ -7,7 +7,7 @@ import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
 import { parseCoordinate, formatCoordinate } from '../utils/coordinate.ts';
 import { DynamicField } from '@dynamic-form/shared-ui';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = (window as any).env.API_BASE_URL;
 
 export default function EntityForm() {
   const [entity, setEntity] = useState<string | null>(null);
@@ -408,7 +408,7 @@ export default function EntityForm() {
             <DynamicField
               field={field}
               value={formData[field.name]}
-              onChange={(name, value) => {
+              onChange={(name: string, value: any) => {
                  setFormData(prev => ({ ...prev, [name]: value }));
               }}
               errorMsg={errorMsg}

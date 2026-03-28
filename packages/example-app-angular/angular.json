@@ -30,6 +30,7 @@
                 "glob": "**/*",
                 "input": "public"
               },
+              "src/assets",
               {
                 "glob": "**/*",
                 "input": "../../node_modules/cesium/Build/Cesium/Assets",
@@ -106,7 +107,8 @@
               {
                 "glob": "**/*",
                 "input": "public"
-              }
+              },
+              "src/assets"
             ],
             "styles": [
               "src/styles.scss"

@@ -5,7 +5,7 @@ const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
 import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = (window as any).env.API_BASE_URL;
 
 export default function EntityList() {
   const [entity, setEntity] = useState<string | null>(null);

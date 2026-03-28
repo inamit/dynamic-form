@@ -19,7 +19,7 @@ export default function DataSourceList() {
 
   const fetchDataSources = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/data-sources');
+      const res = await axios.get(`${(window as any).env.API_BASE_URL}/data-sources`);
       setDataSources(res.data);
     } catch (e) {
       console.error(e);
@@ -28,7 +28,7 @@ export default function DataSourceList() {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:3001/api/data-sources/${id}`);
+      await axios.delete(`${(window as any).env.API_BASE_URL}/data-sources/${id}`);
       fetchDataSources();
     } catch (e) {
       console.error(e);

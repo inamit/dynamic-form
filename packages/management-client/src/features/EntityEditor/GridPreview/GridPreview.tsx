@@ -83,8 +83,8 @@ function SortableItem(props: {
           <DynamicField
             field={props.field}
             value={props.defaultValue}
-            apiBaseUrl="http://localhost:3001/api"
-            onChange={(name, value) => props.onDefaultValueChange!(name, value)}
+            apiBaseUrl={(window as any).env.API_BASE_URL}
+            onChange={(name: string, value: any) => props.onDefaultValueChange!(name, value)}
           />
         </Box>
       )}

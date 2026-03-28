@@ -45,7 +45,7 @@ If your host application contains a map picker, publish this event when the user
 
 **Payload:**
 - `field` (string): The name of the coordinate field being updated.
-- `location` (Array<number>): The `[longitude, latitude]` array.
+- `location` (Array&lt;number&gt;): The `[longitude, latitude]` array.
 
 **Example:**
 ```javascript

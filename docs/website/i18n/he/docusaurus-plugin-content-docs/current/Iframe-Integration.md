@@ -74,7 +74,6 @@ postal.subscribe({
     }
   }
 });
-```
 
 ## 4. טיפול באירועי ניווט (Handling Navigation Events)
 

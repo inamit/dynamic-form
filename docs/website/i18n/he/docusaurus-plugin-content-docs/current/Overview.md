@@ -1,3 +1,8 @@
+---
+slug: /
+sidebar_position: 1
+---
+
 # סקירה כללית
 
 ברוכים הבאים לתיעוד עבור ה-Dynamic Form Microfrontend. מדריך זה מספק הוראות מפורטות כיצד לשלב את רכיבי הטופס הדינמיים לתוך ה-host applications שלך.

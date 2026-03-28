@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Event Bus API
 
 The `dynamic_form` microfrontend uses **postal.js** to communicate with the host application. This means you do not need to pass traditional React or Angular props to the component. Instead, you publish commands to the `dynamic_form` channel, and the component subscribes to them. Similarly, the component publishes events when the user performs an action (such as saving a form), and the host application subscribes to these events to respond appropriately (like navigating to another route).

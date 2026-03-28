@@ -45,7 +45,7 @@ postal.publish({
 
 **מטען (Payload):**
 - `field` (string): שם שדה הקואורדינטה שמעודכן.
-- `location` (Array<number>): מערך ה-`[longitude, latitude]`.
+- `location` (Array&lt;number&gt;): מערך ה-`[longitude, latitude]`.
 
 **דוגמה:**
 ```javascript

@@ -5,7 +5,13 @@
 <instance-profile id="hi" name="Help Instance"
                   start-page="Overview.md">
     <toc-element topic="Overview.md"/>
-    <toc-element topic="Event-Bus-API.md"/>
+    <toc-element topic="Event-Bus-API.md">
+        <toc-element toc-title="List Commands" target-for-accept-web-file-names="Event-Bus-API.md#list-commands"/>
+        <toc-element toc-title="Form Commands" target-for-accept-web-file-names="Event-Bus-API.md#form-commands"/>
+        <toc-element toc-title="Lifecycle Events" target-for-accept-web-file-names="Event-Bus-API.md#lifecycle-events"/>
+        <toc-element toc-title="List Events" target-for-accept-web-file-names="Event-Bus-API.md#list-events"/>
+        <toc-element toc-title="Form Events" target-for-accept-web-file-names="Event-Bus-API.md#form-events"/>
+    </toc-element>
     <toc-element topic="React-Integration.md"/>
     <toc-element topic="Angular-Integration.md"/>
     <toc-element topic="Iframe-Integration.md"/>

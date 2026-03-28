@@ -28,8 +28,8 @@ Instructs the `<mfe-entity-form>` (or `EntityForm` React component) to load the 
 - `entity` (string): The name of the entity.
 - `id` (string | number | undefined): The ID of the entity if editing. Leave undefined for a new entity.
 - `gridTemplate` (string | undefined): An optional custom CSS grid template for the form layout.
-- `presetId` (string | number | undefined): An optional preset layout ID.
-- `defaultCoordinateFormat` (string | undefined): An optional coordinate format (e.g., 'UTM').
+- `presetId` (number | undefined): An optional preset layout ID.
+- `defaultCoordinateFormat` (string | undefined): An optional default coordinate format ('UTM'/'WGS84').
 
 **Example:**
 ```javascript

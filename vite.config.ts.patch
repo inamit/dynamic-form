@@ -1,0 +1,5 @@
+<<<<<<< SEARCH
+      "shared-ui": path.resolve(__dirname, "../../packages/shared-ui/src"),
+=======
+      "shared-ui": path.resolve(__dirname, "../../libs/shared-ui/src"),
+>>>>>>> REPLACE

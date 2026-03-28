@@ -1,0 +1,33 @@
+{
+  "name": "management-client",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/management-client/src",
+  "targets": {
+    "dev": {
+      "command": "vite",
+      "options": {
+        "cwd": "apps/management-client"
+      }
+    },
+    "build": {
+      "command": "tsc -b && vite build",
+      "options": {
+        "cwd": "apps/management-client"
+      },
+      "dependsOn": ["shared-ui:build"]
+    },
+    "lint": {
+      "command": "eslint .",
+      "options": {
+        "cwd": "apps/management-client"
+      }
+    },
+    "preview": {
+      "command": "vite preview",
+      "options": {
+        "cwd": "apps/management-client"
+      }
+    }
+  }
+}

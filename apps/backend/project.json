@@ -1,0 +1,20 @@
+{
+  "name": "backend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/backend/src",
+  "targets": {
+    "start": {
+      "command": "tsx src/index.ts",
+      "options": {
+        "cwd": "apps/backend"
+      }
+    },
+    "dev": {
+      "command": "nodemon --exec tsx src/index.ts",
+      "options": {
+        "cwd": "apps/backend"
+      }
+    }
+  }
+}

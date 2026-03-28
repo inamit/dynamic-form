@@ -1,0 +1,38 @@
+{
+  "name": "example-app-angular",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/examples/example-app-angular/src",
+  "targets": {
+    "ng": {
+      "command": "ng",
+      "options": {
+        "cwd": "apps/examples/example-app-angular"
+      }
+    },
+    "start": {
+      "command": "ng serve",
+      "options": {
+        "cwd": "apps/examples/example-app-angular"
+      }
+    },
+    "build": {
+      "command": "ng build",
+      "options": {
+        "cwd": "apps/examples/example-app-angular"
+      }
+    },
+    "watch": {
+      "command": "ng build --watch --configuration development",
+      "options": {
+        "cwd": "apps/examples/example-app-angular"
+      }
+    },
+    "test": {
+      "command": "ng test",
+      "options": {
+        "cwd": "apps/examples/example-app-angular"
+      }
+    }
+  }
+}

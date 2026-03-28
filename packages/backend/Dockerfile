@@ -1,4 +1,4 @@
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY packages/backend/ ./packages/backend/
 # Build step if required, backend is running via tsx, so we can just use source.
 # If we were compiling tsc we'd do it here.
 
-FROM node:18-alpine
+FROM node:22-alpine
 WORKDIR /app
 COPY --from=builder /app /app
 

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<buildprofiles>
+    <build-profile instance="en">
+        <variables>
+            <download-title>עברית</download-title>
+            <download-link>/he/</download-link>
+            <download-button>true</download-button>
+        </variables>
+    </build-profile>
+    <build-profile instance="he">
+        <variables>
+            <download-title>English</download-title>
+            <download-link>/en/</download-link>
+            <download-button>true</download-button>
+        </variables>
+    </build-profile>
+</buildprofiles>

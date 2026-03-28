@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+
+<instance-profile id="he" name="Help Instance"
+                  start-page="he/Overview.md">
+    <toc-element topic="he/Overview.md"/>
+    <toc-element topic="he/Event-Bus-API.md">
+        <toc-element topic="he/Host-Publishing-Events.md"/>
+        <toc-element topic="he/Microfrontend-Publishing-Events.md"/>
+    </toc-element>
+    <toc-element topic="he/React-Integration.md"/>
+    <toc-element topic="he/Angular-Integration.md"/>
+    <toc-element topic="he/Iframe-Integration.md"/>
+</instance-profile>

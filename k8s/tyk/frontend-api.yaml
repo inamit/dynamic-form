@@ -1,0 +1,21 @@
+apiVersion: tyk.tyk.io/v1alpha1
+kind: ApiDefinition
+metadata:
+  name: form-frontend-api
+  namespace: default
+spec:
+  name: "Form Frontend API"
+  use_keyless: true # Frontend is often public or secured upstream by oauth2-proxy as an ingress auth URL.
+  protocol: http
+  active: true
+  proxy:
+    target_url: "http://frontend-service:80" # Replace with your actual frontend service name and port
+    listen_path: "/form-frontend"
+    strip_listen_path: false # Typically frontend single-page apps handle routing themselves. Adjust if needed.
+  version_data:
+    not_versioned: true
+    versions:
+      Default:
+        name: "Default"
+  cors:
+    enable: false # Not typically needed for frontend HTML assets, handled by the backend

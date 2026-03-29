@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    { "path": "./apps/backend" },
+    { "path": "./apps/utils/mock-api" },
+    { "path": "./libs/shared-ui" },
+    { "path": "./apps/management-client" },
+    { "path": "./apps/microfrontends" },
+    { "path": "./apps/examples/example-app" },
+    { "path": "./apps/examples/example-app-angular" }
+  ]
+}

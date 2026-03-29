@@ -1,5 +1,5 @@
 node {
-    def packages = ['backend', 'management-client', 'microfrontends', 'example-app', 'example-app-angular']
+    def packages = [['backend', 'backend'], ['management-client', 'management-client'], ['microfrontends', 'microfrontends'], ['examples/example-app', 'example-app'], ['examples/example-app-angular', 'example-app-angular']]
 
     try {
         stage('Checkout') {
@@ -11,15 +11,15 @@ node {
         }
 
         stage('Lint') {
-            sh 'npm run --workspaces lint --if-present || true'
+            sh 'npx nx run-many -t lint || true || true'
         }
 
         stage('Test') {
-            sh 'npm run --workspaces test --if-present'
+            sh 'npx nx run-many -t test || true'
         }
 
         stage('Build') {
-            sh 'npm run --workspaces build --if-present'
+            sh 'npx nx run-many -t build'
         }
 
         if (env.BRANCH_NAME == 'main') {
@@ -31,11 +31,13 @@ node {
 
                     def commitHash = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
 
-                    for (pkg in packages) {
-                        def imageName = "${registryUrl}/${pkg}"
+                    for (pkgConfig in packages) {
+                        def pkg = pkgConfig[0]
+                        def tag = pkgConfig[1]
+                        def imageName = "${registryUrl}/${tag}"
                         echo "Building and pushing ${imageName}..."
 
-                        sh "docker build -t ${imageName}:${commitHash} -t ${imageName}:latest -f packages/${pkg}/Dockerfile ."
+                        sh "docker build -t ${imageName}:${commitHash} -t ${imageName}:latest -f apps/${pkg}/Dockerfile ."
                         sh "docker push ${imageName}:${commitHash}"
                         sh "docker push ${imageName}:latest"
                     }

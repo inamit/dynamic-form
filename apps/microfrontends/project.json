@@ -1,0 +1,33 @@
+{
+  "name": "microfrontends",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/microfrontends/src",
+  "targets": {
+    "dev": {
+      "command": "vite",
+      "options": {
+        "cwd": "apps/microfrontends"
+      }
+    },
+    "build": {
+      "command": "tsc -b && vite build",
+      "options": {
+        "cwd": "apps/microfrontends"
+      },
+      "dependsOn": ["shared-ui:build"]
+    },
+    "lint": {
+      "command": "eslint .",
+      "options": {
+        "cwd": "apps/microfrontends"
+      }
+    },
+    "preview": {
+      "command": "vite preview",
+      "options": {
+        "cwd": "apps/microfrontends"
+      }
+    }
+  }
+}

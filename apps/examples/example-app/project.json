@@ -1,0 +1,32 @@
+{
+  "name": "example-app",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/examples/example-app/src",
+  "targets": {
+    "dev": {
+      "command": "vite",
+      "options": {
+        "cwd": "apps/examples/example-app"
+      }
+    },
+    "build": {
+      "command": "tsc -b && vite build",
+      "options": {
+        "cwd": "apps/examples/example-app"
+      }
+    },
+    "lint": {
+      "command": "eslint .",
+      "options": {
+        "cwd": "apps/examples/example-app"
+      }
+    },
+    "preview": {
+      "command": "vite preview",
+      "options": {
+        "cwd": "apps/examples/example-app"
+      }
+    }
+  }
+}

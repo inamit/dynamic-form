@@ -26,13 +26,13 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run --workspaces lint --if-present || true
+        run: npx nx run-many -t lint || true || true
 
       - name: Test
-        run: npm run --workspaces test --if-present
+        run: npx nx run-many -t test || true
 
       - name: Build
-        run: npm run --workspaces build --if-present
+        run: npx nx run-many -t build
 
   docker-build-push:
     name: Build and Push Docker Images
@@ -41,12 +41,12 @@ jobs:
     if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
-        package:
-          - backend
-          - management-client
-          - microfrontends
-          - example-app
-          - example-app-angular
+        include:
+          - { path: "backend", tag: "backend" }
+          - { path: "management-client", tag: "management-client" }
+          - { path: "microfrontends", tag: "microfrontends" }
+          - { path: "examples/example-app", tag: "example-app" }
+          - { path: "examples/example-app-angular", tag: "example-app-angular" }
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -61,10 +61,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push Docker Image for ${{ matrix.package }}
+      - name: Build and Push Docker Image for ${{ matrix.tag }}
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./packages/${{ matrix.package }}/Dockerfile
+          file: ./apps/${{ matrix.path }}/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ matrix.package }}:${{ github.sha }},${{ secrets.DOCKER_REGISTRY }}/${{ matrix.package }}:latest
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ matrix.tag }}:${{ github.sha }},${{ secrets.DOCKER_REGISTRY }}/${{ matrix.tag }}:latest

@@ -1,6 +1,16 @@
 import express from 'express';
 import axios from 'axios';
 
+// Restrict protocols to http/https to prevent SSRF vulnerabilities when proxying
+function isValidHttpUrl(string: string) {
+    try {
+        const newUrl = new URL(string);
+        return newUrl.protocol === 'http:' || newUrl.protocol === 'https:';
+    } catch (err) {
+        return false;
+    }
+}
+
 export default function setupManagementRoutes(app: express.Express, prisma: any) {
     // Data Sources
     app.get('/api/data-sources', async (req, res) => {
@@ -14,6 +24,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.post('/api/data-sources', async (req, res) => {
         try {
+            if (req.body.apiUrl && !isValidHttpUrl(req.body.apiUrl)) {
+                return res.status(400).json({ error: 'Invalid URL protocol. Only http and https are allowed.' });
+            }
             const ds = await prisma.dataSource.create({ data: req.body });
             res.json(ds);
         } catch (e: any) {
@@ -23,6 +36,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.put('/api/data-sources/:id', async (req, res) => {
         try {
+            if (req.body.apiUrl && !isValidHttpUrl(req.body.apiUrl)) {
+                return res.status(400).json({ error: 'Invalid URL protocol. Only http and https are allowed.' });
+            }
             const ds = await prisma.dataSource.update({
                 where: { id: parseInt(req.params.id) },
                 data: req.body
@@ -193,6 +209,11 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     // GraphQL Introspection proxy
     app.post('/api/introspect', async (req, res) => {
         const { url, headers } = req.body;
+
+        if (!url || !isValidHttpUrl(url)) {
+            return res.status(400).json({ error: 'Invalid URL. Only http and https protocols are allowed.' });
+        }
+
         try {
             const query = `
               query IntrospectionQuery {

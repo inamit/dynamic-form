@@ -41,6 +41,23 @@ For Zero-Trust network architecture, it is recommended to enable mTLS between Ty
 As the backend proxies requests dynamically (`/api/data/:entity`), it is crucial that Tyk strips or strictly sanitizes paths before forwarding.
 Tyk handles basic path routing, but the backend must enforce strict URL protocol validation (`http:` / `https:` only) and prevent path traversal attacks when making external calls based on user input.
 
+### 1.6 Microfrontend Integration Security
+To control which host applications can integrate and load your microfrontends (e.g., via Module Federation), the primary and most effective browser-enforced mechanism is **Cross-Origin Resource Sharing (CORS)**.
+
+By configuring CORS strictly on the `frontend-api` Tyk definition (or the upstream web server), you can ensure that browsers will only execute the microfrontend code if it's loaded from a trusted domain.
+```yaml
+# Inside the Tyk ApiDefinition for the frontend
+cors:
+  enable: true
+  allowed_origins:
+    - "https://trusted-host-app1.example.com"
+    - "https://trusted-host-app2.example.com"
+  allowed_methods:
+    - "GET"
+    - "OPTIONS"
+```
+Additionally, if you need stronger guarantees than CORS (which can be bypassed by non-browser clients), consider serving the microfrontend manifest (`remoteEntry.js` or equivalent) behind an authentication layer that requires a service-to-service token exchange or a specific valid user session.
+
 ---
 
 ## 2. Observability Architecture

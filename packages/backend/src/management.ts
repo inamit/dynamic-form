@@ -1,5 +1,15 @@
 import express from 'express';
 import axios from 'axios';
+import { URL } from 'url';
+
+export function isValidUrl(urlStr: string): boolean {
+    try {
+        const parsedUrl = new URL(urlStr);
+        return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    } catch (e) {
+        return false;
+    }
+}
 
 export default function setupManagementRoutes(app: express.Express, prisma: any) {
     // Data Sources
@@ -14,6 +24,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.post('/api/data-sources', async (req, res) => {
         try {
+            if (req.body.apiUrl && !isValidUrl(req.body.apiUrl)) {
+                return res.status(400).json({ error: 'Invalid URL provided.' });
+            }
             const ds = await prisma.dataSource.create({ data: req.body });
             res.json(ds);
         } catch (e: any) {
@@ -23,6 +36,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.put('/api/data-sources/:id', async (req, res) => {
         try {
+            if (req.body.apiUrl && !isValidUrl(req.body.apiUrl)) {
+                return res.status(400).json({ error: 'Invalid URL provided.' });
+            }
             const ds = await prisma.dataSource.update({
                 where: { id: parseInt(req.params.id) },
                 data: req.body
@@ -193,6 +209,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     // GraphQL Introspection proxy
     app.post('/api/introspect', async (req, res) => {
         const { url, headers } = req.body;
+        if (!isValidUrl(url)) {
+            return res.status(400).json({ error: 'Invalid URL provided.' });
+        }
         try {
             const query = `
               query IntrospectionQuery {

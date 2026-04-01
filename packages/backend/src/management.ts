@@ -1,6 +1,15 @@
 import express from 'express';
 import axios from 'axios';
 
+function isValidHttpUrl(string: string) {
+  try {
+    const url = new URL(string);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+}
+
 export default function setupManagementRoutes(app: express.Express, prisma: any) {
     // Data Sources
     app.get('/api/data-sources', async (req, res) => {
@@ -13,6 +22,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     });
 
     app.post('/api/data-sources', async (req, res) => {
+        if (req.body.apiUrl && !isValidHttpUrl(req.body.apiUrl)) {
+            return res.status(400).json({ error: "Invalid URL protocol for apiUrl. Only HTTP and HTTPS are allowed." });
+        }
         try {
             const ds = await prisma.dataSource.create({ data: req.body });
             res.json(ds);
@@ -22,6 +34,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     });
 
     app.put('/api/data-sources/:id', async (req, res) => {
+        if (req.body.apiUrl && !isValidHttpUrl(req.body.apiUrl)) {
+            return res.status(400).json({ error: "Invalid URL protocol for apiUrl. Only HTTP and HTTPS are allowed." });
+        }
         try {
             const ds = await prisma.dataSource.update({
                 where: { id: parseInt(req.params.id) },
@@ -193,6 +208,11 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     // GraphQL Introspection proxy
     app.post('/api/introspect', async (req, res) => {
         const { url, headers } = req.body;
+
+        if (!url || !isValidHttpUrl(url)) {
+            return res.status(400).json({ error: "Invalid URL protocol. Only HTTP and HTTPS are allowed." });
+        }
+
         try {
             const query = `
               query IntrospectionQuery {

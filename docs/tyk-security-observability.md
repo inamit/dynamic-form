@@ -56,7 +56,34 @@ cors:
     - "GET"
     - "OPTIONS"
 ```
-Additionally, if you need stronger guarantees than CORS (which can be bypassed by non-browser clients), consider serving the microfrontend manifest (`remoteEntry.js` or equivalent) behind an authentication layer that requires a service-to-service token exchange or a specific valid user session.
+
+### 1.7 Granular Entity Access Control per Origin
+While CORS controls which domains can *load* the frontend code, restricting which *entities* a given host application can interact with must be enforced at the API Gateway level using **Tyk Security Policies**.
+
+To restrict applications to specific entities:
+1. **Define Path-Based Policies:** Create separate `SecurityPolicy` definitions for different applications. Within the policy's `access_rights_array`, use the `allowed_urls` block to specify exactly which backend entity paths (e.g., `/api/data/users`) that policy is permitted to access.
+2. **Issue Application-Specific Tokens:** When your host applications authenticate (e.g., via OAuth2/OIDC client credentials), ensure they receive a token (JWT) that maps to their specific policy.
+3. **Gateway Enforcement:** When a request arrives, Tyk identifies the policy from the token and verifies if the requested entity path is allowed for that specific caller.
+
+Example of a policy restricting an application to only access the "products" entity:
+```yaml
+apiVersion: tyk.tyk.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: app1-products-only-policy
+spec:
+  name: "App1 Products Policy"
+  state: "active"
+  active: true
+  access_rights_array:
+    - name: "form-backend-api"
+      versions:
+        - "Default"
+      allowed_urls:
+        - url: "/api/data/products(.*)"
+          methods: ["GET", "POST", "PUT"]
+```
+This ensures that even if App1 successfully loads the microfrontend, any API call it makes to entities other than `products` will be blocked by Tyk with a 403 Forbidden.
 
 ---
 

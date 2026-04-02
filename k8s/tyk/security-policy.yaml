@@ -8,7 +8,7 @@ spec:
   state: "active"
   active: true
   access_rights_array:
-    - name: "Form Backend API"
+    - name: "form-backend-api"
       namespace: default # Make sure this matches the API Definition's metadata.namespace
       api_id: "" # Tyk operator resolves this automatically based on the name/namespace
       versions:

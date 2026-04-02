@@ -24,20 +24,39 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.post('/api/data-sources', async (req, res) => {
         try {
+<<<<<<< Updated upstream
+            if (req.body.apiUrl) {
+                const url = new URL(req.body.apiUrl);
+                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                    return res.status(400).json({ error: 'Invalid URL protocol' });
+                }
+=======
             if (req.body.apiUrl && !isValidHttpUrl(req.body.apiUrl)) {
                 return res.status(400).json({ error: 'Invalid URL protocol. Only http and https are allowed.' });
+>>>>>>> Stashed changes
             }
             const ds = await prisma.dataSource.create({ data: req.body });
             res.json(ds);
         } catch (e: any) {
+            if (e.name === 'TypeError' && e.message === 'Invalid URL') {
+                return res.status(400).json({ error: 'Invalid URL format' });
+            }
             res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
         }
     });
 
     app.put('/api/data-sources/:id', async (req, res) => {
         try {
+<<<<<<< Updated upstream
+            if (req.body.apiUrl) {
+                const url = new URL(req.body.apiUrl);
+                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                    return res.status(400).json({ error: 'Invalid URL protocol' });
+                }
+=======
             if (req.body.apiUrl && !isValidHttpUrl(req.body.apiUrl)) {
                 return res.status(400).json({ error: 'Invalid URL protocol. Only http and https are allowed.' });
+>>>>>>> Stashed changes
             }
             const ds = await prisma.dataSource.update({
                 where: { id: parseInt(req.params.id) },
@@ -45,6 +64,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
             });
             res.json(ds);
         } catch (e: any) {
+            if (e.name === 'TypeError' && e.message === 'Invalid URL') {
+                return res.status(400).json({ error: 'Invalid URL format' });
+            }
             res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
         }
     });

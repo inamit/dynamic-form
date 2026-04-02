@@ -1,6 +1,16 @@
 import express from 'express';
 import axios from 'axios';
 
+// Helper to validate HTTP/HTTPS URLs
+function isValidHttpUrl(string: string) {
+    try {
+        const url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (_) {
+        return false;
+    }
+}
+
 export default function setupManagementRoutes(app: express.Express, prisma: any) {
     // Data Sources
     app.get('/api/data-sources', async (req, res) => {
@@ -14,6 +24,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.post('/api/data-sources', async (req, res) => {
         try {
+            if (req.body.apiUrl && !isValidHttpUrl(req.body.apiUrl)) {
+                return res.status(400).json({ error: 'Invalid URL protocol' });
+            }
             const ds = await prisma.dataSource.create({ data: req.body });
             res.json(ds);
         } catch (e: any) {
@@ -23,6 +36,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.put('/api/data-sources/:id', async (req, res) => {
         try {
+            if (req.body.apiUrl && !isValidHttpUrl(req.body.apiUrl)) {
+                return res.status(400).json({ error: 'Invalid URL protocol' });
+            }
             const ds = await prisma.dataSource.update({
                 where: { id: parseInt(req.params.id) },
                 data: req.body
@@ -108,7 +124,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
             res.json({
                 ...finalConfig,
-                presets: finalConfig.presets.map((p) => ({
+                presets: finalConfig.presets.map((p: any) => ({
                     ...p,
                     defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
                 }))
@@ -168,7 +184,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
             res.json({
                 ...finalConfig,
-                presets: finalConfig.presets.map((p) => ({
+                presets: finalConfig.presets.map((p: any) => ({
                     ...p,
                     defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
                 }))
@@ -193,6 +209,9 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     // GraphQL Introspection proxy
     app.post('/api/introspect', async (req, res) => {
         const { url, headers } = req.body;
+        if (!url || !isValidHttpUrl(url)) {
+            return res.status(400).json({ error: 'Invalid URL' });
+        }
         try {
             const query = `
               query IntrospectionQuery {

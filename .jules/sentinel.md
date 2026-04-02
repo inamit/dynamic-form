@@ -1,4 +1,4 @@
-## 2026-03-26 - [Path Traversal in Dynamic Proxy]
-**Vulnerability:** The backend dynamically proxies requests to external endpoints via `/api/data/:entity/:id` and `/api/enums/:enumName` by simply appending user input to a configured URL base.
-**Learning:** These endpoints were vulnerable to path traversal because `id` and `enumName` inputs were unchecked and directly included in `axios.get(url + '/' + input)`. An attacker could pass `../` to access other backend proxy targets unintentionally.
-**Prevention:** Always validate and sanitize user-provided values used to construct paths or URLs in proxies, explicitly blocking traversal patterns like `/` or `..`.
+## 2024-04-02 - [Server-Side Request Forgery (SSRF) in Proxy Routes]
+**Vulnerability:** The backend dynamically proxies requests to external endpoints (e.g., `/api/data-sources`, `/api/introspect`) without strict URL protocol validation.
+**Learning:** This could allow an attacker to make requests to internal files using protocols like `file://` or to internal services, bypassing network controls.
+**Prevention:** Enforce `http:` and `https:` URL protocols using Node's `URL` class before making external requests in proxy endpoints.

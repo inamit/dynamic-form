@@ -11,6 +11,16 @@ import {PrismaPg} from "@prisma/adapter-pg";
 const app = express();
 import setupManagementRoutes from "./management.js";
 
+// Helper to validate HTTP/HTTPS URLs
+function isValidHttpUrl(string: string) {
+    try {
+        const url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (_) {
+        return false;
+    }
+}
+
 let prisma: any;
 
 if (process.env.NODE_ENV === 'production' || process.env.USE_REAL_POSTGRES === 'true') {
@@ -99,6 +109,9 @@ app.get('/api/schemas', async (req, res) => {
         }
 
         const schemasApiUrl = ds.apiUrl.replace('/enums', '/schemas');
+        if (!isValidHttpUrl(schemasApiUrl)) {
+            return res.status(400).json({error: 'Invalid schema API URL'});
+        }
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
         const response = await axios.get(schemasApiUrl, { headers });
         res.json(response.data);
@@ -135,8 +148,13 @@ app.get('/api/schema/:entityName', async (req, res) => {
         // so we replace "enums" with "schema"
         const schemaApiUrl = ds.apiUrl.replace('/enums', '/schema');
 
+        const targetUrl = `${schemaApiUrl}/${entityName}`;
+        if (!isValidHttpUrl(targetUrl)) {
+            return res.status(400).json({error: 'Invalid schema API URL'});
+        }
+
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(`${schemaApiUrl}/${entityName}`, { headers });
+        const response = await axios.get(targetUrl, { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
@@ -165,8 +183,13 @@ app.get('/api/enums/:enumName', async (req, res) => {
             return res.status(404).json({error: 'Enum data source not found'});
         }
 
+        const targetUrl = `${ds.apiUrl}/${enumName}`;
+        if (!isValidHttpUrl(targetUrl)) {
+            return res.status(400).json({error: 'Invalid API URL'});
+        }
+
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(`${ds.apiUrl}/${enumName}`, { headers });
+        const response = await axios.get(targetUrl, { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/enums/${req.params.enumName}:`, error.message);
@@ -199,6 +222,10 @@ app.get('/api/data/:entity', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+        if (!isValidHttpUrl(ds.apiUrl)) {
+            return res.status(400).json({error: 'Invalid data source API URL'});
+        }
+
         if (ds.apiType === 'REST') {
             const response = await axios.get(ds.apiUrl);
             res.json(response.data);
@@ -242,6 +269,10 @@ app.get('/api/data/:entity/:id', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+        if (!isValidHttpUrl(ds.apiUrl)) {
+            return res.status(400).json({error: 'Invalid data source API URL'});
+        }
+
         if (ds.apiType === 'REST') {
             const response = await axios.get(`${ds.apiUrl}/${id}`);
             res.json(response.data);
@@ -283,6 +314,10 @@ app.post('/api/data/:entity', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+        if (!isValidHttpUrl(ds.apiUrl)) {
+            return res.status(400).json({error: 'Invalid data source API URL'});
+        }
+
         if (ds.apiType === 'REST') {
             const response = await axios.post(ds.apiUrl, req.body);
             res.json(response.data);
@@ -333,6 +368,10 @@ app.put('/api/data/:entity/:id', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+        if (!isValidHttpUrl(ds.apiUrl)) {
+            return res.status(400).json({error: 'Invalid data source API URL'});
+        }
+
         if (ds.apiType === 'REST') {
             const response = await axios.put(`${ds.apiUrl}/${id}`, req.body);
             res.json(response.data);
@@ -385,6 +424,10 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+        if (!isValidHttpUrl(ds.apiUrl)) {
+            return res.status(400).json({error: 'Invalid data source API URL'});
+        }
+
         if (ds.apiType === 'REST') {
             await axios.delete(`${ds.apiUrl}/${id}`);
             res.json({success: true});

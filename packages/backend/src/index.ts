@@ -11,6 +11,15 @@ import {PrismaPg} from "@prisma/adapter-pg";
 const app = express();
 import setupManagementRoutes from "./management.js";
 
+function isSafeUrl(urlString: string): boolean {
+    try {
+        const url = new URL(urlString);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
 let prisma: any;
 
 if (process.env.NODE_ENV === 'production' || process.env.USE_REAL_POSTGRES === 'true') {
@@ -99,6 +108,9 @@ app.get('/api/schemas', async (req, res) => {
         }
 
         const schemasApiUrl = ds.apiUrl.replace('/enums', '/schemas');
+        if (!isSafeUrl(schemasApiUrl)) {
+            return res.status(400).json({ error: 'Invalid URL protocol in configuration' });
+        }
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
         const response = await axios.get(schemasApiUrl, { headers });
         res.json(response.data);
@@ -135,8 +147,13 @@ app.get('/api/schema/:entityName', async (req, res) => {
         // so we replace "enums" with "schema"
         const schemaApiUrl = ds.apiUrl.replace('/enums', '/schema');
 
+        const targetUrl = `${schemaApiUrl}/${entityName}`;
+        if (!isSafeUrl(targetUrl)) {
+            return res.status(400).json({ error: 'Invalid URL protocol in configuration' });
+        }
+
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(`${schemaApiUrl}/${entityName}`, { headers });
+        const response = await axios.get(targetUrl, { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
@@ -165,8 +182,13 @@ app.get('/api/enums/:enumName', async (req, res) => {
             return res.status(404).json({error: 'Enum data source not found'});
         }
 
+        const targetUrl = `${ds.apiUrl}/${enumName}`;
+        if (!isSafeUrl(targetUrl)) {
+            return res.status(400).json({ error: 'Invalid URL protocol in configuration' });
+        }
+
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(`${ds.apiUrl}/${enumName}`, { headers });
+        const response = await axios.get(targetUrl, { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/enums/${req.params.enumName}:`, error.message);
@@ -199,6 +221,11 @@ app.get('/api/data/:entity', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+
+        if (!isSafeUrl(ds.apiUrl)) {
+            return res.status(400).json({ error: 'Invalid URL protocol in configuration' });
+        }
+
         if (ds.apiType === 'REST') {
             const response = await axios.get(ds.apiUrl);
             res.json(response.data);
@@ -242,8 +269,14 @@ app.get('/api/data/:entity/:id', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+
+        const targetUrl = `${ds.apiUrl}/${id}`;
+        if (!isSafeUrl(ds.apiUrl) || !isSafeUrl(targetUrl)) {
+            return res.status(400).json({ error: 'Invalid URL protocol in configuration' });
+        }
+
         if (ds.apiType === 'REST') {
-            const response = await axios.get(`${ds.apiUrl}/${id}`);
+            const response = await axios.get(targetUrl);
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
@@ -283,6 +316,11 @@ app.post('/api/data/:entity', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+
+        if (!isSafeUrl(ds.apiUrl)) {
+            return res.status(400).json({ error: 'Invalid URL protocol in configuration' });
+        }
+
         if (ds.apiType === 'REST') {
             const response = await axios.post(ds.apiUrl, req.body);
             res.json(response.data);
@@ -333,8 +371,14 @@ app.put('/api/data/:entity/:id', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+
+        const targetUrl = `${ds.apiUrl}/${id}`;
+        if (!isSafeUrl(ds.apiUrl) || !isSafeUrl(targetUrl)) {
+            return res.status(400).json({ error: 'Invalid URL protocol in configuration' });
+        }
+
         if (ds.apiType === 'REST') {
-            const response = await axios.put(`${ds.apiUrl}/${id}`, req.body);
+            const response = await axios.put(targetUrl, req.body);
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
@@ -385,8 +429,14 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+
+        const targetUrl = `${ds.apiUrl}/${id}`;
+        if (!isSafeUrl(ds.apiUrl) || !isSafeUrl(targetUrl)) {
+            return res.status(400).json({ error: 'Invalid URL protocol in configuration' });
+        }
+
         if (ds.apiType === 'REST') {
-            await axios.delete(`${ds.apiUrl}/${id}`);
+            await axios.delete(targetUrl);
             res.json({success: true});
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');

@@ -27,8 +27,7 @@
       "command": "vite preview",
       "options": {
         "cwd": "apps/microfrontends"
-      },
-      "dependsOn": ["microfrontends:build"]
+      }
     }
   }
 }

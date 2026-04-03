@@ -126,7 +126,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
             res.json({
                 ...finalConfig,
-                presets: finalConfig.presets.map((p) => ({
+                presets: finalConfig.presets.map((p: any) => ({
                     ...p,
                     defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
                 }))
@@ -186,7 +186,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
             res.json({
                 ...finalConfig,
-                presets: finalConfig.presets.map((p) => ({
+                presets: finalConfig.presets.map((p: any) => ({
                     ...p,
                     defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
                 }))
@@ -212,11 +212,12 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     app.post('/api/introspect', async (req, res) => {
         const { url, headers } = req.body;
         try {
-            if (url) {
-                const parsedUrl = new URL(url);
-                if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-                    return res.status(400).json({ error: 'Invalid URL protocol' });
-                }
+            if (!url) {
+                return res.status(400).json({ error: 'URL is required' });
+            }
+            const parsedUrl = new URL(url);
+            if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+                return res.status(400).json({ error: 'Invalid URL protocol' });
             }
             const query = `
               query IntrospectionQuery {
@@ -298,7 +299,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
             if (headers) {
                 try { parsedHeaders = JSON.parse(headers); } catch (e) { console.warn("Invalid JSON in headers", e); }
             }
-            const response = await axios.post(url, { query }, { headers: parsedHeaders, timeout: 5000 });
+            const response = await axios.post(parsedUrl.href, { query }, { headers: parsedHeaders, timeout: 5000 });
             res.json(response.data.data);
         } catch (e: any) {
             console.error(e.response?.data || e.message);

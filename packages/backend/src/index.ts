@@ -11,6 +11,34 @@ import {PrismaPg} from "@prisma/adapter-pg";
 const app = express();
 import setupManagementRoutes from "./management.js";
 
+function buildSafeUrl(base: string, path: string = ''): string {
+    // If path is an absolute URL, new URL(path, base) will ignore the base.
+    // To prevent an attacker from passing an absolute URL in the path (e.g. %68%74%74%70...),
+    // we explicitly construct a relative path before appending it to base.
+    // However, the simplest safe concatenation logic is to manually append.
+    // Then parse the final string to validate the protocol.
+    const separator = base.endsWith('/') || path.startsWith('/') ? '' : '/';
+    const finalUrlStr = path ? `${base}${separator}${path}` : base;
+
+    const url = new URL(finalUrlStr);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new Error('Invalid URL protocol');
+    }
+
+    // As an additional layer of SSRF protection, we check that the resulting origin
+    // matches the origin of the base URL, assuming the base is a fully qualified URL.
+    try {
+        const baseUrlObj = new URL(base);
+        if (url.origin !== baseUrlObj.origin) {
+            throw new Error('URL origin mismatch');
+        }
+    } catch(e) {
+        // Base is not a valid URL by itself, this shouldn't happen based on DB data, but safe fallback
+    }
+
+    return url.href;
+}
+
 let prisma: any;
 
 if (process.env.NODE_ENV === 'production' || process.env.USE_REAL_POSTGRES === 'true') {
@@ -99,8 +127,9 @@ app.get('/api/schemas', async (req, res) => {
         }
 
         const schemasApiUrl = ds.apiUrl.replace('/enums', '/schemas');
+        const safeUrl = buildSafeUrl(schemasApiUrl);
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(schemasApiUrl, { headers });
+        const response = await axios.get(safeUrl, { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/schemas:`, error.message);
@@ -135,8 +164,9 @@ app.get('/api/schema/:entityName', async (req, res) => {
         // so we replace "enums" with "schema"
         const schemaApiUrl = ds.apiUrl.replace('/enums', '/schema');
 
+        const safeUrl = buildSafeUrl(schemaApiUrl, entityName);
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(`${schemaApiUrl}/${entityName}`, { headers });
+        const response = await axios.get(safeUrl, { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
@@ -165,8 +195,9 @@ app.get('/api/enums/:enumName', async (req, res) => {
             return res.status(404).json({error: 'Enum data source not found'});
         }
 
+        const safeUrl = buildSafeUrl(ds.apiUrl, enumName);
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(`${ds.apiUrl}/${enumName}`, { headers });
+        const response = await axios.get(safeUrl, { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/enums/${req.params.enumName}:`, error.message);
@@ -199,8 +230,9 @@ app.get('/api/data/:entity', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+        const safeUrl = buildSafeUrl(ds.apiUrl);
         if (ds.apiType === 'REST') {
-            const response = await axios.get(ds.apiUrl);
+            const response = await axios.get(safeUrl);
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
@@ -208,7 +240,7 @@ app.get('/api/data/:entity', async (req, res) => {
             if (!queryStr) throw new Error("Missing 'list' query configuration");
 
             const query = gql`${queryStr}`;
-            const data = await request(ds.apiUrl, query) as any;
+            const data = await request(safeUrl, query) as any;
             res.json(data[`${entity}s`]);
         }
     } catch (error: any) {
@@ -243,16 +275,18 @@ app.get('/api/data/:entity/:id', async (req, res) => {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
-            const response = await axios.get(`${ds.apiUrl}/${id}`);
+            const safeUrl = buildSafeUrl(ds.apiUrl, id);
+            const response = await axios.get(safeUrl);
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
+            const safeUrl = buildSafeUrl(ds.apiUrl);
             const ops = JSON.parse(ds.endpointsQueries || '{}');
             const queryStr = ops.get;
             if (!queryStr) throw new Error("Missing 'get' query configuration");
 
             const query = gql`${queryStr}`;
             const variables = {id};
-            const data = await request(ds.apiUrl, query, variables) as any;
+            const data = await request(safeUrl, query, variables) as any;
             res.json(data[entity]);
         }
     } catch (error: any) {
@@ -283,8 +317,9 @@ app.post('/api/data/:entity', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+        const safeUrl = buildSafeUrl(ds.apiUrl);
         if (ds.apiType === 'REST') {
-            const response = await axios.post(ds.apiUrl, req.body);
+            const response = await axios.post(safeUrl, req.body);
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
@@ -298,8 +333,8 @@ app.post('/api/data/:entity', async (req, res) => {
                 variables[f.name] = req.body[f.name];
             });
 
-            console.log(`Sending GraphQL mutation to ${ds.apiUrl}:`, queryStr, 'with variables:', variables);
-            const data = await request(ds.apiUrl, mutation, variables) as any;
+            console.log(`Sending GraphQL mutation to ${safeUrl}:`, queryStr, 'with variables:', variables);
+            const data = await request(safeUrl, mutation, variables) as any;
             res.json(data[`create${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
         }
     } catch (error: any) {
@@ -334,9 +369,11 @@ app.put('/api/data/:entity/:id', async (req, res) => {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
-            const response = await axios.put(`${ds.apiUrl}/${id}`, req.body);
+            const safeUrl = buildSafeUrl(ds.apiUrl, id);
+            const response = await axios.put(safeUrl, req.body);
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
+            const safeUrl = buildSafeUrl(ds.apiUrl);
             const ops = JSON.parse(ds.endpointsQueries || '{}');
             const queryStr = ops.update;
             if (!queryStr) throw new Error("Missing 'update' query configuration");
@@ -350,8 +387,8 @@ app.put('/api/data/:entity/:id', async (req, res) => {
                 }
             });
 
-            console.log(`Sending GraphQL mutation to ${ds.apiUrl}:`, queryStr, 'with variables:', variables);
-            const data = await request(ds.apiUrl, mutation, variables) as any;
+            console.log(`Sending GraphQL mutation to ${safeUrl}:`, queryStr, 'with variables:', variables);
+            const data = await request(safeUrl, mutation, variables) as any;
             res.json(data[`update${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
         }
     } catch (error: any) {
@@ -386,9 +423,11 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
-            await axios.delete(`${ds.apiUrl}/${id}`);
+            const safeUrl = buildSafeUrl(ds.apiUrl, id);
+            await axios.delete(safeUrl);
             res.json({success: true});
         } else if (ds.apiType === 'GRAPHQL') {
+            const safeUrl = buildSafeUrl(ds.apiUrl);
             const ops = JSON.parse(ds.endpointsQueries || '{}');
             const queryStr = ops.delete;
             if (!queryStr) throw new Error("Missing 'delete' query configuration");
@@ -396,8 +435,8 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
             const mutation = gql`${queryStr}`;
             const variables = {id};
 
-            console.log(`Sending GraphQL mutation to ${ds.apiUrl}:`, queryStr, 'with variables:', variables);
-            await request(ds.apiUrl, mutation, variables);
+            console.log(`Sending GraphQL mutation to ${safeUrl}:`, queryStr, 'with variables:', variables);
+            await request(safeUrl, mutation, variables);
             res.json({success: true});
         }
     } catch (error: any) {

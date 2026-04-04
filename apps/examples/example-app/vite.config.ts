@@ -13,16 +13,16 @@ export default defineConfig({
       },
       shared: {
         react: {
-            requiredVersion: "^19.2.4"
+            requiredVersion: "19.2.4"
         },
         'react-dom': {
-            requiredVersion: "^19.2.4"
+            requiredVersion: "19.2.4"
         },
         'react-router-dom': {
-            requiredVersion: "^7.13.1"
+            requiredVersion: "7.13.1"
         },
         axios: {
-            requiredVersion: "^1.13.6"
+            requiredVersion: "1.13.6"
         }
       }
     })

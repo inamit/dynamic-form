@@ -20,7 +20,20 @@ export default defineConfig({
         './EntityForm': './src/components/EntityForm.tsx',
         './WebComponents': './src/web-components.tsx'
       },
-      shared: ['react', 'react-dom', 'react-router-dom', 'axios']
+      shared: {
+        react: {
+            requiredVersion: "^19.2.4"
+        },
+        'react-dom': {
+            requiredVersion: "^19.2.4"
+        },
+        'react-router-dom': {
+            requiredVersion: "^7.13.1"
+        },
+        axios: {
+            requiredVersion: "^1.13.6"
+        }
+      }
     })
   ],
   build: {

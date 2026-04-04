@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*",
+    "libs/*",
+    "examples/*",
+    "utils/*"
   ],
   "scripts": {
     "dev": "npm run dev --workspaces",
@@ -11,5 +15,17 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.4.1"
+  },
+  "devDependencies": {
+    "@nx/docker": "22.6.4",
+    "@nx/eslint": "22.6.4",
+    "@nx/vite": "22.6.4",
+    "@nx/web": "22.6.4",
+    "@vitest/ui": "~4.1.0",
+    "eslint": "~8.57.0",
+    "jiti": "2.4.2",
+    "nx": "22.6.4",
+    "vite": "^8.0.0",
+    "vitest": "~4.1.0"
   }
 }

@@ -408,7 +408,7 @@ export default function EntityForm() {
             <DynamicField
               field={field}
               value={formData[field.name]}
-              onChange={(name, value) => {
+              onChange={(name: any, value: any) => {
                  setFormData(prev => ({ ...prev, [name]: value }));
               }}
               errorMsg={errorMsg}

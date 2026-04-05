@@ -3,6 +3,7 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPGlite } from 'pglite-prisma-adapter';
 import { PGlite } from '@electric-sql/pglite';
+import { parseCoordinate, getDistance } from './geo.js';
 
 const app = express();
 
@@ -86,12 +87,77 @@ app.post('/api/check', async (req, res) => {
             // If the permission specifies constraints, we need data to evaluate them
             if (data) {
                 let matches = true;
-                if (perm.geography && data.country && data.country !== perm.geography) {
-                    matches = false;
+
+                // Geographic constraint logic
+                if (perm.geography) {
+                    try {
+                        const parsedConstraint = JSON.parse(perm.geography);
+                        if (parsedConstraint.type === 'radius' && parsedConstraint.center && parsedConstraint.radiusKm !== undefined) {
+                            // Find coordinate field in data
+                            let dataCoord = null;
+                            for (const val of Object.values(data)) {
+                                if (val && typeof val === 'object' && 'latitude' in (val as any) && 'longitude' in (val as any)) {
+                                     dataCoord = [ (val as any).longitude, (val as any).latitude ];
+                                     break;
+                                } else if (typeof val === 'string') {
+                                     // Try parsing string as coord if it happens to be one
+                                     const parsed = parseCoordinate(val);
+                                     if (parsed) dataCoord = parsed;
+                                }
+                            }
+
+                            if (dataCoord) {
+                                const centerCoord = parseCoordinate(parsedConstraint.center);
+                                if (centerCoord) {
+                                     const dist = getDistance(dataCoord as [number, number], centerCoord);
+                                     if (dist / 1000 > parsedConstraint.radiusKm) {
+                                          matches = false;
+                                     }
+                                } else {
+                                     // Invalid center in config
+                                     matches = false;
+                                }
+                            } else {
+                                // No coordinate in data, but geographic rule exists
+                                matches = false;
+                            }
+                        } else {
+                             // Fallback to simple matching if it's not a structured JSON radius rule
+                             // E.g. simple string matching on "country" field
+                             if (data.country !== perm.geography) {
+                                 matches = false;
+                             }
+                        }
+                    } catch (e) {
+                         // Not JSON, fallback to simple matching
+                         if (data.country !== perm.geography) {
+                             matches = false;
+                         }
+                    }
                 }
-                if (perm.fieldValue && data.someField && data.someField !== perm.fieldValue) {
-                    matches = false;
+
+                // Field value constraint logic
+                if (perm.fieldValue && matches) {
+                    try {
+                        const parsedConstraint = JSON.parse(perm.fieldValue);
+                        let fieldMatch = false;
+                        for (const key of Object.keys(parsedConstraint)) {
+                             if (data[key] === parsedConstraint[key]) {
+                                 fieldMatch = true;
+                             } else {
+                                 fieldMatch = false;
+                                 break;
+                             }
+                        }
+                        if (!fieldMatch) matches = false;
+                    } catch (e) {
+                        // Not JSON, fallback to simple matching on 'someField'
+                        if (data.someField !== perm.fieldValue) {
+                            matches = false;
+                        }
+                    }
                 }
+
                 if (matches) {
                     hasAccess = true;
                     break;

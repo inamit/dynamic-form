@@ -4,12 +4,10 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "apps/*",
+    "apps/**/*",
     "libs/*",
     "examples/*",
-    "utils/*",
-    "apps/permissions/*",
-    "apps/microfrontends/*"
+    "utils/*"
   ],
   "scripts": {
     "dev": "npm run dev --workspaces",
@@ -18,6 +16,7 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.4.1",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
     "express": "^5.2.1"
   },
   "devDependencies": {

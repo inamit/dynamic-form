@@ -4,12 +4,22 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPGlite } from 'pglite-prisma-adapter';
 import { PGlite } from '@electric-sql/pglite';
 import { parseCoordinate, getDistance } from '@dynamic-form/geo-utils';
+import {PrismaPg} from "@prisma/adapter-pg";
 
 const app = express();
 
-const client = new PGlite('./pglite-db');
-const adapter = new PrismaPGlite(client);
-const prisma = new PrismaClient({ adapter });
+let prisma: any;
+
+if (process.env.NODE_ENV === 'production' || process.env.USE_REAL_POSTGRES === 'true') {
+    const adapter = new PrismaPg({
+        connectionString: process.env.DATABASE_URL!,
+    });
+    prisma = new PrismaClient({adapter});
+} else {
+    const client = new PGlite('./pglite-db');
+    const adapter = new PrismaPGlite(client);
+    prisma = new PrismaClient({adapter});
+}
 
 app.use(cors());
 app.use(express.json());

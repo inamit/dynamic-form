@@ -3,7 +3,7 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPGlite } from 'pglite-prisma-adapter';
 import { PGlite } from '@electric-sql/pglite';
-import { parseCoordinate, getDistance } from './geo.js';
+import { parseCoordinate, getDistance } from '@dynamic-form/geo-utils';
 
 const app = express();
 

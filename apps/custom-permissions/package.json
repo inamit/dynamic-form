@@ -23,6 +23,7 @@
   "dependencies": {
     "@prisma/client": "^7.6.0",
     "mgrs": "^2.1.0",
-    "proj4": "^2.20.6"
+    "proj4": "^2.20.6",
+    "@dynamic-form/geo-utils": "*"
   }
 }

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import * as countryCoder from '@rapideditor/country-coder';
-import { parseCoordinate } from './geo.js';
+import { parseCoordinate } from '@dynamic-form/geo-utils';
 
 const app = express();
 app.use(cors());

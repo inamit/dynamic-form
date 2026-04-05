@@ -4,7 +4,7 @@ import 'postal';
 const postal = (window as any).postal;
 import type { EntityConfig } from '../types';
 import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
-import { parseCoordinate, formatCoordinate } from '../utils/coordinate.ts';
+import { parseCoordinate, formatCoordinate } from '@dynamic-form/geo-utils';
 import { DynamicField } from '@dynamic-form/shared-ui';
 
 const API_BASE = 'http://localhost:3001/api';

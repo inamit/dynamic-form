@@ -19,10 +19,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                 try {
                     validateUrl(req.body.apiUrl);
                 } catch (err: any) {
-                    if (err.message.includes('protocol')) {
-                        return res.status(400).json({ error: 'Invalid URL protocol' });
-                    }
-                    throw err; // let outer catch handle invalid url format
+                    return res.status(400).json({ error: err.message });
                 }
             }
             const ds = await prisma.dataSource.create({ data: req.body });
@@ -41,10 +38,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                 try {
                     validateUrl(req.body.apiUrl);
                 } catch (err: any) {
-                    if (err.message.includes('protocol')) {
-                        return res.status(400).json({ error: 'Invalid URL protocol' });
-                    }
-                    throw err; // let outer catch handle invalid url format
+                    return res.status(400).json({ error: err.message });
                 }
             }
             const ds = await prisma.dataSource.update({
@@ -225,10 +219,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                 try {
                     validateUrl(url);
                 } catch (err: any) {
-                    if (err.message.includes('protocol')) {
-                        return res.status(400).json({ error: 'Invalid URL protocol' });
-                    }
-                    throw err; // let outer catch handle invalid url format
+                    return res.status(400).json({ error: err.message });
                 }
             }
             const query = `

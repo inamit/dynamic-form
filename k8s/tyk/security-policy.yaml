@@ -1,0 +1,22 @@
+apiVersion: tyk.tyk.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: form-backend-policy
+  namespace: default
+spec:
+  name: "Form Backend Default Security Policy"
+  state: "active"
+  active: true
+  access_rights_array:
+    - name: "form-backend-api"
+      namespace: default # Make sure this matches the API Definition's metadata.namespace
+      api_id: "" # Tyk operator resolves this automatically based on the name/namespace
+      versions:
+        - "Default"
+  rate: 100 # Requests
+  per: 60 # per 60 seconds (rate limiting)
+  quota_max: 10000 # Quota allowed
+  quota_renewal_rate: 3600 # renew every hour
+  throttle_interval: 0
+  throttle_retry_limit: 0
+  max_query_depth: 0

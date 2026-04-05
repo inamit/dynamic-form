@@ -43,9 +43,6 @@ async function checkAuth(req: express.Request, entityName: string, ability: stri
         console.error('Error parsing auth config', e);
     }
 
-    // Default to 'custom' if not specified for test
-    if (services.length === 0) services = ['custom'];
-
     let userId = req.cookies.jwt_user_id || 'anonymous';
     if (req.headers.authorization) {
         const token = req.headers.authorization.split(' ')[1];

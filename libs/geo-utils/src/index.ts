@@ -1,0 +1,80 @@
+import proj4 from 'proj4';
+
+const wgs84 = '+proj=longlat +datum=WGS84 +no_defs';
+
+export function getUTMZone(longitude: number) {
+  return Math.floor((longitude + 180) / 6) + 1;
+}
+
+export function getUTMProjection(zone: number, isNorth: boolean) {
+  return `+proj=utm +zone=${zone} ${isNorth ? '' : '+south '}+ellps=WGS84 +datum=WGS84 +units=m +no_defs`;
+}
+
+export function formatCoordinate(lng: number, lat: number, format: 'WGS84' | 'UTM'): string {
+  if (format === 'WGS84') {
+    return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  } else {
+    const zone = getUTMZone(lng);
+    const isNorth = lat >= 0;
+    const utmProj = getUTMProjection(zone, isNorth);
+    try {
+        const [easting, northing] = proj4(wgs84, utmProj, [lng, lat]);
+        return `${zone}${isNorth ? 'N' : 'S'} ${easting.toFixed(2)} ${northing.toFixed(2)}`;
+    } catch (e) {
+        return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+  }
+}
+
+export function parseCoordinate(val: string): [number, number] | null {
+  val = val.trim();
+
+  // Decimal degrees (e.g. "34.05, -118.25")
+  let match = val.match(/^([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)$/);
+  if (match && match[1] && match[2]) {
+    const lat = parseFloat(match[1]);
+    const lng = parseFloat(match[2]);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      return [lng, lat];
+    }
+  }
+
+  // UTM (e.g. "11N 384000 3768000" or "11 N 384000 3768000")
+  match = val.match(/^(\d{1,2})\s*([C-X])\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/i);
+  if (match && match[1] && match[2] && match[3] && match[4]) {
+    const zone = parseInt(match[1]);
+    const band = match[2].toUpperCase();
+    const easting = parseFloat(match[3]);
+    const northing = parseFloat(match[4]);
+
+    // N band is >= N (equator is N)
+    const isNorth = band >= 'N';
+    const utmProj = getUTMProjection(zone, isNorth);
+    try {
+        const [lng, lat] = proj4(utmProj, wgs84, [easting, northing]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          return [lng, lat];
+        }
+    } catch (e) {
+        return null;
+    }
+  }
+
+  return null;
+}
+
+// Haversine formula
+export function getDistance(coord1: [number, number], coord2: [number, number]) {
+    const R = 6371e3; // metres
+    const lat1 = coord1[1] * Math.PI/180; // φ, λ in radians
+    const lat2 = coord2[1] * Math.PI/180;
+    const deltaLat = (coord2[1]-coord1[1]) * Math.PI/180;
+    const deltaLng = (coord2[0]-coord1[0]) * Math.PI/180;
+
+    const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+            Math.cos(lat1) * Math.cos(lat2) *
+            Math.sin(deltaLng/2) * Math.sin(deltaLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // in metres
+}

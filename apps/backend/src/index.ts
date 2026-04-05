@@ -10,6 +10,7 @@ import {PrismaPg} from "@prisma/adapter-pg";
 
 const app = express();
 import setupManagementRoutes from "./management.js";
+import { validateUrl } from "./utils.js";
 
 let prisma: any;
 
@@ -100,7 +101,7 @@ app.get('/api/schemas', async (req, res) => {
 
         const schemasApiUrl = ds.apiUrl.replace('/enums', '/schemas');
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(schemasApiUrl, { headers });
+        const response = await axios.get(validateUrl(schemasApiUrl), { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/schemas:`, error.message);
@@ -136,7 +137,7 @@ app.get('/api/schema/:entityName', async (req, res) => {
         const schemaApiUrl = ds.apiUrl.replace('/enums', '/schema');
 
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(`${schemaApiUrl}/${entityName}`, { headers });
+        const response = await axios.get(validateUrl(`${schemaApiUrl}/${entityName}`), { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
@@ -166,7 +167,7 @@ app.get('/api/enums/:enumName', async (req, res) => {
         }
 
         const headers = ds.headers ? JSON.parse(ds.headers) : {};
-        const response = await axios.get(`${ds.apiUrl}/${enumName}`, { headers });
+        const response = await axios.get(validateUrl(`${ds.apiUrl}/${enumName}`), { headers });
         res.json(response.data);
     } catch (error: any) {
         console.error(`Error in GET /api/enums/${req.params.enumName}:`, error.message);
@@ -200,7 +201,7 @@ app.get('/api/data/:entity', async (req, res) => {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
-            const response = await axios.get(ds.apiUrl);
+            const response = await axios.get(validateUrl(ds.apiUrl));
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
@@ -208,7 +209,7 @@ app.get('/api/data/:entity', async (req, res) => {
             if (!queryStr) throw new Error("Missing 'list' query configuration");
 
             const query = gql`${queryStr}`;
-            const data = await request(ds.apiUrl, query) as any;
+            const data = await request(validateUrl(ds.apiUrl), query) as any;
             res.json(data[`${entity}s`]);
         }
     } catch (error: any) {
@@ -243,7 +244,7 @@ app.get('/api/data/:entity/:id', async (req, res) => {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
-            const response = await axios.get(`${ds.apiUrl}/${id}`);
+            const response = await axios.get(validateUrl(`${ds.apiUrl}/${id}`));
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
@@ -252,7 +253,7 @@ app.get('/api/data/:entity/:id', async (req, res) => {
 
             const query = gql`${queryStr}`;
             const variables = {id};
-            const data = await request(ds.apiUrl, query, variables) as any;
+            const data = await request(validateUrl(ds.apiUrl), query, variables) as any;
             res.json(data[entity]);
         }
     } catch (error: any) {
@@ -284,7 +285,7 @@ app.post('/api/data/:entity', async (req, res) => {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
-            const response = await axios.post(ds.apiUrl, req.body);
+            const response = await axios.post(validateUrl(ds.apiUrl), req.body);
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
@@ -299,7 +300,7 @@ app.post('/api/data/:entity', async (req, res) => {
             });
 
             console.log(`Sending GraphQL mutation to ${ds.apiUrl}:`, queryStr, 'with variables:', variables);
-            const data = await request(ds.apiUrl, mutation, variables) as any;
+            const data = await request(validateUrl(ds.apiUrl), mutation, variables) as any;
             res.json(data[`create${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
         }
     } catch (error: any) {
@@ -334,7 +335,7 @@ app.put('/api/data/:entity/:id', async (req, res) => {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
-            const response = await axios.put(`${ds.apiUrl}/${id}`, req.body);
+            const response = await axios.put(validateUrl(`${ds.apiUrl}/${id}`), req.body);
             res.json(response.data);
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
@@ -351,7 +352,7 @@ app.put('/api/data/:entity/:id', async (req, res) => {
             });
 
             console.log(`Sending GraphQL mutation to ${ds.apiUrl}:`, queryStr, 'with variables:', variables);
-            const data = await request(ds.apiUrl, mutation, variables) as any;
+            const data = await request(validateUrl(ds.apiUrl), mutation, variables) as any;
             res.json(data[`update${entity.charAt(0).toUpperCase() + entity.slice(1)}`]);
         }
     } catch (error: any) {
@@ -386,7 +387,7 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
-            await axios.delete(`${ds.apiUrl}/${id}`);
+            await axios.delete(validateUrl(`${ds.apiUrl}/${id}`));
             res.json({success: true});
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
@@ -397,7 +398,7 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
             const variables = {id};
 
             console.log(`Sending GraphQL mutation to ${ds.apiUrl}:`, queryStr, 'with variables:', variables);
-            await request(ds.apiUrl, mutation, variables);
+            await request(validateUrl(ds.apiUrl), mutation, variables);
             res.json({success: true});
         }
     } catch (error: any) {

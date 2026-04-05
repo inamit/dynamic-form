@@ -2,3 +2,8 @@
 **Vulnerability:** Server-Side Request Forgery (SSRF) exists in `/api/data-sources` (POST/PUT) and `/api/introspect` (POST) because user-provided URLs (`apiUrl` and `url`) are not validated before being saved to the database or used in backend HTTP requests via `axios`. This allows users to set arbitrary URLs (e.g., `file://`, `ftp://`, internal network IPs) that the backend will try to access, potentially exposing internal services or local files.
 **Learning:** The application acts as a proxy/gateway to external APIs based on user configuration, making it a high-risk vector for SSRF. The root cause is a lack of strict protocol and hostname validation on user-submitted URLs.
 **Prevention:** Implement strict URL validation for all user-provided endpoints. Ensure only `http:` and `https:` protocols are permitted before saving configurations or initiating outgoing backend requests.
+
+## 2024-04-05 - [SSRF Protocol Smuggling Fix]
+**Vulnerability:** The backend `apps/backend/src/index.ts` was proxying external data sources dynamically retrieved from the DB (e.g. `ds.apiUrl`) via `axios` and `graphql-request` without strictly enforcing URL protocols.
+**Learning:** Even when reading trusted configuration properties from the database (like an internal API URL string), those URLs must still be rigorously validated. If a configuration is modified, or if local path parameters manipulate the structure, an SSRF via protocol smuggling (e.g., using `file://` or `gopher://` strings) becomes possible.
+**Prevention:** Always validate and parse dynamic base URLs against explicitly allowed schemes (e.g., `http:` and `https:`) using Node's `new URL()` constructor before making an outbound request.

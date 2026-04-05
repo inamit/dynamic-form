@@ -1,5 +1,6 @@
 import express from 'express';
 import axios from 'axios';
+import { validateUrl } from './utils.js';
 
 export default function setupManagementRoutes(app: express.Express, prisma: any) {
     // Data Sources
@@ -15,9 +16,10 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     app.post('/api/data-sources', async (req, res) => {
         try {
             if (req.body.apiUrl) {
-                const url = new URL(req.body.apiUrl);
-                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-                    return res.status(400).json({ error: 'Invalid URL protocol' });
+                try {
+                    validateUrl(req.body.apiUrl);
+                } catch (err: any) {
+                    return res.status(400).json({ error: err.message });
                 }
             }
             const ds = await prisma.dataSource.create({ data: req.body });
@@ -33,9 +35,10 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     app.put('/api/data-sources/:id', async (req, res) => {
         try {
             if (req.body.apiUrl) {
-                const url = new URL(req.body.apiUrl);
-                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-                    return res.status(400).json({ error: 'Invalid URL protocol' });
+                try {
+                    validateUrl(req.body.apiUrl);
+                } catch (err: any) {
+                    return res.status(400).json({ error: err.message });
                 }
             }
             const ds = await prisma.dataSource.update({
@@ -126,7 +129,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
             res.json({
                 ...finalConfig,
-                presets: finalConfig.presets.map((p) => ({
+                presets: finalConfig.presets.map((p: any) => ({
                     ...p,
                     defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
                 }))
@@ -186,7 +189,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
             res.json({
                 ...finalConfig,
-                presets: finalConfig.presets.map((p) => ({
+                presets: finalConfig.presets.map((p: any) => ({
                     ...p,
                     defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
                 }))
@@ -213,9 +216,10 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         const { url, headers } = req.body;
         try {
             if (url) {
-                const parsedUrl = new URL(url);
-                if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-                    return res.status(400).json({ error: 'Invalid URL protocol' });
+                try {
+                    validateUrl(url);
+                } catch (err: any) {
+                    return res.status(400).json({ error: err.message });
                 }
             }
             const query = `

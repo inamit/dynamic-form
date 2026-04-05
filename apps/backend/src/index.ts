@@ -56,7 +56,8 @@ async function checkAuth(req: express.Request, entityName: string, ability: stri
     const origin = req.headers.origin || 'http://localhost:5001';
 
     try {
-        const res = await axios.post('http://localhost:3005/api/authorize', {
+        const orchestratorUrl = process.env.ORCHESTRATOR_URL || 'http://localhost:3005/api/authorize';
+        const res = await axios.post(orchestratorUrl, {
             userId,
             origin,
             entityName,

@@ -7,9 +7,9 @@ app.use(cors());
 app.use(express.json());
 
 const SERVICE_URLS: Record<string, string> = {
-    custom: 'http://localhost:3002/api/check',
-    external1: 'http://localhost:3003/api/check',
-    external2: 'http://localhost:3004/api/check'
+    custom: process.env.CUSTOM_PERMISSIONS_URL || 'http://localhost:3002/api/check',
+    external1: process.env.EXTERNAL1_URL || 'http://localhost:3003/api/check',
+    external2: process.env.EXTERNAL2_URL || 'http://localhost:3004/api/check'
 };
 
 app.post('/api/authorize', async (req, res) => {

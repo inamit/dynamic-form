@@ -1,5 +1,6 @@
 import express from 'express';
 import axios from 'axios';
+import { validateUrl } from './utils.js';
 
 export default function setupManagementRoutes(app: express.Express, prisma: any) {
     // Data Sources
@@ -15,9 +16,13 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     app.post('/api/data-sources', async (req, res) => {
         try {
             if (req.body.apiUrl) {
-                const url = new URL(req.body.apiUrl);
-                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-                    return res.status(400).json({ error: 'Invalid URL protocol' });
+                try {
+                    validateUrl(req.body.apiUrl);
+                } catch (err: any) {
+                    if (err.message.includes('protocol')) {
+                        return res.status(400).json({ error: 'Invalid URL protocol' });
+                    }
+                    throw err; // let outer catch handle invalid url format
                 }
             }
             const ds = await prisma.dataSource.create({ data: req.body });
@@ -33,9 +38,13 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     app.put('/api/data-sources/:id', async (req, res) => {
         try {
             if (req.body.apiUrl) {
-                const url = new URL(req.body.apiUrl);
-                if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-                    return res.status(400).json({ error: 'Invalid URL protocol' });
+                try {
+                    validateUrl(req.body.apiUrl);
+                } catch (err: any) {
+                    if (err.message.includes('protocol')) {
+                        return res.status(400).json({ error: 'Invalid URL protocol' });
+                    }
+                    throw err; // let outer catch handle invalid url format
                 }
             }
             const ds = await prisma.dataSource.update({
@@ -213,9 +222,13 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         const { url, headers } = req.body;
         try {
             if (url) {
-                const parsedUrl = new URL(url);
-                if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-                    return res.status(400).json({ error: 'Invalid URL protocol' });
+                try {
+                    validateUrl(url);
+                } catch (err: any) {
+                    if (err.message.includes('protocol')) {
+                        return res.status(400).json({ error: 'Invalid URL protocol' });
+                    }
+                    throw err; // let outer catch handle invalid url format
                 }
             }
             const query = `

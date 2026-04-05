@@ -10,14 +10,7 @@ import {PrismaPg} from "@prisma/adapter-pg";
 
 const app = express();
 import setupManagementRoutes from "./management.js";
-
-function validateUrl(urlString: string): string {
-    const url = new URL(urlString);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-        throw new Error('Invalid URL protocol. Only HTTP and HTTPS are allowed.');
-    }
-    return urlString;
-}
+import { validateUrl } from "./utils.js";
 
 let prisma: any;
 

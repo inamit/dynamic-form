@@ -123,14 +123,14 @@ app.post('/api/check', async (req, res) => {
                             }
                         } else {
                              // Fallback to simple matching if it's not a structured JSON radius rule
-                             // E.g. simple string matching on "country" field
-                             if (data.country !== perm.geography) {
+                             // E.g. simple string matching on the territory evaluated by orchestrator
+                             if (data._geography_territory !== perm.geography && data.country !== perm.geography) {
                                  matches = false;
                              }
                         }
                     } catch (e) {
-                         // Not JSON, fallback to simple matching
-                         if (data.country !== perm.geography) {
+                         // Not JSON, fallback to simple matching on the territory evaluated by orchestrator
+                         if (data._geography_territory !== perm.geography && data.country !== perm.geography) {
                              matches = false;
                          }
                     }

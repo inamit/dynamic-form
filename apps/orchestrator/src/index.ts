@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
+import * as countryCoder from '@rapideditor/country-coder';
+import { parseCoordinate } from './geo.js';
 
 const app = express();
 app.use(cors());
@@ -12,8 +14,10 @@ const SERVICE_URLS: Record<string, string> = {
     external2: process.env.EXTERNAL2_URL || 'http://localhost:3004/api/check'
 };
 
+const WIKIDATA_MAPPING: Record<string, string> = JSON.parse(process.env.WIKIDATA_MAPPING || '{}');
+
 app.post('/api/authorize', async (req, res) => {
-    const { userId, origin, entityName, ability, data, services } = req.body;
+    let { userId, origin, entityName, ability, data, services } = req.body;
 
     console.log(`Authorize request: User=${userId}, Origin=${origin}, Entity=${entityName}, Ability=${ability}, Services=${services}`);
 
@@ -21,6 +25,43 @@ app.post('/api/authorize', async (req, res) => {
         // If no authorization services configured, default to allowed or denied based on your policy.
         // We'll default to allowed if no specific auth layer is configured.
         return res.json({ allowed: true });
+    }
+
+    // Geographic calculation
+    let territory: string | null = null;
+    let dataCoord: [number, number] | null = null;
+
+    if (data) {
+        // Find a coordinate in the data
+        for (const val of Object.values(data)) {
+            if (val && typeof val === 'object' && 'latitude' in (val as any) && 'longitude' in (val as any)) {
+                 dataCoord = [ (val as any).longitude, (val as any).latitude ];
+                 break;
+            } else if (typeof val === 'string') {
+                 const parsed = parseCoordinate(val);
+                 if (parsed) {
+                     dataCoord = parsed;
+                     break;
+                 }
+            }
+        }
+    }
+
+    if (dataCoord) {
+        // Handle commonJS import of countryCoder
+        const cc = (countryCoder as any).default || countryCoder;
+        const feature = cc.locationsAt(dataCoord, { level: 'territory' })[0];
+        if (feature && feature.properties.wikidata) {
+             const wikidata = feature.properties.wikidata;
+             territory = WIKIDATA_MAPPING[wikidata] || wikidata;
+        }
+    }
+
+    // Inject territory into data for downstream services if evaluated
+    // They will now just check if `data._geography_territory` matches their string rule,
+    // rather than doing coordinates matching.
+    if (data && territory) {
+         data = { ...data, _geography_territory: territory };
     }
 
     try {

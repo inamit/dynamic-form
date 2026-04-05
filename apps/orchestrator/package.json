@@ -9,5 +9,12 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@rapideditor/country-coder": "^5.6.1",
+    "proj4": "^2.20.6"
+  },
+  "devDependencies": {
+    "@types/proj4": "^2.5.6"
+  }
 }

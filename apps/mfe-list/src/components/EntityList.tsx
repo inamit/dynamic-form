@@ -12,6 +12,7 @@ export default function EntityList() {
   const [config, setConfig] = useState<EntityConfig | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [abilities, setAbilities] = useState({ canCreate: false, canEdit: false, canDelete: false, canView: false });
 
   useEffect(() => {
     const sub = postal.subscribe({
@@ -45,10 +46,13 @@ export default function EntityList() {
   const fetchData = async (currentEntity: string) => {
     setLoading(true);
     try {
-      const configRes = await axios.get(`${API_BASE}/config/${currentEntity}`);
+      const [configRes, abilitiesRes, dataRes] = await Promise.all([
+        axios.get(`${API_BASE}/config/${currentEntity}`),
+        axios.get(`${API_BASE}/data/${currentEntity}/abilities`),
+        axios.get(`${API_BASE}/data/${currentEntity}`)
+      ]);
       setConfig(configRes.data);
-
-      const dataRes = await axios.get(`${API_BASE}/data/${currentEntity}`);
+      setAbilities(abilitiesRes.data);
       setData(dataRes.data);
     } catch (err) {
       console.error('Failed to fetch data', err);
@@ -88,16 +92,22 @@ export default function EntityList() {
   if (loading) return <div>Loading...</div>;
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
 
+  if (!abilities.canView) {
+      return <div>You do not have permission to view {entity} records.</div>;
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h3>{entity}s</h3>
-        <button
-          onClick={handleCreate}
-          style={{ padding: '8px 16px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px' }}
-        >
-          Create New
-        </button>
+        {abilities.canCreate && (
+          <button
+            onClick={handleCreate}
+            style={{ padding: '8px 16px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px' }}
+          >
+            Create New
+          </button>
+        )}
       </div>
 
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -130,18 +140,22 @@ export default function EntityList() {
                 );
               })}
               <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                <button
-                  onClick={() => handleEdit(item.id)}
-                  style={{ background: 'transparent', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', padding: 0, marginRight: '10px' }}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  style={{ background: 'transparent', border: 'none', color: 'red', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
-                >
-                  Delete
-                </button>
+                {abilities.canEdit && (
+                  <button
+                    onClick={() => handleEdit(item.id)}
+                    style={{ background: 'transparent', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', padding: 0, marginRight: '10px' }}
+                  >
+                    Edit
+                  </button>
+                )}
+                {abilities.canDelete && (
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    style={{ background: 'transparent', border: 'none', color: 'red', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                  >
+                    Delete
+                  </button>
+                )}
               </td>
             </tr>
           ))}

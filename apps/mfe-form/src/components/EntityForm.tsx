@@ -23,6 +23,7 @@ export default function EntityForm() {
   const [selectModeField, setSelectModeField] = useState<string | null>(null);
   const [schema, setSchema] = useState<any>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [abilities, setAbilities] = useState({ canCreate: false, canEdit: false, canDelete: false, canView: false });
 
   const [defaultValues, setDefaultValues] = useState<Record<string, any>>({});
 
@@ -94,8 +95,12 @@ export default function EntityForm() {
     setLoading(true);
     setValidationErrors({});
     try {
-      const configRes = await axios.get(`${API_BASE}/config/${currentEntity}`);
+      const [configRes, abilitiesRes] = await Promise.all([
+        axios.get(`${API_BASE}/config/${currentEntity}`),
+        axios.get(`${API_BASE}/data/${currentEntity}/abilities`)
+      ]);
       setConfig(configRes.data);
+      setAbilities(abilitiesRes.data);
 
       try {
         // Fallback to currentEntity if schemaName is null/missing (for older configurations or the current mock hardcode endpoints structure)
@@ -320,6 +325,13 @@ export default function EntityForm() {
 
   if (loading) return <div>Loading...</div>;
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
+
+  if (id && !abilities.canEdit) {
+      return <div>You do not have permission to edit this {entity}.</div>;
+  }
+  if (!id && !abilities.canCreate) {
+      return <div>You do not have permission to create a {entity}.</div>;
+  }
 
   let effectiveGridTemplate = injectedGridTemplate;
   let currentActivePresetId = activePresetId;

@@ -1,0 +1,43 @@
+{
+  "name": "mfe-form",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "nx serve",
+    "build": "tsc -b && nx vite:build",
+    "lint": "nx eslint:lint",
+    "preview": "nx vite:preview"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.9",
+    "@mui/material": "^7.3.9",
+    "axios": "^1.13.6",
+    "mgrs": "^2.1.0",
+    "postal": "^3.2.0",
+    "proj4": "^2.20.4",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.1",
+    "@dynamic-form/shared-ui": "*"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@originjs/vite-plugin-federation": "^1.4.1",
+    "@types/node": "^24.12.0",
+    "@types/postal": "^1.0.35",
+    "@types/proj4": "^2.5.6",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.57.0",
+    "vite": "^8.0.1"
+  }
+}

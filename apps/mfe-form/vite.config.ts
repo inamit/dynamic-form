@@ -7,10 +7,9 @@ export default defineConfig({
   plugins: [
     react(),
     federation({
-      name: 'dynamic_form',
+      name: 'dynamic_form_form',
       filename: 'remoteEntry.js',
       exposes: {
-        './EntityList': './src/components/EntityList.tsx',
         './EntityForm': './src/components/EntityForm.tsx',
         './WebComponents': './src/web-components.tsx'
       },
@@ -24,9 +23,9 @@ export default defineConfig({
     cssCodeSplit: false
   },
   server: {
-    port: 5001,
+    port: 5002,
   },
   preview: {
-    port: 5001,
+    port: 5002,
   }
 })

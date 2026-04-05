@@ -29,6 +29,10 @@ model EntityConfig {
   presets         Preset[]
   defaultPresetId Int?
   schemaName      String?
+  authView        String? // JSON array of service names e.g., '["custom"]'
+  authCreate      String?
+  authEdit        String?
+  authDelete      String?
 }
 
 model Preset {

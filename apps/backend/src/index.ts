@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import pkg from '@prisma/client';
 const { PrismaClient } = pkg;
 import {PrismaPGlite} from 'pglite-prisma-adapter';
@@ -27,7 +28,48 @@ if (process.env.NODE_ENV === 'production' || process.env.USE_REAL_POSTGRES === '
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 setupManagementRoutes(app, prisma);
+
+// Orchestrator Helper
+async function checkAuth(req: express.Request, entityName: string, ability: string, config: any, data?: any) {
+    let services = [];
+    try {
+        if (ability === 'view' && config.authView) services = JSON.parse(config.authView);
+        if (ability === 'create' && config.authCreate) services = JSON.parse(config.authCreate);
+        if (ability === 'edit' && config.authEdit) services = JSON.parse(config.authEdit);
+        if (ability === 'delete' && config.authDelete) services = JSON.parse(config.authDelete);
+    } catch (e) {
+        console.error('Error parsing auth config', e);
+    }
+
+    // Default to 'custom' if not specified for test
+    if (services.length === 0) services = ['custom'];
+
+    let userId = req.cookies.jwt_user_id || 'anonymous';
+    if (req.headers.authorization) {
+        const token = req.headers.authorization.split(' ')[1];
+        if (token) userId = 'user_from_token'; // mock decoding
+    }
+
+    // During tests without reverse proxies, use origin or a mock
+    const origin = req.headers.origin || 'http://localhost:5001';
+
+    try {
+        const res = await axios.post('http://localhost:3005/api/authorize', {
+            userId,
+            origin,
+            entityName,
+            ability,
+            data,
+            services
+        });
+        return res.data;
+    } catch (error: any) {
+        console.error('Error checking auth via orchestrator:', error.message);
+        return { allowed: false, reason: 'Orchestrator unavailable' };
+    }
+}
 
 // --- CONFIGURATION ENDPOINTS ---
 
@@ -176,6 +218,39 @@ app.get('/api/enums/:enumName', async (req, res) => {
 });
 
 
+// --- ABILITIES ENDPOINT ---
+
+app.get('/api/data/:entity/abilities', async (req, res) => {
+    const {entity} = req.params;
+
+    // Prevent path traversal
+    if (entity.includes('/') || entity.includes('..')) {
+        return res.status(400).json({error: 'Invalid entity'});
+    }
+
+    const config = await prisma.entityConfig.findUnique({
+        where: {name: entity}
+    });
+
+    if (!config) {
+        return res.status(404).json({error: 'Entity not found'});
+    }
+
+    const [viewAuth, createAuth, editAuth, deleteAuth] = await Promise.all([
+        checkAuth(req, entity, 'view', config),
+        checkAuth(req, entity, 'create', config),
+        checkAuth(req, entity, 'edit', config),
+        checkAuth(req, entity, 'delete', config)
+    ]);
+
+    res.json({
+        canView: viewAuth.allowed,
+        canCreate: createAuth.allowed,
+        canEdit: editAuth.allowed,
+        canDelete: deleteAuth.allowed
+    });
+});
+
 // --- DATA PROXY ENDPOINTS ---
 
 app.get('/api/data/:entity', async (req, res) => {
@@ -200,9 +275,11 @@ app.get('/api/data/:entity', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+        let dataList: any[] = [];
+
         if (ds.apiType === 'REST') {
             const response = await axios.get(validateUrl(ds.apiUrl));
-            res.json(response.data);
+            dataList = response.data;
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
             const queryStr = ops.list;
@@ -210,8 +287,19 @@ app.get('/api/data/:entity', async (req, res) => {
 
             const query = gql`${queryStr}`;
             const data = await request(validateUrl(ds.apiUrl), query) as any;
-            res.json(data[`${entity}s`]);
+            dataList = data[`${entity}s`];
         }
+
+        // Filter list based on view permissions per row
+        const filteredList = [];
+        for (const item of dataList) {
+             const auth = await checkAuth(req, entity, 'view', config, item);
+             if (auth.allowed) {
+                 filteredList.push(item);
+             }
+        }
+        res.json(filteredList);
+
     } catch (error: any) {
         console.error(`Error in GET /api/data/${entity}:`, error.message);
         res.status(500).json({error: 'Failed to fetch data'});
@@ -243,9 +331,11 @@ app.get('/api/data/:entity/:id', async (req, res) => {
     try {
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
+        let itemData: any = null;
+
         if (ds.apiType === 'REST') {
             const response = await axios.get(validateUrl(`${ds.apiUrl}/${id}`));
-            res.json(response.data);
+            itemData = response.data;
         } else if (ds.apiType === 'GRAPHQL') {
             const ops = JSON.parse(ds.endpointsQueries || '{}');
             const queryStr = ops.get;
@@ -254,8 +344,17 @@ app.get('/api/data/:entity/:id', async (req, res) => {
             const query = gql`${queryStr}`;
             const variables = {id};
             const data = await request(validateUrl(ds.apiUrl), query, variables) as any;
-            res.json(data[entity]);
+            itemData = data[entity];
         }
+
+        if (itemData) {
+            const auth = await checkAuth(req, entity, 'view', config, itemData);
+            if (!auth.allowed) {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
+        }
+
+        res.json(itemData);
     } catch (error: any) {
         console.error(`Error in GET /api/data/${entity}/${id}:`, error.message);
         res.status(500).json({error: 'Failed to fetch data'});
@@ -282,6 +381,11 @@ app.post('/api/data/:entity', async (req, res) => {
     }
 
     try {
+        const authCreate = await checkAuth(req, entity, 'create', config, req.body);
+        if (!authCreate.allowed) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
@@ -332,6 +436,11 @@ app.put('/api/data/:entity/:id', async (req, res) => {
     }
 
     try {
+        const authEdit = await checkAuth(req, entity, 'edit', config, { id, ...req.body });
+        if (!authEdit.allowed) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {
@@ -384,6 +493,11 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
     }
 
     try {
+        const authDelete = await checkAuth(req, entity, 'delete', config, { id });
+        if (!authDelete.allowed) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
         const ds = config.dataSource;
         console.log(`Using data source ${ds.name} (${ds.apiType}) at ${ds.apiUrl}`);
         if (ds.apiType === 'REST') {

@@ -7,7 +7,9 @@
     "apps/*",
     "libs/*",
     "examples/*",
-    "utils/*"
+    "utils/*",
+    "apps/permissions/*",
+    "apps/microfrontends/*"
   ],
   "scripts": {
     "dev": "npm run dev --workspaces",

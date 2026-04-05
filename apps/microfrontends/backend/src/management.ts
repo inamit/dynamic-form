@@ -89,7 +89,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     // Create a new config
     app.post('/api/config/new', async (req, res) => {
-        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId } = req.body;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete } = req.body;
         try {
             const config = await prisma.entityConfig.create({
                 data: {
@@ -105,7 +105,8 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                             gridTemplate: p.gridTemplate,
                             defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
                         }))
-                    }
+                    },
+                    authView, authCreate, authEdit, authDelete
                 },
                 include: { fields: true, presets: true }
             });
@@ -141,7 +142,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     // Configs Update
     app.put('/api/config/:id', async (req, res) => {
-        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId } = req.body;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete } = req.body;
         const id = parseInt(req.params.id);
 
         try {
@@ -163,7 +164,8 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                             gridTemplate: p.gridTemplate,
                             defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
                         }))
-                    }
+                    },
+                    authView, authCreate, authEdit, authDelete
                 },
                 include: { fields: true, presets: true }
             });

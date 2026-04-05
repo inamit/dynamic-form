@@ -126,7 +126,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
             res.json({
                 ...finalConfig,
-                presets: finalConfig.presets.map((p) => ({
+                presets: finalConfig.presets.map((p: any) => ({
                     ...p,
                     defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
                 }))
@@ -186,7 +186,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
             res.json({
                 ...finalConfig,
-                presets: finalConfig.presets.map((p) => ({
+                presets: finalConfig.presets.map((p: any) => ({
                     ...p,
                     defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
                 }))

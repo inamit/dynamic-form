@@ -3,5 +3,5 @@ export function validateUrl(urlString: string): string {
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
         throw new Error('Invalid URL protocol. Only HTTP and HTTPS are allowed.');
     }
-    return urlString;
+    return url.href;
 }

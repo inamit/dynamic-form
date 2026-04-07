@@ -17,7 +17,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         try {
             if (req.body.apiUrl) {
                 try {
-                    validateUrl(req.body.apiUrl);
+                    req.body.apiUrl = validateUrl(req.body.apiUrl);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }
@@ -36,7 +36,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         try {
             if (req.body.apiUrl) {
                 try {
-                    validateUrl(req.body.apiUrl);
+                    req.body.apiUrl = validateUrl(req.body.apiUrl);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }

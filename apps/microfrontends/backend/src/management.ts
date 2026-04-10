@@ -17,7 +17,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         try {
             if (req.body.apiUrl) {
                 try {
-                    validateUrl(req.body.apiUrl);
+                    req.body.apiUrl = validateUrl(req.body.apiUrl);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }
@@ -36,7 +36,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         try {
             if (req.body.apiUrl) {
                 try {
-                    validateUrl(req.body.apiUrl);
+                    req.body.apiUrl = validateUrl(req.body.apiUrl);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }
@@ -216,10 +216,11 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     // GraphQL Introspection proxy
     app.post('/api/introspect', async (req, res) => {
         const { url, headers } = req.body;
+        let validUrl = url;
         try {
             if (url) {
                 try {
-                    validateUrl(url);
+                    validUrl = validateUrl(url);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }
@@ -304,7 +305,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
             if (headers) {
                 try { parsedHeaders = JSON.parse(headers); } catch (e) { console.warn("Invalid JSON in headers", e); }
             }
-            const response = await axios.post(url, { query }, { headers: parsedHeaders, timeout: 5000 });
+            const response = await axios.post(validUrl, { query }, { headers: parsedHeaders, timeout: 5000 });
             res.json(response.data.data);
         } catch (e: any) {
             console.error(e.response?.data || e.message);

@@ -5,3 +5,7 @@ export function validateUrl(urlString: string): string {
     }
     return url.href;
 }
+
+export function isValidParam(param: string): boolean {
+    return /^[a-zA-Z0-9_\-\u0590-\u05FF]+$/.test(param);
+}

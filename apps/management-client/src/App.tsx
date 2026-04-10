@@ -4,6 +4,8 @@ import DataSourceList from './features/DataSource/DataSourceList';
 import DataSourceForm from './features/DataSource/DataSourceForm';
 import EntityList from './features/EntityEditor/EntityList';
 import EntityForm from './features/EntityEditor/EntityForm';
+import SitePermissions from './features/Permissions/SitePermissions';
+import UserPermissions from './features/Permissions/UserPermissions';
 
 const drawerWidth = 240;
 
@@ -40,6 +42,16 @@ function App() {
                   <ListItemText primary="Data Sources" />
                 </ListItemButton>
               </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/permissions/site">
+                  <ListItemText primary="Site Permissions" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/permissions/user">
+                  <ListItemText primary="User Permissions" />
+                </ListItemButton>
+              </ListItem>
             </List>
           </Box>
         </Drawer>
@@ -52,6 +64,8 @@ function App() {
             <Route path="/data-sources" element={<DataSourceList />} />
             <Route path="/data-sources/new" element={<DataSourceForm />} />
             <Route path="/data-sources/:id" element={<DataSourceForm />} />
+            <Route path="/permissions/site" element={<SitePermissions />} />
+            <Route path="/permissions/user" element={<UserPermissions />} />
             <Route path="/" element={<Typography paragraph>Select an option from the menu.</Typography>} />
           </Routes>
         </Box>

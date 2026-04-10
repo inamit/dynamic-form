@@ -21,7 +21,11 @@ export default function EntityForm() {
     schemaName: '',
     fields: [],
     presets: [{ name: 'Default', gridTemplate: '' }],
-    defaultPresetId: null
+    defaultPresetId: null,
+    authView: '[]',
+    authCreate: '[]',
+    authEdit: '[]',
+    authDelete: '[]'
   });
 
   // Track operations if they get updated from Introspection
@@ -74,6 +78,12 @@ export default function EntityForm() {
           config.defaultPresetId = null;
       }
 
+      // Ensure auth fields are populated with valid defaults if null
+      config.authView = config.authView || '[]';
+      config.authCreate = config.authCreate || '[]';
+      config.authEdit = config.authEdit || '[]';
+      config.authDelete = config.authDelete || '[]';
+
       setFormData(config);
     } catch (e: any) {
       setError(e.response?.data?.error || e.message);
@@ -109,6 +119,10 @@ export default function EntityForm() {
         name: formData.name,
         dataSourceId: Number(formData.dataSourceId),
         schemaName: formData.schemaName || null,
+        authView: formData.authView,
+        authCreate: formData.authCreate,
+        authEdit: formData.authEdit,
+        authDelete: formData.authDelete,
         presets: formData.presets.map((p: any) => {
             const presetPayload: any = {
                 name: p.name,
@@ -161,6 +175,17 @@ export default function EntityForm() {
     }
   };
 
+  const handleAuthChange = (action: string, e: any) => {
+     const value = typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value;
+     setFormData({ ...formData, [action]: JSON.stringify(value) });
+  };
+
+  const getAuthArray = (action: string) => {
+     try { return JSON.parse(formData[action]); } catch { return []; }
+  };
+
+  const authOptions = ['custom', 'external1', 'external2'];
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
       <Typography variant="h4">{isEdit ? 'Edit Entity' : 'New Entity'}</Typography>
@@ -190,6 +215,24 @@ export default function EntityForm() {
             New Data Source
           </Button>
         </Box>
+      </Paper>
+
+      <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600 }}>
+         <Typography variant="h6">Authorization Configuration</Typography>
+         <Typography variant="body2" color="textSecondary">Select the authorization services to use for each action. The orchestrator will check all selected services.</Typography>
+
+         <TextField select label="View Authorization" value={getAuthArray('authView')} onChange={(e) => handleAuthChange('authView', e)} SelectProps={{ multiple: true }}>
+            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+         </TextField>
+         <TextField select label="Create Authorization" value={getAuthArray('authCreate')} onChange={(e) => handleAuthChange('authCreate', e)} SelectProps={{ multiple: true }}>
+            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+         </TextField>
+         <TextField select label="Edit Authorization" value={getAuthArray('authEdit')} onChange={(e) => handleAuthChange('authEdit', e)} SelectProps={{ multiple: true }}>
+            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+         </TextField>
+         <TextField select label="Delete Authorization" value={getAuthArray('authDelete')} onChange={(e) => handleAuthChange('authDelete', e)} SelectProps={{ multiple: true }}>
+            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+         </TextField>
       </Paper>
 
       {selectedDataSource && selectedDataSource.apiType === 'GRAPHQL' && (

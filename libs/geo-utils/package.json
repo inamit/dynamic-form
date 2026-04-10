@@ -1,0 +1,21 @@
+{
+  "name": "@dynamic-form/geo-utils",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/proj4": "^2.5.6",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "mgrs": "^2.1.0",
+    "proj4": "^2.20.6"
+  }
+}

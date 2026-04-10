@@ -22,10 +22,10 @@ export default function EntityForm() {
     fields: [],
     presets: [{ name: 'Default', gridTemplate: '' }],
     defaultPresetId: null,
-    authView: '["custom"]',
-    authCreate: '["custom"]',
-    authEdit: '["custom"]',
-    authDelete: '["custom"]'
+    authView: '[]',
+    authCreate: '[]',
+    authEdit: '[]',
+    authDelete: '[]'
   });
 
   // Track operations if they get updated from Introspection
@@ -79,10 +79,10 @@ export default function EntityForm() {
       }
 
       // Ensure auth fields are populated with valid defaults if null
-      config.authView = config.authView || '["custom"]';
-      config.authCreate = config.authCreate || '["custom"]';
-      config.authEdit = config.authEdit || '["custom"]';
-      config.authDelete = config.authDelete || '["custom"]';
+      config.authView = config.authView || '[]';
+      config.authCreate = config.authCreate || '[]';
+      config.authEdit = config.authEdit || '[]';
+      config.authDelete = config.authDelete || '[]';
 
       setFormData(config);
     } catch (e: any) {

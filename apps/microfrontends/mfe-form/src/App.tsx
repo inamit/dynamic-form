@@ -3,72 +3,8 @@ import {BrowserRouter, Routes, Route, useParams, useNavigate} from 'react-router
 import 'postal';
 
 const postal = (window as any).postal;
-import EntityList from './components/EntityList';
 import EntityForm from './components/EntityForm';
 import {CHANNEL_NAME, TOPICS} from "./utils/topic.ts";
-
-function ListWrapper() {
-    const {entity} = useParams<{ entity: string }>();
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        const subCreate = postal.subscribe({
-            channel: CHANNEL_NAME,
-            topic: TOPICS.LIST_CREATE_CLICKED,
-            callback: (data: any) => {
-                if (data.entity === entity) {
-                    navigate(`/${entity}/form`);
-                }
-            }
-        });
-
-        const subEdit = postal.subscribe({
-            channel: CHANNEL_NAME,
-            topic: TOPICS.LIST_EDIT_CLICKED,
-            callback: (data: any) => {
-                if (data.entity === entity) {
-                    navigate(`/${entity}/form/${data.id}`);
-                }
-            }
-        });
-
-        return () => {
-            subCreate.unsubscribe();
-            subEdit.unsubscribe();
-        };
-    }, [entity, navigate]);
-
-    useEffect(() => {
-        if (!entity) return;
-        const subReady = postal.subscribe({
-            channel: CHANNEL_NAME,
-            topic: TOPICS.COMPONENT_READY,
-            callback: (data: any) => {
-                if (data.type === 'list') {
-                    postal.publish({
-                        channel: CHANNEL_NAME,
-                        topic: TOPICS.LOAD_LIST,
-                        data: {entity}
-                    });
-                }
-            }
-        });
-
-        postal.publish({
-            channel: CHANNEL_NAME,
-            topic: TOPICS.LOAD_LIST,
-            data: {entity}
-        });
-
-        return () => {
-            subReady.unsubscribe();
-        };
-    }, [entity]);
-
-    if (!entity) return <p>No entity selected</p>;
-
-    return <EntityList/>;
-}
 
 function FormWrapper() {
     const {entity, id} = useParams<{ entity: string, id?: string }>();
@@ -160,7 +96,6 @@ function App() {
         <BrowserRouter>
             <div style={{padding: '20px', fontFamily: 'sans-serif'}}>
                 <Routes>
-                    <Route path="/:entity/list" element={<ListWrapper/>}/>
                     <Route path="/:entity/form/:id?" element={<FormWrapper/>}/>
                     <Route path="/" element={<p>Select an entity to manage.</p>}/>
                 </Routes>

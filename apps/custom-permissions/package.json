@@ -1,12 +1,10 @@
 {
-  "name": "custom-permissions-service",
+  "name": "custom-permissions",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "tsx src/index.ts",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "dev": "tsx src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,10 +21,9 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@dynamic-form/geo-utils": "*",
     "@prisma/client": "^7.6.0",
-    "dotenv": "^17.4.1",
     "mgrs": "^2.1.0",
-    "proj4": "^2.20.6"
+    "proj4": "^2.20.6",
+    "@dynamic-form/geo-utils": "*"
   }
 }

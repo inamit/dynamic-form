@@ -17,7 +17,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         try {
             if (req.body.apiUrl) {
                 try {
-                    req.body.apiUrl = validateUrl(req.body.apiUrl);
+                    validateUrl(req.body.apiUrl);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }
@@ -36,7 +36,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
         try {
             if (req.body.apiUrl) {
                 try {
-                    req.body.apiUrl = validateUrl(req.body.apiUrl);
+                    validateUrl(req.body.apiUrl);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }
@@ -89,7 +89,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     // Create a new config
     app.post('/api/config/new', async (req, res) => {
-        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete } = req.body;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId } = req.body;
         try {
             const config = await prisma.entityConfig.create({
                 data: {
@@ -105,8 +105,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                             gridTemplate: p.gridTemplate,
                             defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
                         }))
-                    },
-                    authView, authCreate, authEdit, authDelete
+                    }
                 },
                 include: { fields: true, presets: true }
             });
@@ -142,7 +141,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     // Configs Update
     app.put('/api/config/:id', async (req, res) => {
-        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete } = req.body;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId } = req.body;
         const id = parseInt(req.params.id);
 
         try {
@@ -164,8 +163,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
                             gridTemplate: p.gridTemplate,
                             defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
                         }))
-                    },
-                    authView, authCreate, authEdit, authDelete
+                    }
                 },
                 include: { fields: true, presets: true }
             });
@@ -216,11 +214,10 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
     // GraphQL Introspection proxy
     app.post('/api/introspect', async (req, res) => {
         const { url, headers } = req.body;
-        let validUrl = url;
         try {
             if (url) {
                 try {
-                    validUrl = validateUrl(url);
+                    validateUrl(url);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }
@@ -305,7 +302,7 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
             if (headers) {
                 try { parsedHeaders = JSON.parse(headers); } catch (e) { console.warn("Invalid JSON in headers", e); }
             }
-            const response = await axios.post(validUrl, { query }, { headers: parsedHeaders, timeout: 5000 });
+            const response = await axios.post(url, { query }, { headers: parsedHeaders, timeout: 5000 });
             res.json(response.data.data);
         } catch (e: any) {
             console.error(e.response?.data || e.message);

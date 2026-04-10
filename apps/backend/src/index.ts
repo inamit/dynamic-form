@@ -114,7 +114,7 @@ app.get('/api/schema/:entityName', async (req, res) => {
         const {entityName} = req.params;
 
         // Prevent path traversal
-        if (entityName.includes('/') || entityName.includes('..')) {
+        if (!/^[a-zA-Z0-9_-]+$/.test(entityName)) {
             return res.status(400).json({error: 'Invalid entityName'});
         }
 
@@ -152,7 +152,7 @@ app.get('/api/enums/:enumName', async (req, res) => {
         const {enumName} = req.params;
 
         // Prevent path traversal
-        if (enumName.includes('/') || enumName.includes('..')) {
+        if (!/^[a-zA-Z0-9_-]+$/.test(enumName)) {
             return res.status(400).json({error: 'Invalid enumName'});
         }
 
@@ -182,7 +182,7 @@ app.get('/api/data/:entity', async (req, res) => {
     const {entity} = req.params;
 
     // Prevent path traversal
-    if (entity.includes('/') || entity.includes('..')) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(entity)) {
         return res.status(400).json({error: 'Invalid entity'});
     }
 
@@ -222,10 +222,10 @@ app.get('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
 
     // Prevent path traversal
-    if (entity.includes('/') || entity.includes('..')) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(entity)) {
         return res.status(400).json({error: 'Invalid entity'});
     }
-    if (id.includes('/') || id.includes('..')) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
         return res.status(400).json({error: 'Invalid id'});
     }
 
@@ -266,7 +266,7 @@ app.post('/api/data/:entity', async (req, res) => {
     const {entity} = req.params;
 
     // Prevent path traversal
-    if (entity.includes('/') || entity.includes('..')) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(entity)) {
         return res.status(400).json({error: 'Invalid entity'});
     }
 
@@ -313,10 +313,10 @@ app.put('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
 
     // Prevent path traversal
-    if (entity.includes('/') || entity.includes('..')) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(entity)) {
         return res.status(400).json({error: 'Invalid entity'});
     }
-    if (id.includes('/') || id.includes('..')) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
         return res.status(400).json({error: 'Invalid id'});
     }
 
@@ -365,10 +365,10 @@ app.delete('/api/data/:entity/:id', async (req, res) => {
     const {entity, id} = req.params;
 
     // Prevent path traversal
-    if (entity.includes('/') || entity.includes('..')) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(entity)) {
         return res.status(400).json({error: 'Invalid entity'});
     }
-    if (id.includes('/') || id.includes('..')) {
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
         return res.status(400).json({error: 'Invalid id'});
     }
 

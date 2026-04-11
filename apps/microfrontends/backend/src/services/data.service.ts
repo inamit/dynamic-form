@@ -1,33 +1,30 @@
 import { EntityRepository } from '../repositories/entity.repository.js';
-import { DataClient } from '../clients/data.client.js';
+import { IDataClient } from '../clients/data.client.js';
+import { RestDataClient } from '../clients/rest-data.client.js';
+import { GraphqlDataClient } from '../clients/graphql-data.client.js';
 import { OrchestratorService } from './orchestrator.service.js';
 
 export class DataService {
     private entityRepository: EntityRepository;
-    private dataClient: DataClient;
 
     constructor() {
         this.entityRepository = new EntityRepository();
-        this.dataClient = new DataClient();
     }
 
-    async getEntityAbilities(entityName: string, userId: string, origin: string) {
-        const config = await this.entityRepository.findEntityConfig(entityName);
-        if (!config) throw new Error('Entity not found');
+    private getClient(apiType: string): IDataClient {
+        if (apiType === 'REST') {
+            return new RestDataClient();
+        } else if (apiType === 'GRAPHQL') {
+            return new GraphqlDataClient();
+        }
+        throw new Error('Unsupported API type');
+    }
 
-        const [viewAuth, createAuth, editAuth, deleteAuth] = await Promise.all([
-            OrchestratorService.checkAuth(userId, origin, entityName, 'view', config),
-            OrchestratorService.checkAuth(userId, origin, entityName, 'create', config),
-            OrchestratorService.checkAuth(userId, origin, entityName, 'edit', config),
-            OrchestratorService.checkAuth(userId, origin, entityName, 'delete', config)
-        ]);
-
-        return {
-            canView: viewAuth.allowed,
-            canCreate: createAuth.allowed,
-            canEdit: editAuth.allowed,
-            canDelete: deleteAuth.allowed
-        };
+    private getQueryString(ds: any, operation: string): string {
+        const ops = JSON.parse(ds.endpointsQueries || '{}');
+        const queryStr = ops[operation];
+        if (!queryStr) throw new Error(`Missing '${operation}' query configuration`);
+        return queryStr;
     }
 
     async getData(entityName: string, userId: string, origin: string) {
@@ -35,15 +32,14 @@ export class DataService {
         if (!config) throw new Error('Entity not found');
 
         const ds = config.dataSource;
-        let dataList: any[] = [];
+        const client = this.getClient(ds.apiType);
 
+        let dataList: any[] = [];
         if (ds.apiType === 'REST') {
-            dataList = await this.dataClient.getRestData(ds.apiUrl);
-        } else if (ds.apiType === 'GRAPHQL') {
-            const ops = JSON.parse(ds.endpointsQueries || '{}');
-            const queryStr = ops.list;
-            if (!queryStr) throw new Error("Missing 'list' query configuration");
-            dataList = await this.dataClient.getGraphqlData(ds.apiUrl, queryStr, entityName);
+            dataList = await client.getData(ds.apiUrl);
+        } else {
+            const queryStr = this.getQueryString(ds, 'list');
+            dataList = await client.getData(ds.apiUrl, queryStr, entityName);
         }
 
         const filteredList = [];
@@ -61,15 +57,14 @@ export class DataService {
         if (!config) throw new Error('Entity not found');
 
         const ds = config.dataSource;
-        let itemData: any = null;
+        const client = this.getClient(ds.apiType);
 
+        let itemData: any = null;
         if (ds.apiType === 'REST') {
-            itemData = await this.dataClient.getRestDataById(ds.apiUrl, id);
-        } else if (ds.apiType === 'GRAPHQL') {
-            const ops = JSON.parse(ds.endpointsQueries || '{}');
-            const queryStr = ops.get;
-            if (!queryStr) throw new Error("Missing 'get' query configuration");
-            itemData = await this.dataClient.getGraphqlDataById(ds.apiUrl, queryStr, entityName, id);
+            itemData = await client.getDataById(ds.apiUrl, id);
+        } else {
+            const queryStr = this.getQueryString(ds, 'get');
+            itemData = await client.getDataById(ds.apiUrl, id, queryStr, entityName);
         }
 
         if (itemData) {
@@ -90,18 +85,13 @@ export class DataService {
         if (!authCreate.allowed) throw new Error('Forbidden');
 
         const ds = config.dataSource;
-        if (ds.apiType === 'REST') {
-            return await this.dataClient.createRestData(ds.apiUrl, data);
-        } else if (ds.apiType === 'GRAPHQL') {
-            const ops = JSON.parse(ds.endpointsQueries || '{}');
-            const queryStr = ops.create;
-            if (!queryStr) throw new Error("Missing 'create' query configuration");
+        const client = this.getClient(ds.apiType);
 
-            const variables: Record<string, any> = {};
-            config.fields.forEach((f: any) => {
-                variables[f.name] = data[f.name];
-            });
-            return await this.dataClient.createGraphqlData(ds.apiUrl, queryStr, entityName, variables);
+        if (ds.apiType === 'REST') {
+            return await client.createData(ds.apiUrl, data);
+        } else {
+            const queryStr = this.getQueryString(ds, 'create');
+            return await client.createData(ds.apiUrl, data, queryStr, entityName, config);
         }
     }
 
@@ -113,20 +103,13 @@ export class DataService {
         if (!authEdit.allowed) throw new Error('Forbidden');
 
         const ds = config.dataSource;
-        if (ds.apiType === 'REST') {
-            return await this.dataClient.updateRestData(ds.apiUrl, id, data);
-        } else if (ds.apiType === 'GRAPHQL') {
-            const ops = JSON.parse(ds.endpointsQueries || '{}');
-            const queryStr = ops.update;
-            if (!queryStr) throw new Error("Missing 'update' query configuration");
+        const client = this.getClient(ds.apiType);
 
-            const variables: Record<string, any> = { id };
-            config.fields.forEach((f: any) => {
-                if (data[f.name] !== undefined) {
-                    variables[f.name] = data[f.name];
-                }
-            });
-            return await this.dataClient.updateGraphqlData(ds.apiUrl, queryStr, entityName, variables);
+        if (ds.apiType === 'REST') {
+            return await client.updateData(ds.apiUrl, id, data);
+        } else {
+            const queryStr = this.getQueryString(ds, 'update');
+            return await client.updateData(ds.apiUrl, id, data, queryStr, entityName, config);
         }
     }
 
@@ -136,18 +119,16 @@ export class DataService {
 
         let itemData: any = null;
         const ds = config.dataSource;
+        const client = this.getClient(ds.apiType);
 
         if (ds.apiType === 'REST') {
             try {
-                itemData = await this.dataClient.getRestDataById(ds.apiUrl, id);
+                itemData = await client.getDataById(ds.apiUrl, id);
             } catch (e) {}
         } else if (ds.apiType === 'GRAPHQL') {
             try {
-                const ops = JSON.parse(ds.endpointsQueries || '{}');
-                const getQueryStr = ops.get;
-                if (getQueryStr) {
-                    itemData = await this.dataClient.getGraphqlDataById(ds.apiUrl, getQueryStr, entityName, id);
-                }
+                const getQueryStr = this.getQueryString(ds, 'get');
+                itemData = await client.getDataById(ds.apiUrl, id, getQueryStr, entityName);
             } catch (e) {}
         }
 
@@ -155,13 +136,10 @@ export class DataService {
         if (!authDelete.allowed) throw new Error('Forbidden');
 
         if (ds.apiType === 'REST') {
-            return await this.dataClient.deleteRestData(ds.apiUrl, id);
-        } else if (ds.apiType === 'GRAPHQL') {
-            const ops = JSON.parse(ds.endpointsQueries || '{}');
-            const queryStr = ops.delete;
-            if (!queryStr) throw new Error("Missing 'delete' query configuration");
-            const variables = { id };
-            return await this.dataClient.deleteGraphqlData(ds.apiUrl, queryStr, entityName, variables);
+            return await client.deleteData(ds.apiUrl, id);
+        } else {
+            const queryStr = this.getQueryString(ds, 'delete');
+            return await client.deleteData(ds.apiUrl, id, queryStr, entityName);
         }
     }
 }

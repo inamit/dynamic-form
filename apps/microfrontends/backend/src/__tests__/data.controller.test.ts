@@ -18,7 +18,6 @@ describe('DataController', () => {
         });
 
         mockDataService = {
-            getEntityAbilities: jest.fn(),
             getData: jest.fn(),
             getDataById: jest.fn(),
             createData: jest.fn(),
@@ -29,7 +28,6 @@ describe('DataController', () => {
         const controller = new DataController();
         (controller as any).dataService = mockDataService;
 
-        app.get('/data/:entity/abilities', controller.getAbilities);
         app.get('/data/:entity', controller.getData);
         app.get('/data/:entity/:id', controller.getDataById);
         app.post('/data/:entity', controller.createData);
@@ -39,22 +37,6 @@ describe('DataController', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
-    });
-
-    describe('GET /data/:entity/abilities', () => {
-        it('should return 400 if entity is invalid path', async () => {
-            const response = await request(app).get('/data/invalid..path/abilities');
-            expect(response.status).toBe(400);
-        });
-
-        it('should return abilities', async () => {
-            const mockAbilities = { canView: true, canCreate: false, canEdit: false, canDelete: false };
-            mockDataService.getEntityAbilities.mockResolvedValue(mockAbilities);
-
-            const response = await request(app).get('/data/testEntity/abilities');
-            expect(response.status).toBe(200);
-            expect(response.body).toEqual(mockAbilities);
-        });
     });
 
     describe('GET /data/:entity', () => {

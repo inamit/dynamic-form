@@ -1,39 +1,17 @@
-import { ManagementRepository } from '../repositories/management.repository.js';
+import { EntityConfigRepository } from '../repositories/entity-config.repository.js';
 import { validateUrl } from '../utils.js';
 import axios from 'axios';
 import { request, gql } from 'graphql-request';
 
-export class ManagementService {
-    private managementRepo: ManagementRepository;
+export class EntityConfigService {
+    private configRepo: EntityConfigRepository;
 
     constructor() {
-        this.managementRepo = new ManagementRepository();
-    }
-
-    async getDataSources() {
-        return await this.managementRepo.getDataSources();
-    }
-
-    async createDataSource(data: any) {
-        if (data.apiUrl) {
-            data.apiUrl = validateUrl(data.apiUrl);
-        }
-        return await this.managementRepo.createDataSource(data);
-    }
-
-    async updateDataSource(id: number, data: any) {
-        if (data.apiUrl) {
-            data.apiUrl = validateUrl(data.apiUrl);
-        }
-        return await this.managementRepo.updateDataSource(id, data);
-    }
-
-    async deleteDataSource(id: number) {
-        return await this.managementRepo.deleteDataSource(id);
+        this.configRepo = new EntityConfigRepository();
     }
 
     async getConfigById(id: number) {
-        const config = await this.managementRepo.getConfigById(id);
+        const config = await this.configRepo.getConfigById(id);
         if (!config) throw new Error('Config not found');
         return config;
     }
@@ -56,7 +34,7 @@ export class ManagementService {
             authView, authCreate, authEdit, authDelete
         };
 
-        const config = await this.managementRepo.createConfig(configData);
+        const config = await this.configRepo.createConfig(configData);
 
         let newDefaultPresetId = null;
         if (defaultPresetId) {
@@ -69,7 +47,7 @@ export class ManagementService {
             newDefaultPresetId = config.presets[0].id;
         }
 
-        return await this.managementRepo.updateConfigDefaultPresetId(config.id, newDefaultPresetId);
+        return await this.configRepo.updateConfigDefaultPresetId(config.id, newDefaultPresetId);
     }
 
     async updateConfig(id: number, data: any) {
@@ -90,11 +68,11 @@ export class ManagementService {
             authView, authCreate, authEdit, authDelete
         };
 
-        return await this.managementRepo.updateConfigWithTransaction(id, updateData, defaultPresetId, presets || []);
+        return await this.configRepo.updateConfigWithTransaction(id, updateData, defaultPresetId, presets || []);
     }
 
     async deleteConfig(id: number) {
-        return await this.managementRepo.deleteConfig(id);
+        return await this.configRepo.deleteConfig(id);
     }
 
     async introspect(url: string, type: string) {

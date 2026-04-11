@@ -1,22 +1,24 @@
 import { Router } from 'express';
-import { ManagementController } from '../controllers/management.controller.js';
+import { DataSourceController } from '../controllers/data-source.controller.js';
+import { EntityConfigController } from '../controllers/entity-config.controller.js';
 
 const router = Router();
-const managementController = new ManagementController();
+const dataSourceController = new DataSourceController();
+const entityConfigController = new EntityConfigController();
 
 // Data Sources
-router.get('/data-sources', managementController.getDataSources);
-router.post('/data-sources', managementController.createDataSource);
-router.put('/data-sources/:id', managementController.updateDataSource);
-router.delete('/data-sources/:id', managementController.deleteDataSource);
+router.get('/data-sources', dataSourceController.getDataSources);
+router.post('/data-sources', dataSourceController.createDataSource);
+router.put('/data-sources/:id', dataSourceController.updateDataSource);
+router.delete('/data-sources/:id', dataSourceController.deleteDataSource);
 
 // Configs
-router.get('/config/id/:id', managementController.getConfigById);
-router.post('/config/new', managementController.createConfig);
-router.put('/config/:id', managementController.updateConfig);
-router.delete('/config/:id', managementController.deleteConfig);
+router.get('/config/id/:id', entityConfigController.getConfigById);
+router.post('/config/new', entityConfigController.createConfig);
+router.put('/config/:id', entityConfigController.updateConfig);
+router.delete('/config/:id', entityConfigController.deleteConfig);
 
 // Introspect
-router.post('/introspect', managementController.introspect);
+router.post('/introspect', entityConfigController.introspect);
 
 export default router;

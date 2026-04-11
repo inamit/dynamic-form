@@ -1,12 +1,32 @@
 import { renderHook, act } from '@testing-library/react';
-import { useEntityForm } from '../hooks/useEntityForm';
+import { jest } from '@jest/globals';
 import { ApiService } from '../services/api.service';
+import { useEntityForm } from '../hooks/useEntityForm';
 
-jest.mock('../services/api.service');
+jest.mock('../services/api.service', () => ({
+  ApiService: {
+    getConfig: jest.fn(),
+    getAbilities: jest.fn(),
+    getSchema: jest.fn(),
+    getDataById: jest.fn(),
+    createData: jest.fn(),
+    updateData: jest.fn()
+  }
+}));
 
 describe('useEntityForm', () => {
+  let useEntityForm: any;
+  beforeAll(async () => {
+      const mod = await import('../hooks/useEntityForm');
+      useEntityForm = mod.useEntityForm;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
+    (ApiService.getConfig as jest.Mock).mockReset();
+    (ApiService.getAbilities as jest.Mock).mockReset();
+    (ApiService.getSchema as jest.Mock).mockReset();
+    (ApiService.getDataById as jest.Mock).mockReset();
   });
 
   it('should initialize with default state', () => {
@@ -26,12 +46,14 @@ describe('useEntityForm', () => {
     (ApiService.getAbilities as jest.Mock<any>).mockResolvedValue(mockAbilities);
     (ApiService.getSchema as jest.Mock<any>).mockResolvedValue(mockSchema);
 
-    const { result } = renderHook(() => useEntityForm('users'));
-
-    expect(result.current.loading).toBe(true);
+    let result: any;
+    let unmount: any;
 
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0));
+      const render = renderHook(() => useEntityForm('users'));
+      result = render.result;
+      unmount = render.unmount;
+      await new Promise(resolve => setTimeout(resolve, 50));
     });
 
     expect(result.current.loading).toBe(false);

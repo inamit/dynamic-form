@@ -16,5 +16,5 @@ export default {
     ],
   },
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  setupFiles: ['<rootDir>/jest.setup.js'],
+  setupFiles: ['<rootDir>/jest.setup.ts'],
 };

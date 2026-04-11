@@ -6,10 +6,10 @@ import FieldManager from './FieldManager';
 import PresetsManager from './PresetsManager';
 import EntityBasicInfo from './EntityBasicInfo';
 import EntityAuthorizationConfig from './EntityAuthorizationConfig';
+import EndpointsQueriesConfig from './EndpointsQueriesConfig';
 import { useEntity } from '../../hooks/useEntities';
 import { useDataSources } from '../../hooks/useDataSources';
 import { entityService } from '../../services/entityService';
-import { dataSourceService } from '../../services/dataSourceService';
 import type { EntityConfig, SchemaDefinition, Field } from '../../types';
 
 export default function EntityForm() {
@@ -28,6 +28,7 @@ export default function EntityForm() {
     name: '',
     dataSourceId: '',
     schemaName: '',
+    endpointsQueries: '',
     fields: [],
     presets: [{ name: 'Default', gridTemplate: '' }],
     defaultPresetId: null,
@@ -50,6 +51,7 @@ export default function EntityForm() {
     if (entity) {
       setFormData({
         ...entity,
+        endpointsQueries: entity.endpointsQueries || '',
         presets: entity.presets && entity.presets.length > 0 ? entity.presets : [{ name: 'Default', gridTemplate: '' }],
         authView: entity.authView || '[]',
         authCreate: entity.authCreate || '[]',
@@ -77,6 +79,10 @@ export default function EntityForm() {
     setFormData({ ...formData, [action]: value });
   };
 
+  const handleEndpointsQueriesChange = (val: string) => {
+    setFormData({ ...formData, endpointsQueries: val });
+  };
+
   const selectedDataSource = dataSources.find(ds => ds.id === Number(formData.dataSourceId));
 
   const handleFieldsAdded = (newFields: Field[]) => {
@@ -99,10 +105,26 @@ export default function EntityForm() {
     e.preventDefault();
     setSubmitError('');
     try {
+
+      let finalEndpointsQueries = formData.endpointsQueries;
+
+      // If we configured new operations via GraphQL introspection, update the EntityConfig endpointsQueries
+      if (graphqlOperations && selectedDataSource?.apiType === 'GRAPHQL') {
+         const builtQueries = {
+             list: graphqlOperations.list ? `query { ${graphqlOperations.list} { id } }` : '',
+             get: graphqlOperations.get ? `query($id: ID!) { ${graphqlOperations.get}(id: $id) { id } }` : '',
+             create: graphqlOperations.create ? `mutation($input: any!) { ${graphqlOperations.create}(input: $input) { id } }` : '',
+             update: graphqlOperations.update ? `mutation($id: ID!, $input: any!) { ${graphqlOperations.update}(id: $id, input: $input) { id } }` : '',
+             delete: graphqlOperations.delete ? `mutation($id: ID!) { ${graphqlOperations.delete}(id: $id) }` : '',
+         };
+         finalEndpointsQueries = JSON.stringify(builtQueries);
+      }
+
       const payload: Partial<EntityConfig> = {
         name: formData.name,
         dataSourceId: Number(formData.dataSourceId),
         schemaName: formData.schemaName || null,
+        endpointsQueries: finalEndpointsQueries,
         authView: formData.authView,
         authCreate: formData.authCreate,
         authEdit: formData.authEdit,
@@ -113,7 +135,6 @@ export default function EntityForm() {
                 gridTemplate: p.gridTemplate,
                 defaultValues: p.defaultValues
             };
-            // Only send id if it's a number (from DB), not for new ones
             if (typeof p.id === 'number') {
                 presetPayload.id = p.id;
             }
@@ -134,25 +155,6 @@ export default function EntityForm() {
         await entityService.create(payload);
       }
 
-      // If we configured new operations via GraphQL introspection, update the DataSource
-      if (graphqlOperations && selectedDataSource) {
-         // Build the query strings based on operations (simple standard structure for demo)
-         const builtQueries = {
-             list: graphqlOperations.list ? `query { ${graphqlOperations.list} { id } }` : '',
-             get: graphqlOperations.get ? `query($id: ID!) { ${graphqlOperations.get}(id: $id) { id } }` : '',
-             create: graphqlOperations.create ? `mutation($input: any!) { ${graphqlOperations.create}(input: $input) { id } }` : '',
-             update: graphqlOperations.update ? `mutation($id: ID!, $input: any!) { ${graphqlOperations.update}(id: $id, input: $input) { id } }` : '',
-             delete: graphqlOperations.delete ? `mutation($id: ID!) { ${graphqlOperations.delete}(id: $id) }` : '',
-         };
-
-         const updatedDataSource = {
-            ...selectedDataSource,
-            endpointsQueries: JSON.stringify(builtQueries)
-         };
-
-         await dataSourceService.update(selectedDataSource.id, updatedDataSource);
-      }
-
       navigate('/entities');
     } catch (e: any) {
       setSubmitError(e.message || 'Failed to save entity');
@@ -162,7 +164,7 @@ export default function EntityForm() {
   if (loadingEntity || loadingDataSources) return <CircularProgress />;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
       <Typography variant="h4">{isEdit ? 'Edit Entity' : 'New Entity'}</Typography>
       {fetchError && <Alert severity="error">{fetchError}</Alert>}
       {submitError && <Alert severity="error">{submitError}</Alert>}
@@ -178,6 +180,15 @@ export default function EntityForm() {
         formData={formData}
         onChange={handleAuthChange}
       />
+
+      {selectedDataSource && (
+        <EndpointsQueriesConfig
+            apiType={selectedDataSource.apiType}
+            entityName={formData.name}
+            value={formData.endpointsQueries || ''}
+            onChange={handleEndpointsQueriesChange}
+        />
+      )}
 
       {selectedDataSource && selectedDataSource.apiType === 'GRAPHQL' && (
         <Paper sx={{ p: 2 }}>
@@ -203,7 +214,7 @@ export default function EntityForm() {
       />
 
       <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-        <Button variant="contained" onClick={handleSubmit}>Save Entity</Button>
+        <Button variant="contained" type="submit">Save Entity</Button>
         <Button variant="outlined" onClick={() => navigate('/entities')}>Cancel</Button>
       </Box>
     </Box>

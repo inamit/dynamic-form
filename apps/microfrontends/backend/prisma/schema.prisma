@@ -16,7 +16,6 @@ model DataSource {
   apiUrl           String
   apiType          String         @default("REST") // "REST" or "GRAPHQL"
   headers          String? // JSON string of headers
-  endpointsQueries String? // JSON string containing map of operation -> endpoint/query
   entityConfigs    EntityConfig[]
 }
 
@@ -29,6 +28,7 @@ model EntityConfig {
   presets         Preset[]
   defaultPresetId Int?
   schemaName      String?
+  endpointsQueries String? // JSON string containing map of operation -> endpoint/query
   authView        String? // JSON array of service names e.g., '["custom"]'
   authCreate      String?
   authEdit        String?

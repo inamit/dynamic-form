@@ -20,11 +20,11 @@ export class DataService {
         throw new Error('Unsupported API type');
     }
 
-    private getQueryString(ds: any, operation: string): string {
-        const ops = JSON.parse(ds.endpointsQueries || '{}');
+    private getQueryString(config: any, operation: string, apiType: string): any {
+        const ops = JSON.parse(config.endpointsQueries || '{}');
         const queryStr = ops[operation];
         if (!queryStr) throw new Error(`Missing '${operation}' query configuration`);
-        return queryStr;
+        return apiType === 'REST' ? JSON.stringify(queryStr) : queryStr;
     }
 
     async getData(entityName: string, userId: string, origin: string) {
@@ -34,13 +34,8 @@ export class DataService {
         const ds = config.dataSource;
         const client = this.getClient(ds.apiType);
 
-        let dataList: any[] = [];
-        if (ds.apiType === 'REST') {
-            dataList = await client.getData(ds.apiUrl);
-        } else {
-            const queryStr = this.getQueryString(ds, 'list');
-            dataList = await client.getData(ds.apiUrl, queryStr, entityName);
-        }
+        const queryStr = this.getQueryString(config, 'list', ds.apiType);
+        let dataList = await client.getData(ds.apiUrl, queryStr, entityName);
 
         const filteredList = [];
         for (const item of dataList) {
@@ -59,13 +54,8 @@ export class DataService {
         const ds = config.dataSource;
         const client = this.getClient(ds.apiType);
 
-        let itemData: any = null;
-        if (ds.apiType === 'REST') {
-            itemData = await client.getDataById(ds.apiUrl, id);
-        } else {
-            const queryStr = this.getQueryString(ds, 'get');
-            itemData = await client.getDataById(ds.apiUrl, id, queryStr, entityName);
-        }
+        const queryStr = this.getQueryString(config, 'get', ds.apiType);
+        let itemData = await client.getDataById(ds.apiUrl, id, queryStr, entityName);
 
         if (itemData) {
             const auth = await OrchestratorService.checkAuth(userId, origin, entityName, 'view', config, itemData);
@@ -87,12 +77,8 @@ export class DataService {
         const ds = config.dataSource;
         const client = this.getClient(ds.apiType);
 
-        if (ds.apiType === 'REST') {
-            return await client.createData(ds.apiUrl, data);
-        } else {
-            const queryStr = this.getQueryString(ds, 'create');
-            return await client.createData(ds.apiUrl, data, queryStr, entityName, config);
-        }
+        const queryStr = this.getQueryString(config, 'create', ds.apiType);
+        return await client.createData(ds.apiUrl, data, queryStr, entityName, config);
     }
 
     async updateData(entityName: string, id: string, data: any, userId: string, origin: string) {
@@ -105,12 +91,8 @@ export class DataService {
         const ds = config.dataSource;
         const client = this.getClient(ds.apiType);
 
-        if (ds.apiType === 'REST') {
-            return await client.updateData(ds.apiUrl, id, data);
-        } else {
-            const queryStr = this.getQueryString(ds, 'update');
-            return await client.updateData(ds.apiUrl, id, data, queryStr, entityName, config);
-        }
+        const queryStr = this.getQueryString(config, 'update', ds.apiType);
+        return await client.updateData(ds.apiUrl, id, data, queryStr, entityName, config);
     }
 
     async deleteData(entityName: string, id: string, userId: string, origin: string) {
@@ -121,25 +103,15 @@ export class DataService {
         const ds = config.dataSource;
         const client = this.getClient(ds.apiType);
 
-        if (ds.apiType === 'REST') {
-            try {
-                itemData = await client.getDataById(ds.apiUrl, id);
-            } catch (e) {}
-        } else if (ds.apiType === 'GRAPHQL') {
-            try {
-                const getQueryStr = this.getQueryString(ds, 'get');
-                itemData = await client.getDataById(ds.apiUrl, id, getQueryStr, entityName);
-            } catch (e) {}
-        }
+        const getQueryStr = this.getQueryString(config, 'get', ds.apiType);
+        try {
+            itemData = await client.getDataById(ds.apiUrl, id, getQueryStr, entityName);
+        } catch (e) {}
 
         const authDelete = await OrchestratorService.checkAuth(userId, origin, entityName, 'delete', config, itemData || { id });
         if (!authDelete.allowed) throw new Error('Forbidden');
 
-        if (ds.apiType === 'REST') {
-            return await client.deleteData(ds.apiUrl, id);
-        } else {
-            const queryStr = this.getQueryString(ds, 'delete');
-            return await client.deleteData(ds.apiUrl, id, queryStr, entityName);
-        }
+        const queryStr = this.getQueryString(config, 'delete', ds.apiType);
+        return await client.deleteData(ds.apiUrl, id, queryStr, entityName);
     }
 }

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import 'postal';
 const postal = (window as any).postal;
-import type { EntityConfig } from '../types';
-import {CHANNEL_NAME, TOPICS} from "../utils/topic.ts";
-import { parseCoordinate, formatCoordinate } from '@dynamic-form/geo-utils';
+import { CHANNEL_NAME, TOPICS } from "../utils/topic.js";
+import { formatCoordinate } from '@dynamic-form/geo-utils';
 import { DynamicField } from '@dynamic-form/shared-ui';
+import { useEntityForm } from '../hooks/useEntityForm';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -16,16 +15,24 @@ export default function EntityForm() {
   const [injectedPresetId, setInjectedPresetId] = useState<number | undefined>(undefined);
   const [activePresetId, setActivePresetId] = useState<number | undefined>(undefined);
   const [hidePresetSelector, setHidePresetSelector] = useState<boolean>(false);
-  const [config, setConfig] = useState<EntityConfig | null>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(true);
-  const [coordinateFormats, setCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>({});
   const [selectModeField, setSelectModeField] = useState<string | null>(null);
-  const [schema, setSchema] = useState<any>(null);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [abilities, setAbilities] = useState({ canCreate: false, canEdit: false, canDelete: false, canView: false });
 
-  const [defaultValues, setDefaultValues] = useState<Record<string, any>>({});
+  const [initialCoordinateFormats, setInitialCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>({});
+  const [initialDefaultValues, setInitialDefaultValues] = useState<Record<string, any>>({});
+
+  const {
+    config,
+    formData,
+    setFormData,
+    loading,
+    error,
+    abilities,
+    coordinateFormats,
+    updateCoordinateFormat,
+    schema,
+    validationErrors,
+    handleSubmit
+  } = useEntityForm(entity, id, initialCoordinateFormats, initialDefaultValues, injectedPresetId);
 
   useEffect(() => {
     const sub = postal.subscribe({
@@ -39,11 +46,10 @@ export default function EntityForm() {
         setActivePresetId(data.presetId);
         setHidePresetSelector(data.hidePresetSelector || false);
         if (data.defaultCoordinateFormat) {
-          // Will be applied to all coordinate fields when config loads
-          setCoordinateFormats(prev => ({ ...prev, _default: data.defaultCoordinateFormat! }));
+          setInitialCoordinateFormats({ _default: data.defaultCoordinateFormat });
         }
         if (data.defaultValues) {
-          setDefaultValues(data.defaultValues);
+          setInitialDefaultValues(data.defaultValues);
         }
       }
     });
@@ -60,259 +66,22 @@ export default function EntityForm() {
   }, []);
 
   useEffect(() => {
-    if (!selectModeField) return;
-
     const locationSub = postal.subscribe({
       channel: CHANNEL_NAME,
       topic: TOPICS.LOCATION_SELECTED,
       callback: (data: { field: string, location: [number, number] }) => {
-        if (data.field !== selectModeField) return;
-        setFormData(prevData => {
-           setCoordinateFormats(prevFormats => {
-             const fmt = prevFormats[data.field] || prevFormats._default || 'UTM';
-             const formatted = formatCoordinate(data.location[0], data.location[1], fmt);
-             setFormData(pd => ({ ...pd, [data.field]: formatted }));
-             return prevFormats;
-           });
-           return prevData;
-        });
-        setSelectModeField(null);
+        const fmt = coordinateFormats[data.field] || coordinateFormats._default || 'UTM';
+        const formatted = formatCoordinate(data.location[0], data.location[1], fmt);
+        setFormData(data.field, formatted);
       }
     });
 
     return () => locationSub.unsubscribe();
-  }, [selectModeField]);
+  }, [coordinateFormats, setFormData]);
 
-  useEffect(() => {
-    if (entity) {
-      fetchConfigAndData(entity, id);
-    } else {
-      setLoading(false);
-    }
-  }, [entity, id]);
-
-  const fetchConfigAndData = async (currentEntity: string, currentId?: string) => {
-    setLoading(true);
-    setValidationErrors({});
-    try {
-      const [configRes, abilitiesRes] = await Promise.all([
-        axios.get(`${API_BASE}/config/${currentEntity}`),
-        axios.get(`${API_BASE}/data/${currentEntity}/abilities`)
-      ]);
-      setConfig(configRes.data);
-      setAbilities(abilitiesRes.data);
-
-      try {
-        // Fallback to currentEntity if schemaName is null/missing (for older configurations or the current mock hardcode endpoints structure)
-        const schemaName = configRes.data.schemaName || currentEntity;
-        const schemaRes = await axios.get(`${API_BASE}/schema/${schemaName}`);
-        setSchema(schemaRes.data);
-      } catch (err) {
-        console.error(`Failed to fetch schema for ${currentEntity}`, err);
-        setSchema(null);
-      }
-
-
-      // Initialize formats
-      const defaultFormat = coordinateFormats._default || 'UTM';
-      const formats: Record<string, 'WGS84' | 'UTM'> = { _default: defaultFormat };
-      configRes.data.fields.forEach((f: any) => {
-        if (f.type === 'coordinate') {
-          formats[f.name] = defaultFormat as 'WGS84' | 'UTM';
-        }
-      });
-      setCoordinateFormats(formats);
-
-      if (currentId) {
-        const dataRes = await axios.get(`${API_BASE}/data/${currentEntity}/${currentId}`);
-
-        // Deserialize incoming coordinate data objects into strings for the text boxes
-        const loadedData = dataRes.data;
-        configRes.data.fields.forEach((f: any) => {
-          if (f.type === 'coordinate' && loadedData[f.name]) {
-            const loc = loadedData[f.name];
-            if (loc && typeof loc === 'object' && loc.latitude !== undefined && loc.longitude !== undefined) {
-               loadedData[f.name] = formatCoordinate(loc.longitude, loc.latitude, formats[f.name] || 'UTM');
-            }
-          }
-        });
-        setFormData(loadedData);
-      } else {
-        // Determine the initial active preset to get default values
-        let presetDefaultValues: Record<string, any> = {};
-        if (!currentId) {
-            let initialPresetId = injectedPresetId || configRes.data.defaultPresetId;
-            if (initialPresetId && configRes.data.presets) {
-                const p = configRes.data.presets.find((p: any) => p.id === initialPresetId);
-                if (p && p.defaultValues) {
-                    presetDefaultValues = p.defaultValues;
-                }
-            } else if (!initialPresetId && configRes.data.presets && configRes.data.presets.length > 0) {
-                 const p = configRes.data.presets[0];
-                 if (p && p.defaultValues) {
-                     presetDefaultValues = p.defaultValues;
-                 }
-            }
-        }
-
-        // Form loaded default values take precedence over preset default values
-        const mergedDefaults = { ...presetDefaultValues, ...defaultValues };
-
-        // Initialize empty form data
-        const initialData: Record<string, any> = {};
-        configRes.data.fields.forEach((f: any) => {
-          if (mergedDefaults[f.name] !== undefined) {
-            if (f.type === 'coordinate' && typeof mergedDefaults[f.name] === 'object') {
-              const loc = mergedDefaults[f.name];
-              initialData[f.name] = formatCoordinate(loc.longitude, loc.latitude, formats[f.name] || 'UTM');
-            } else {
-              initialData[f.name] = mergedDefaults[f.name];
-            }
-          } else if (f.type === 'enum') {
-            initialData[f.name] = ''; // Selection is deferred or initialized by the dropdown itself
-          } else {
-            initialData[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
-          }
-        });
-        setFormData(initialData);
-      }
-    } catch (err) {
-      console.error('Failed to fetch form data', err);
-      (postal as any).publish({
-        channel: CHANNEL_NAME,
-        topic: TOPICS.FORM_LOAD_ERROR,
-        data: { entity: currentEntity, error: err }
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const validateField = (name: string, value: any, currentSchema: any) => {
-    if (!currentSchema || !currentSchema.properties || !currentSchema.properties[name]) return '';
-
-    const rules = currentSchema.properties[name];
-    const isRequired = currentSchema.required?.includes(name);
-
-    if (isRequired && (value === undefined || value === null || value === '')) {
-      return 'This field is required';
-    }
-
-    if (value === undefined || value === null || value === '') return '';
-
-    if (rules.type === 'string' && typeof value === 'string') {
-      if (rules.minLength !== undefined && value.length < rules.minLength) {
-        return `Minimum length is ${rules.minLength}`;
-      }
-      if (rules.maxLength !== undefined && value.length > rules.maxLength) {
-        return `Maximum length is ${rules.maxLength}`;
-      }
-      if (rules.pattern !== undefined) {
-        const regex = new window.RegExp(rules.pattern);
-        if (!regex.test(value)) {
-          return `Does not match the required pattern`;
-        }
-      }
-    } else if (rules.type === 'number' && typeof value === 'number') {
-      if (rules.minimum !== undefined && value < rules.minimum) {
-        return `Minimum value is ${rules.minimum}`;
-      }
-      if (rules.maximum !== undefined && value > rules.maximum) {
-        return `Maximum value is ${rules.maximum}`;
-      }
-    }
-
-    return '';
-  };
-
-
-  const handleCoordinateFormatChange = (field: string, format: 'WGS84' | 'UTM') => {
-    const currentVal = formData[field];
-    let newVal = currentVal;
-    if (currentVal) {
-      const parsed = parseCoordinate(currentVal);
-      if (parsed) {
-        newVal = formatCoordinate(parsed[0], parsed[1], format);
-      }
-    }
-
-    setCoordinateFormats(prev => ({
-      ...prev,
-      [field]: format
-    }));
-
-    if (newVal !== currentVal) {
-      setFormData(prev => ({
-        ...prev,
-        [field]: newVal
-      }));
-    }
-  };
-
-  const handleSelectLocation = (field: string) => {
-    const isCurrentlySelecting = selectModeField === field;
-    setSelectModeField(isCurrentlySelecting ? null : field);
-    postal.publish({
-      channel: CHANNEL_NAME,
-      topic: TOPICS.SELECT_LOCATION,
-      data: { field: isCurrentlySelecting ? null : field }
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate all fields before submit
-    if (schema) {
-      const newErrors: Record<string, string> = {};
-      let hasErrors = false;
-      config?.fields.forEach(f => {
-        const error = validateField(f.name, formData[f.name], schema);
-        if (error) {
-          newErrors[f.name] = error;
-          hasErrors = true;
-        }
-      });
-      setValidationErrors(newErrors);
-      if (hasErrors) return;
-    }
-
-    try {
-      let response;
-
-      // Map coordinate string fields back to objects for the backend payload
-      const payload = { ...formData };
-      if (config) {
-        config.fields.forEach(f => {
-          if (f.type === 'coordinate' && payload[f.name]) {
-             const parsed = parseCoordinate(payload[f.name]);
-             if (parsed) {
-                payload[f.name] = { longitude: parsed[0], latitude: parsed[1] };
-             } else {
-                delete payload[f.name]; // Or set to null if the backend expects it
-             }
-          }
-        });
-      }
-
-      if (id) {
-        response = await axios.put(`${API_BASE}/data/${entity}/${id}`, payload);
-      } else {
-        response = await axios.post(`${API_BASE}/data/${entity}`, payload);
-      }
-      (postal as any).publish({
-        channel: CHANNEL_NAME,
-        topic: TOPICS.ENTITY_SAVED,
-        data: { entity, data: response.data }
-      });
-    } catch (err) {
-      console.error('Failed to save', err);
-      (postal as any).publish({
-        channel: CHANNEL_NAME,
-        topic: TOPICS.ENTITY_SAVE_ERROR,
-        data: { entity, error: err }
-      });
-    }
+    await handleSubmit();
   };
 
   const handleCancel = () => {
@@ -323,7 +92,20 @@ export default function EntityForm() {
     });
   };
 
+  const handleCoordinateFormatChange = (field: string, format: 'WGS84' | 'UTM') => {
+      updateCoordinateFormat(field, format);
+  };
+
+  const handleSelectLocation = (field: string) => {
+      postal.publish({
+        channel: CHANNEL_NAME,
+        topic: TOPICS.SELECT_LOCATION,
+        data: { field }
+      });
+  };
+
   if (loading) return <div>Loading...</div>;
+  if (error) return <div className="p-4 text-red-500">{error}</div>;
   if (!config) return <div>Configuration not found for entity: {entity}</div>;
 
   if (id && !abilities.canEdit) {
@@ -351,7 +133,6 @@ export default function EntityForm() {
 
   const isGrid = !!effectiveGridTemplate;
 
-  // Extract all valid grid areas from the template so we can hide fields not in the template
   const validGridAreas = new Set<string>();
   if (isGrid && effectiveGridTemplate) {
     const words = effectiveGridTemplate.replace(/['"]/g, '').split(/\s+/);
@@ -374,26 +155,21 @@ export default function EntityForm() {
                   setActivePresetId(newPresetId);
                   const newPreset = config.presets?.find(p => p.id === newPresetId);
                   if (newPreset && !id) {
-                    // When in create mode and changing the preset, override fields with default values
                     const presetDefaults = newPreset.defaultValues || {};
-                    const mergedDefaults = { ...presetDefaults, ...defaultValues };
-                    setFormData(prev => {
-                      const updated = { ...prev };
-                      config.fields.forEach(f => {
+                    const mergedDefaults = { ...presetDefaults, ...initialDefaultValues };
+                    config.fields.forEach(f => {
                          if (mergedDefaults[f.name] !== undefined) {
                             if (f.type === 'coordinate' && typeof mergedDefaults[f.name] === 'object') {
                                const loc = mergedDefaults[f.name];
-                               updated[f.name] = formatCoordinate(loc.longitude, loc.latitude, coordinateFormats[f.name] || 'UTM');
+                               setFormData(f.name, formatCoordinate(loc.longitude, loc.latitude, coordinateFormats[f.name] || 'UTM'));
                             } else {
-                               updated[f.name] = mergedDefaults[f.name];
+                               setFormData(f.name, mergedDefaults[f.name]);
                             }
                          } else if (f.type === 'enum') {
-                            updated[f.name] = ''; // Reset empty value
+                            setFormData(f.name, '');
                          } else {
-                            updated[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
+                            setFormData(f.name, f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : ''));
                          }
-                      });
-                      return updated;
                     });
                   }
                 }}
@@ -406,7 +182,7 @@ export default function EntityForm() {
           </div>
       )}
 
-      <form onSubmit={handleSubmit} style={
+      <form onSubmit={onFormSubmit} style={
         isGrid
           ? { display: 'grid', gridTemplateAreas: effectiveGridTemplate, gap: '20px' }
           : { display: 'flex', flexDirection: 'column', gap: '20px' }
@@ -421,7 +197,7 @@ export default function EntityForm() {
               field={field}
               value={formData[field.name]}
               onChange={(name: any, value: any) => {
-                 setFormData(prev => ({ ...prev, [name]: value }));
+                 setFormData(name, value);
               }}
               errorMsg={errorMsg}
               isRequired={isRequired}

@@ -15,14 +15,27 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.post('/api/data-sources', async (req, res) => {
         try {
-            if (req.body.apiUrl) {
+            const { name, apiUrl, apiType, headers, endpointsQueries } = req.body;
+            let validatedUrl = apiUrl;
+
+            if (validatedUrl) {
                 try {
-                    req.body.apiUrl = validateUrl(req.body.apiUrl);
+                    validatedUrl = validateUrl(validatedUrl);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }
             }
-            const ds = await prisma.dataSource.create({ data: req.body });
+
+            // Prevent Mass Assignment by explicitly whitelisting allowed fields
+            const data = {
+                name,
+                apiUrl: validatedUrl,
+                apiType,
+                headers,
+                endpointsQueries
+            };
+
+            const ds = await prisma.dataSource.create({ data });
             res.json(ds);
         } catch (e: any) {
             if (e.name === 'TypeError' && e.message === 'Invalid URL') {
@@ -34,16 +47,29 @@ export default function setupManagementRoutes(app: express.Express, prisma: any)
 
     app.put('/api/data-sources/:id', async (req, res) => {
         try {
-            if (req.body.apiUrl) {
+            const { name, apiUrl, apiType, headers, endpointsQueries } = req.body;
+            let validatedUrl = apiUrl;
+
+            if (validatedUrl) {
                 try {
-                    req.body.apiUrl = validateUrl(req.body.apiUrl);
+                    validatedUrl = validateUrl(validatedUrl);
                 } catch (err: any) {
                     return res.status(400).json({ error: err.message });
                 }
             }
+
+            // Prevent Mass Assignment by explicitly whitelisting allowed fields
+            const data = {
+                name,
+                apiUrl: validatedUrl,
+                apiType,
+                headers,
+                endpointsQueries
+            };
+
             const ds = await prisma.dataSource.update({
                 where: { id: parseInt(req.params.id) },
-                data: req.body
+                data
             });
             res.json(ds);
         } catch (e: any) {

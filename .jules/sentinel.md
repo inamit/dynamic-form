@@ -17,3 +17,8 @@
 **Vulnerability:** The application was vulnerable to path traversal because it validated route parameters (like `entityName`, `id`) against a deny-list (`param.includes('..')`). Express.js decodes parameters, but this simple string check could be bypassed using URL encoding (like `%2e%2e%2f` for `../`) if the string was later passed to `axios` or another URL constructor.
 **Learning:** Deny-list validation for security concepts like path traversal is notoriously fragile and prone to bypasses. It assumes you can enumerate all possible bad inputs.
 **Prevention:** Always use strict allow-list validation. For dynamic route parameters that should only contain standard characters (e.g., entity names or numeric/UUID IDs), enforce validation using a strict regex (e.g., `/^[a-zA-Z0-9_-]+$/`).
+
+## 2024-05-24 - [Mass Assignment in Prisma Operations]
+**Vulnerability:** The application was vulnerable to Mass Assignment because the backend was passing the raw `req.body` directly to `prisma.dataSource.create` and `prisma.dataSource.update` endpoints. This allows a malicious user to inject arbitrary fields into the database payload (such as forcing an explicit `id` or modifying unpermitted relational fields like `entityConfigs`).
+**Learning:** Directly passing user-controlled objects (like `req.body`) into ORM creation or update methods implicitly trusts all keys provided by the client, ignoring the principle of least privilege.
+**Prevention:** Always explicitly whitelist the allowed fields (e.g., using object destructuring syntax `const { field1, field2 } = req.body`) before passing data to Prisma models or other ORMs.

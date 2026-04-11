@@ -6,6 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Box, Paper, Typography, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+// @ts-expect-error - external lib
 import { DynamicField } from '@dynamic-form/shared-ui';
 
 interface Field {
@@ -84,7 +85,7 @@ function SortableItem(props: {
             field={props.field}
             value={props.defaultValue}
             apiBaseUrl="http://localhost:3001/api"
-            onChange={(name, value) => props.onDefaultValueChange!(name, value)}
+            onChange={(name: string, value: any) => props.onDefaultValueChange!(name, value)}
           />
         </Box>
       )}
@@ -221,7 +222,9 @@ export default function GridPreview({ fields, gridTemplate, defaultValues, onLay
              }
           }
       }
-    } catch (e) { }
+    } catch {
+        // Ignored fallback failure
+    }
 
     setMaxColumns(cols);
 

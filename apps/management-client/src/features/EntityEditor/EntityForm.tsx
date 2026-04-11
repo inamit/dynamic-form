@@ -1,21 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { TextField, Button, Typography, MenuItem, Box, Alert, Paper } from '@mui/material';
-import axios from 'axios';
+import { Button, Typography, Box, Alert, Paper, CircularProgress } from '@mui/material';
 import GraphQLIntrospection from './GraphQLIntrospection';
 import FieldManager from './FieldManager';
 import PresetsManager from './PresetsManager';
+import EntityBasicInfo from './EntityBasicInfo';
+import EntityAuthorizationConfig from './EntityAuthorizationConfig';
+import { useEntity } from '../../hooks/useEntities';
+import { useDataSources } from '../../hooks/useDataSources';
+import { entityService } from '../../services/entityService';
+import { dataSourceService } from '../../services/dataSourceService';
+import type { EntityConfig, SchemaDefinition, Field } from '../../types';
 
 export default function EntityForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const [error, setError] = useState('');
-  const [dataSources, setDataSources] = useState<any[]>([]);
-  const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
-  const [schemaDef, setSchemaDef] = useState<any>(null);
+  const [submitError, setSubmitError] = useState('');
 
-  const [formData, setFormData] = useState<any>({
+  const { dataSources, loading: loadingDataSources } = useDataSources();
+  const { entity, loading: loadingEntity, error: fetchError } = useEntity(id);
+
+  const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
+  const [schemaDef, setSchemaDef] = useState<SchemaDefinition | null>(null);
+
+  const [formData, setFormData] = useState<EntityConfig>({
     name: '',
     dataSourceId: '',
     schemaName: '',
@@ -32,72 +41,46 @@ export default function EntityForm() {
   const [graphqlOperations, setGraphqlOperations] = useState<any>(null);
 
   useEffect(() => {
-    fetchDataSources();
-    fetchSchemas();
-    if (isEdit) {
-      fetchEntity();
+    entityService.getAvailableSchemas()
+      .then(setAvailableSchemas)
+      .catch(e => console.error("Failed to fetch schemas", e));
+  }, []);
+
+  useEffect(() => {
+    if (entity) {
+      setFormData({
+        ...entity,
+        presets: entity.presets && entity.presets.length > 0 ? entity.presets : [{ name: 'Default', gridTemplate: '' }],
+        authView: entity.authView || '[]',
+        authCreate: entity.authCreate || '[]',
+        authEdit: entity.authEdit || '[]',
+        authDelete: entity.authDelete || '[]'
+      });
     }
-  }, [id, isEdit]);
+  }, [entity]);
 
   useEffect(() => {
     if (formData.schemaName) {
-        axios.get(`http://localhost:3001/api/schema/${formData.schemaName}`)
-            .then(res => setSchemaDef(res.data))
+        entityService.getSchemaDefinition(formData.schemaName)
+            .then(setSchemaDef)
             .catch(e => console.error("Failed to load schema definition", e));
     } else {
         setSchemaDef(null);
     }
   }, [formData.schemaName]);
 
-  const fetchSchemas = async () => {
-    try {
-      const res = await axios.get('http://localhost:3001/api/schemas');
-      setAvailableSchemas(res.data);
-    } catch (e) {
-      console.error("Failed to fetch schemas", e);
-    }
-  };
-
-  const fetchDataSources = async () => {
-    try {
-      const res = await axios.get('http://localhost:3001/api/data-sources');
-      setDataSources(res.data);
-    } catch (e: any) {
-      setError(e.message);
-    }
-  };
-
-  const fetchEntity = async () => {
-    try {
-      const res = await axios.get(`http://localhost:3001/api/config/id/${id}`);
-
-      const config = res.data;
-      if (!config.presets || config.presets.length === 0) {
-          // Backward compatibility if presets are missing
-          config.presets = [{ name: 'Default', gridTemplate: config.gridTemplate || '' }];
-          config.defaultPresetId = null;
-      }
-
-      // Ensure auth fields are populated with valid defaults if null
-      config.authView = config.authView || '[]';
-      config.authCreate = config.authCreate || '[]';
-      config.authEdit = config.authEdit || '[]';
-      config.authDelete = config.authDelete || '[]';
-
-      setFormData(config);
-    } catch (e: any) {
-      setError(e.response?.data?.error || e.message);
-    }
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const selectedDataSource = dataSources.find(ds => ds.id === formData.dataSourceId);
+  const handleAuthChange = (action: keyof EntityConfig, value: string) => {
+    setFormData({ ...formData, [action]: value });
+  };
 
-  const handleFieldsAdded = (newFields: any[]) => {
-    const existingFieldNames = new Set(formData.fields.map((f: any) => f.name));
+  const selectedDataSource = dataSources.find(ds => ds.id === Number(formData.dataSourceId));
+
+  const handleFieldsAdded = (newFields: Field[]) => {
+    const existingFieldNames = new Set(formData.fields.map((f: Field) => f.name));
     const addedFields = newFields.filter(f => !existingFieldNames.has(f.name)).map(f => ({
       ...f,
       type: f.type || 'text',
@@ -114,8 +97,9 @@ export default function EntityForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
     try {
-      const payload = {
+      const payload: Partial<EntityConfig> = {
         name: formData.name,
         dataSourceId: Number(formData.dataSourceId),
         schemaName: formData.schemaName || null,
@@ -136,7 +120,7 @@ export default function EntityForm() {
             return presetPayload;
         }),
         defaultPresetId: formData.defaultPresetId,
-        fields: formData.fields.map((f: any) => ({
+        fields: formData.fields.map((f: Field) => ({
           name: f.name,
           type: f.type,
           label: f.label,
@@ -144,10 +128,10 @@ export default function EntityForm() {
         }))
       };
 
-      if (isEdit) {
-        await axios.put(`http://localhost:3001/api/config/${id}`, payload);
+      if (isEdit && id) {
+        await entityService.update(id, payload);
       } else {
-        await axios.post('http://localhost:3001/api/config/new', payload);
+        await entityService.create(payload);
       }
 
       // If we configured new operations via GraphQL introspection, update the DataSource
@@ -166,80 +150,40 @@ export default function EntityForm() {
             endpointsQueries: JSON.stringify(builtQueries)
          };
 
-         await axios.put(`http://localhost:3001/api/data-sources/${selectedDataSource.id}`, updatedDataSource);
+         await dataSourceService.update(selectedDataSource.id, updatedDataSource);
       }
 
       navigate('/entities');
     } catch (e: any) {
-      setError(e.message);
+      setSubmitError(e.message || 'Failed to save entity');
     }
   };
 
-  const handleAuthChange = (action: string, e: any) => {
-     const value = typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value;
-     setFormData({ ...formData, [action]: JSON.stringify(value) });
-  };
-
-  const getAuthArray = (action: string) => {
-     try { return JSON.parse(formData[action]); } catch { return []; }
-  };
-
-  const authOptions = ['custom', 'external1', 'external2'];
+  if (loadingEntity || loadingDataSources) return <CircularProgress />;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
       <Typography variant="h4">{isEdit ? 'Edit Entity' : 'New Entity'}</Typography>
-      {error && <Alert severity="error">{error}</Alert>}
+      {fetchError && <Alert severity="error">{fetchError}</Alert>}
+      {submitError && <Alert severity="error">{submitError}</Alert>}
 
-      <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600 }}>
-        <TextField label="Name" name="name" value={formData.name} onChange={handleChange} required />
-        <TextField
-          select
-          label="Schema Name"
-          name="schemaName"
-          value={formData.schemaName || ''}
-          onChange={handleChange}
-        >
-          <MenuItem value=""><em>None</em></MenuItem>
-          {availableSchemas.map((s) => (
-            <MenuItem key={s} value={s}>{s}</MenuItem>
-          ))}
-        </TextField>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <TextField select label="Data Source" name="dataSourceId" value={formData.dataSourceId} onChange={handleChange} required sx={{ flexGrow: 1 }}>
-            {dataSources.map((ds) => (
-              <MenuItem key={ds.id} value={ds.id}>{ds.name} ({ds.apiType})</MenuItem>
-            ))}
-          </TextField>
-          <Button variant="outlined" onClick={() => navigate('/data-sources/new')} sx={{ whiteSpace: 'nowrap' }}>
-            New Data Source
-          </Button>
-        </Box>
-      </Paper>
+      <EntityBasicInfo
+        formData={formData}
+        dataSources={dataSources}
+        availableSchemas={availableSchemas}
+        onChange={handleChange}
+      />
 
-      <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600 }}>
-         <Typography variant="h6">Authorization Configuration</Typography>
-         <Typography variant="body2" color="textSecondary">Select the authorization services to use for each action. The orchestrator will check all selected services.</Typography>
-
-         <TextField select label="View Authorization" value={getAuthArray('authView')} onChange={(e) => handleAuthChange('authView', e)} SelectProps={{ multiple: true }}>
-            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-         </TextField>
-         <TextField select label="Create Authorization" value={getAuthArray('authCreate')} onChange={(e) => handleAuthChange('authCreate', e)} SelectProps={{ multiple: true }}>
-            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-         </TextField>
-         <TextField select label="Edit Authorization" value={getAuthArray('authEdit')} onChange={(e) => handleAuthChange('authEdit', e)} SelectProps={{ multiple: true }}>
-            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-         </TextField>
-         <TextField select label="Delete Authorization" value={getAuthArray('authDelete')} onChange={(e) => handleAuthChange('authDelete', e)} SelectProps={{ multiple: true }}>
-            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-         </TextField>
-      </Paper>
+      <EntityAuthorizationConfig
+        formData={formData}
+        onChange={handleAuthChange}
+      />
 
       {selectedDataSource && selectedDataSource.apiType === 'GRAPHQL' && (
         <Paper sx={{ p: 2 }}>
           <GraphQLIntrospection
             dataSourceUrl={selectedDataSource.apiUrl}
-            dataSourceHeaders={selectedDataSource.headers}
+            dataSourceHeaders={selectedDataSource.headers || ''}
             onFieldsSelected={handleFieldsAdded}
             onOperationsSelected={handleOperationsSelected}
           />
@@ -253,9 +197,9 @@ export default function EntityForm() {
       <PresetsManager
         fields={formData.fields}
         presets={formData.presets}
-        defaultPresetId={formData.defaultPresetId}
+        defaultPresetId={formData.defaultPresetId as any}
         schemaRequired={schemaDef?.required || []}
-        onChange={(presets, defaultPresetId) => setFormData({ ...formData, presets, defaultPresetId })}
+        onChange={(presets, defaultPresetId) => setFormData({ ...formData, presets, defaultPresetId: defaultPresetId as number | null })}
       />
 
       <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>

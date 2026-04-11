@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { Box, Button, Typography, TextField, MenuItem, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
-
-interface Field {
-  name: string;
-  type: string;
-  label: string;
-  enumName?: string;
-}
+import type { Field } from '../../types';
 
 interface Props {
   fields: Field[];

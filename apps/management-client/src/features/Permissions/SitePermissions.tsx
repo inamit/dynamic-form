@@ -1,53 +1,28 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Button, Table, TableBody, TableCell, TableHead, TableRow, TextField, Select, MenuItem, Box, Typography } from '@mui/material';
-
-const API_BASE = 'http://localhost:3002/api';
+import { useState } from 'react';
+import { Button, Table, TableBody, TableCell, TableHead, TableRow, TextField, Select, MenuItem, Box, Typography, Alert, CircularProgress } from '@mui/material';
+import { useSitePermissions } from '../../hooks/usePermissions';
 
 export default function SitePermissions() {
-    const [permissions, setPermissions] = useState<any[]>([]);
+    const { permissions, loading, error, operationError, addPermission, deletePermission } = useSitePermissions();
     const [origin, setOrigin] = useState('');
     const [entityName, setEntityName] = useState('');
     const [ability, setAbility] = useState('view');
 
-    const fetchPermissions = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}/site-permissions`);
-            setPermissions(res.data);
-        } catch (e) {
-            console.error('Failed to fetch site permissions', e);
-        }
-    };
-
-    useEffect(() => {
-        fetchPermissions();
-    }, []);
-
     const handleCreate = async () => {
         if (!origin || !entityName || !ability) return;
-        try {
-            await axios.post(`${API_BASE}/site-permissions`, { origin, entityName, ability });
-            setOrigin('');
-            setEntityName('');
-            setAbility('view');
-            fetchPermissions();
-        } catch (e) {
-            console.error('Failed to create site permission', e);
-        }
+        await addPermission({ origin, entityName, ability });
+        setOrigin('');
+        setEntityName('');
+        setAbility('view');
     };
 
-    const handleDelete = async (id: number) => {
-        try {
-            await axios.delete(`${API_BASE}/site-permissions/${id}`);
-            fetchPermissions();
-        } catch (e) {
-            console.error('Failed to delete site permission', e);
-        }
-    };
+    if (loading) return <CircularProgress />;
 
     return (
         <Box>
             <Typography variant="h4" gutterBottom>Site Permissions</Typography>
+            {error && <Alert severity="error">{error}</Alert>}
+            {operationError && <Alert severity="error">{operationError}</Alert>}
             <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
                 <TextField label="Origin" value={origin} onChange={e => setOrigin(e.target.value)} size="small" />
                 <TextField label="Entity Name" value={entityName} onChange={e => setEntityName(e.target.value)} size="small" />
@@ -78,7 +53,7 @@ export default function SitePermissions() {
                             <TableCell>{p.entityName}</TableCell>
                             <TableCell>{p.ability}</TableCell>
                             <TableCell>
-                                <Button color="error" onClick={() => handleDelete(p.id)}>Delete</Button>
+                                <Button color="error" onClick={() => deletePermission(p.id)}>Delete</Button>
                             </TableCell>
                         </TableRow>
                     ))}

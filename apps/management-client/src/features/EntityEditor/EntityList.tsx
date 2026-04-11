@@ -1,36 +1,18 @@
-import { useEffect, useState } from "react";
-import { Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import { Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, CircularProgress, Alert } from '@mui/material';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { useEntities } from '../../hooks/useEntities';
 
 export default function EntityList() {
-  const [entities, setEntities] = useState<any[]>([]);
+  const { entities, loading, error, operationError, deleteEntity } = useEntities();
 
-  useEffect(() => {
-    fetchEntities();
-  }, []);
-
-  const fetchEntities = async () => {
-    try {
-      const res = await axios.get('http://localhost:3001/api/config');
-      setEntities(res.data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await axios.delete(`http://localhost:3001/api/config/${id}`);
-      fetchEntities();
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  if (loading) return <CircularProgress />;
 
   return (
     <div>
       <Typography variant="h4" gutterBottom>Entities</Typography>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {operationError && <Alert severity="error" sx={{ mb: 2 }}>{operationError}</Alert>}
+
       <Button variant="contained" component={Link} to="/entities/new" sx={{ mb: 2 }}>
         Add Entity
       </Button>
@@ -50,12 +32,12 @@ export default function EntityList() {
               <TableRow key={e.id}>
                 <TableCell>{e.id}</TableCell>
                 <TableCell>{e.name}</TableCell>
-                <TableCell>{e.dataSource?.name || 'N/A'}</TableCell>
+                <TableCell>{(e as any).dataSource?.name || 'N/A'}</TableCell>
                 <TableCell>{e.fields?.length || 0}</TableCell>
                 <TableCell>
                   <Button component={Link} to={`/entities/${e.id}`} size="small" color="primary">Edit</Button>
                   <Button size="small" color="secondary" onClick={() => window.open(`http://localhost:5174/?entity=${e.name}`, '_blank')}>Preview</Button>
-                  <Button size="small" color="error" onClick={() => handleDelete(e.id)}>Delete</Button>
+                  <Button size="small" color="error" onClick={() => deleteEntity(e.id!)}>Delete</Button>
                 </TableCell>
               </TableRow>
             ))}

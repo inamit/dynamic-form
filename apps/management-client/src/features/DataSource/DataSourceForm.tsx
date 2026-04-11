@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { TextField, Button, Typography, MenuItem, Box, Alert } from '@mui/material';
-import axios from 'axios';
+import { TextField, Button, Typography, MenuItem, Box, Alert, CircularProgress } from '@mui/material';
+import { useDataSource } from '../../hooks/useDataSources';
+import { dataSourceService } from '../../services/dataSourceService';
+import type { DataSource } from '../../types';
 
 export default function DataSourceForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
+  const { dataSource, loading, error: fetchError } = useDataSource(id);
+  const [submitError, setSubmitError] = useState('');
+
+  const [formData, setFormData] = useState<Partial<DataSource>>({
     name: '',
     apiUrl: '',
     apiType: 'REST',
@@ -18,19 +22,10 @@ export default function DataSourceForm() {
   });
 
   useEffect(() => {
-    if (isEdit) {
-      const fetchData = async () => {
-        try {
-          const res = await axios.get('http://localhost:3001/api/data-sources');
-          const ds = res.data.find((d: any) => d.id === Number(id));
-          if (ds) setFormData(ds);
-        } catch (e: any) {
-          setError(e.message);
-        }
-      };
-      fetchData();
+    if (dataSource) {
+      setFormData(dataSource);
     }
-  }, [id, isEdit]);
+  }, [dataSource]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -38,22 +33,26 @@ export default function DataSourceForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
     try {
-      if (isEdit) {
-        await axios.put(`http://localhost:3001/api/data-sources/${id}`, formData);
+      if (isEdit && id) {
+        await dataSourceService.update(id, formData);
       } else {
-        await axios.post('http://localhost:3001/api/data-sources', formData);
+        await dataSourceService.create(formData);
       }
       navigate('/data-sources');
     } catch (e: any) {
-      setError(e.message);
+      setSubmitError(e.message || 'Failed to save data source');
     }
   };
+
+  if (loading) return <CircularProgress />;
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600 }}>
       <Typography variant="h4">{isEdit ? 'Edit Data Source' : 'New Data Source'}</Typography>
-      {error && <Alert severity="error">{error}</Alert>}
+      {fetchError && <Alert severity="error">{fetchError}</Alert>}
+      {submitError && <Alert severity="error">{submitError}</Alert>}
 
       <TextField label="Name" name="name" value={formData.name} onChange={handleChange} required />
       <TextField label="API URL" name="apiUrl" value={formData.apiUrl} onChange={handleChange} required />

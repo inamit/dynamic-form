@@ -1,43 +1,18 @@
-import { useEffect, useState } from "react";
-import { Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import { Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, Alert, CircularProgress } from '@mui/material';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
-
-interface DataSource {
-  id: number;
-  name: string;
-  apiUrl: string;
-  apiType: string;
-}
+import { useDataSources } from '../../hooks/useDataSources';
 
 export default function DataSourceList() {
-  const [dataSources, setDataSources] = useState<DataSource[]>([]);
+  const { dataSources, loading, error, operationError, deleteDataSource } = useDataSources();
 
-  useEffect(() => {
-    fetchDataSources();
-  }, []);
-
-  const fetchDataSources = async () => {
-    try {
-      const res = await axios.get('http://localhost:3001/api/data-sources');
-      setDataSources(res.data);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await axios.delete(`http://localhost:3001/api/data-sources/${id}`);
-      fetchDataSources();
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  if (loading) return <CircularProgress />;
 
   return (
     <div>
       <Typography variant="h4" gutterBottom>Data Sources</Typography>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {operationError && <Alert severity="error" sx={{ mb: 2 }}>{operationError}</Alert>}
+
       <Button variant="contained" component={Link} to="/data-sources/new" sx={{ mb: 2 }}>
         Add Data Source
       </Button>
@@ -61,7 +36,7 @@ export default function DataSourceList() {
                 <TableCell>{ds.apiType}</TableCell>
                 <TableCell>
                   <Button component={Link} to={`/data-sources/${ds.id}`} size="small" color="primary">Edit</Button>
-                  <Button size="small" color="error" onClick={() => handleDelete(ds.id)}>Delete</Button>
+                  <Button size="small" color="error" onClick={() => deleteDataSource(ds.id)}>Delete</Button>
                 </TableCell>
               </TableRow>
             ))}

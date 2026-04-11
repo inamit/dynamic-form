@@ -52,7 +52,7 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
   const handleSavePresetName = () => {
     if (!presetName.trim()) return;
 
-    let newPresets = [...presets];
+    const newPresets = [...presets];
     let newDefaultId = defaultPresetId;
 
     if (editingPresetIndex !== null) {

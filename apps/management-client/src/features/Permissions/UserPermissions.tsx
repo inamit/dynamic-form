@@ -1,61 +1,38 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Button, Table, TableBody, TableCell, TableHead, TableRow, TextField, Select, MenuItem, Box, Typography } from '@mui/material';
-
-const API_BASE = 'http://localhost:3002/api';
+import { useState } from 'react';
+import { Button, Table, TableBody, TableCell, TableHead, TableRow, TextField, Select, MenuItem, Box, Typography, Alert, CircularProgress } from '@mui/material';
+import { useUserPermissions } from '../../hooks/usePermissions';
 
 export default function UserPermissions() {
-    const [permissions, setPermissions] = useState<any[]>([]);
+    const { permissions, loading, error, operationError, addPermission, deletePermission } = useUserPermissions();
     const [userId, setUserId] = useState('');
     const [entityName, setEntityName] = useState('');
     const [ability, setAbility] = useState('view');
     const [geography, setGeography] = useState('');
     const [fieldValue, setFieldValue] = useState('');
 
-    const fetchPermissions = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}/user-permissions`);
-            setPermissions(res.data);
-        } catch (e) {
-            console.error('Failed to fetch user permissions', e);
-        }
-    };
-
-    useEffect(() => {
-        fetchPermissions();
-    }, []);
-
     const handleCreate = async () => {
         if (!userId || !entityName || !ability) return;
-        try {
-            await axios.post(`${API_BASE}/user-permissions`, {
-                userId, entityName, ability,
-                geography: geography || null,
-                fieldValue: fieldValue || null
-            });
-            setUserId('');
-            setEntityName('');
-            setAbility('view');
-            setGeography('');
-            setFieldValue('');
-            fetchPermissions();
-        } catch (e) {
-            console.error('Failed to create user permission', e);
-        }
+        await addPermission({
+            userId,
+            entityName,
+            ability,
+            geography: geography || null,
+            fieldValue: fieldValue || null
+        });
+        setUserId('');
+        setEntityName('');
+        setAbility('view');
+        setGeography('');
+        setFieldValue('');
     };
 
-    const handleDelete = async (id: number) => {
-        try {
-            await axios.delete(`${API_BASE}/user-permissions/${id}`);
-            fetchPermissions();
-        } catch (e) {
-            console.error('Failed to delete user permission', e);
-        }
-    };
+    if (loading) return <CircularProgress />;
 
     return (
         <Box>
             <Typography variant="h4" gutterBottom>User Permissions</Typography>
+            {error && <Alert severity="error">{error}</Alert>}
+            {operationError && <Alert severity="error">{operationError}</Alert>}
             <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
                 <TextField label="User ID" value={userId} onChange={e => setUserId(e.target.value)} size="small" />
                 <TextField label="Entity Name" value={entityName} onChange={e => setEntityName(e.target.value)} size="small" />
@@ -92,7 +69,7 @@ export default function UserPermissions() {
                             <TableCell>{p.geography}</TableCell>
                             <TableCell>{p.fieldValue}</TableCell>
                             <TableCell>
-                                <Button color="error" onClick={() => handleDelete(p.id)}>Delete</Button>
+                                <Button color="error" onClick={() => deletePermission(p.id)}>Delete</Button>
                             </TableCell>
                         </TableRow>
                     ))}

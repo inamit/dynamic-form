@@ -5,11 +5,7 @@ export class OrchestratorService {
         let services: string[] = [];
         try {
             if (config.auth) {
-                const parsedAuth = JSON.parse(config.auth);
-                if (ability === 'view' && parsedAuth.view) services = parsedAuth.view;
-                if (ability === 'create' && parsedAuth.create) services = parsedAuth.create;
-                if (ability === 'edit' && parsedAuth.edit) services = parsedAuth.edit;
-                if (ability === 'delete' && parsedAuth.delete) services = parsedAuth.delete;
+                services = JSON.parse(config.auth)[ability] || [];
             }
         } catch (e) {
             console.error('Error parsing auth config', e);

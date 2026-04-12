@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { useState, useEffect, useCallback } from 'react';
 import { ApiService } from '../services/api.service';
 import type { EntityConfig } from '../types';

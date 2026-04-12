@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Box, Paper, Typography, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-// @ts-expect-error - external lib
+
 import { DynamicField } from '@dynamic-form/shared-ui';
 
 interface Field {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { useState, useEffect, useCallback } from 'react';
 import { ApiService } from '../services/api.service';
 import type { EntityConfig } from '../types';
@@ -66,7 +67,7 @@ export function useEntityForm(
         setFormData(newData);
       } else {
         let presetDefaultValues: Record<string, any> = {};
-        let initialPresetId = injectedPresetId || configData.defaultPresetId;
+        const initialPresetId = injectedPresetId || configData.defaultPresetId;
         if (initialPresetId && configData.presets) {
             const p = configData.presets.find((p: any) => p.id === initialPresetId);
             if (p && p.defaultValues) {

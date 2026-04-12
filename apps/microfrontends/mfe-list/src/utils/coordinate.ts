@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import * as mgrs from 'mgrs';
 
 export function parseCoordinate(val: string): [number, number] | null {

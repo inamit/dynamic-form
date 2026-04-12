@@ -9,6 +9,7 @@ export class OrchestratorService {
             }
         } catch (e) {
             console.error('Error parsing auth config', e);
+            return { allowed: false, reason: 'Invalid auth configuration' };
         }
 
         try {

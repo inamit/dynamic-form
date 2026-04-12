@@ -13,17 +13,30 @@ export class DataSourceService {
     }
 
     async createDataSource(data: any) {
-        if (data.apiUrl) {
-            data.apiUrl = validateUrl(data.apiUrl);
+        const { name, apiUrl, apiType, headers, endpointsQueries } = data;
+        const safeData = { name, apiUrl, apiType, headers, endpointsQueries };
+        if (safeData.apiUrl) {
+            safeData.apiUrl = validateUrl(safeData.apiUrl);
         }
-        return await this.dataSourceRepo.createDataSource(data);
+        return await this.dataSourceRepo.createDataSource(safeData);
     }
 
     async updateDataSource(id: number, data: any) {
-        if (data.apiUrl) {
-            data.apiUrl = validateUrl(data.apiUrl);
+        const { name, apiUrl, apiType, headers, endpointsQueries } = data;
+        const safeData = { name, apiUrl, apiType, headers, endpointsQueries };
+
+        // Remove undefined fields so they aren't overwritten with null/undefined
+        const filteredData: any = {};
+        for (const key in safeData) {
+            if ((safeData as any)[key] !== undefined) {
+                filteredData[key] = (safeData as any)[key];
+            }
         }
-        return await this.dataSourceRepo.updateDataSource(id, data);
+
+        if (filteredData.apiUrl) {
+            filteredData.apiUrl = validateUrl(filteredData.apiUrl);
+        }
+        return await this.dataSourceRepo.updateDataSource(id, filteredData);
     }
 
     async deleteDataSource(id: number) {

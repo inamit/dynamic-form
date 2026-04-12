@@ -18,6 +18,7 @@ export interface EntityConfig {
   name: string;
   dataSourceId: number | string;
   schemaName?: string | null;
+  endpointsQueries?: string;
   fields: Field[];
   presets: Preset[];
   defaultPresetId?: number | string | null;
@@ -33,7 +34,6 @@ export interface DataSource {
   apiType: 'REST' | 'GRAPHQL';
   apiUrl: string;
   headers?: string;
-  endpointsQueries?: string;
 }
 
 export interface SchemaDefinition {

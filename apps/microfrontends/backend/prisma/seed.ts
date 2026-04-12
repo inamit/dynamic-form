@@ -36,6 +36,7 @@ async function main() {
         create: {
             name: 'person',
             dataSourceId: personDs.id,
+            endpointsQueries: JSON.stringify({"list":{"endpoint":"/persons","method":"GET"},"get":{"endpoint":"/persons/:id","method":"GET"},"create":{"endpoint":"/persons","method":"POST"},"update":{"endpoint":"/persons/:id","method":"PUT"},"delete":{"endpoint":"/persons/:id","method":"DELETE"}}),
             fields: {
                 create: [
                     {name: 'firstName', type: 'text', label: 'First Name'},
@@ -88,6 +89,7 @@ async function main() {
         create: {
             name: 'candy',
             dataSourceId: candyDs.id,
+            endpointsQueries: JSON.stringify({"list":{"endpoint":"/candies","method":"GET"},"get":{"endpoint":"/candies/:id","method":"GET"},"create":{"endpoint":"/candies","method":"POST"},"update":{"endpoint":"/candies/:id","method":"PUT"},"delete":{"endpoint":"/candies/:id","method":"DELETE"}}),
             fields: {
                 create: [
                     {name: 'name', type: 'text', label: 'Candy Name'},
@@ -183,8 +185,7 @@ async function main() {
             name: 'store-graphql',
             apiUrl: 'http://localhost:4000/graphql',
             apiType: 'GRAPHQL',
-            endpointsQueries: JSON.stringify(storeQueries)
-        }
+            }
     });
 
     const storeConfig = await prisma.entityConfig.upsert({
@@ -203,6 +204,7 @@ async function main() {
         create: {
             name: 'store',
             dataSourceId: storeDs.id,
+            endpointsQueries: JSON.stringify(storeQueries),
             fields: {
                 create: [
                     {name: 'name', type: 'text', label: 'Store Name'},

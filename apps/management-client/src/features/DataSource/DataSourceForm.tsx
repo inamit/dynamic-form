@@ -17,8 +17,7 @@ export default function DataSourceForm() {
     name: '',
     apiUrl: '',
     apiType: 'REST',
-    headers: '',
-    endpointsQueries: ''
+    headers: ''
   });
 
   useEffect(() => {
@@ -68,15 +67,6 @@ export default function DataSourceForm() {
         multiline
         rows={3}
         placeholder='{"Authorization": "Bearer token"}'
-      />
-      <TextField
-        label={formData.apiType === 'REST' ? 'Endpoints (JSON)' : 'Queries (JSON)'}
-        name="endpointsQueries"
-        value={formData.endpointsQueries || ''}
-        onChange={handleChange}
-        multiline
-        rows={6}
-        placeholder={formData.apiType === 'REST' ? '{"list": "/users", "get": "/users/:id"}' : '{"list": "query { users { id name } }", "get": "query($id: ID!) { user(id: $id) { id name } }"}'}
       />
 
       <Box sx={{ display: 'flex', gap: 2 }}>

@@ -17,12 +17,13 @@ export class EntityConfigService {
     }
 
     async createConfig(data: any) {
-        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete } = data;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete, endpointsQueries } = data;
 
         const configData = {
             name,
             dataSourceId,
             schemaName,
+            endpointsQueries,
             fields: { create: fields },
             presets: {
                 create: (presets || []).map((p: any) => ({
@@ -51,12 +52,13 @@ export class EntityConfigService {
     }
 
     async updateConfig(id: number, data: any) {
-        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete } = data;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete, endpointsQueries } = data;
 
         const updateData = {
             name,
             dataSourceId,
             schemaName,
+            endpointsQueries,
             fields: { create: fields },
             presets: {
                 create: (presets || []).map((p: any) => ({

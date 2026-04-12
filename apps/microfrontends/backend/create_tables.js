@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS "DataSource" (
     "apiUrl" TEXT NOT NULL,
     "apiType" TEXT NOT NULL DEFAULT 'REST',
     "headers" TEXT,
-    "endpointsQueries" TEXT,
 
     CONSTRAINT "DataSource_pkey" PRIMARY KEY ("id")
 );
@@ -28,6 +27,7 @@ CREATE TABLE IF NOT EXISTS "EntityConfig" (
     "dataSourceId" INTEGER NOT NULL,
     "defaultPresetId" INTEGER,
     "schemaName" TEXT,
+    "endpointsQueries" TEXT,
 
     CONSTRAINT "EntityConfig_pkey" PRIMARY KEY ("id")
 );

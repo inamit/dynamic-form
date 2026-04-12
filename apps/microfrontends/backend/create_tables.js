@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS "EntityConfig" (
     "defaultPresetId" INTEGER,
     "schemaName" TEXT,
     "endpointsQueries" TEXT,
+    "auth" TEXT,
 
     CONSTRAINT "EntityConfig_pkey" PRIMARY KEY ("id")
 );

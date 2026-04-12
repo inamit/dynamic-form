@@ -32,10 +32,7 @@ export default function EntityForm() {
     fields: [],
     presets: [{ name: 'Default', gridTemplate: '' }],
     defaultPresetId: null,
-    authView: '[]',
-    authCreate: '[]',
-    authEdit: '[]',
-    authDelete: '[]'
+    auth: JSON.stringify({ view: [], create: [], edit: [], delete: [] })
   });
 
   // Track operations if they get updated from Introspection
@@ -53,10 +50,7 @@ export default function EntityForm() {
         ...entity,
         endpointsQueries: entity.endpointsQueries || '',
         presets: entity.presets && entity.presets.length > 0 ? entity.presets : [{ name: 'Default', gridTemplate: '' }],
-        authView: entity.authView || '[]',
-        authCreate: entity.authCreate || '[]',
-        authEdit: entity.authEdit || '[]',
-        authDelete: entity.authDelete || '[]'
+        auth: entity.auth || JSON.stringify({ view: [], create: [], edit: [], delete: [] })
       });
     }
   }, [entity]);
@@ -125,10 +119,7 @@ export default function EntityForm() {
         dataSourceId: Number(formData.dataSourceId),
         schemaName: formData.schemaName || null,
         endpointsQueries: finalEndpointsQueries,
-        authView: formData.authView,
-        authCreate: formData.authCreate,
-        authEdit: formData.authEdit,
-        authDelete: formData.authDelete,
+        auth: formData.auth,
         presets: formData.presets.map((p: any) => {
             const presetPayload: any = {
                 name: p.name,

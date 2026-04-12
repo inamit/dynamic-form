@@ -2,14 +2,14 @@ import axios from 'axios';
 
 export class OrchestratorService {
     static async checkAuth(userId: string, origin: string, entityName: string, ability: string, config: any, data?: any) {
-        let services = [];
+        let services: string[] = [];
         try {
-            if (ability === 'view' && config.authView) services = JSON.parse(config.authView);
-            if (ability === 'create' && config.authCreate) services = JSON.parse(config.authCreate);
-            if (ability === 'edit' && config.authEdit) services = JSON.parse(config.authEdit);
-            if (ability === 'delete' && config.authDelete) services = JSON.parse(config.authDelete);
+            if (config.auth) {
+                services = JSON.parse(config.auth)[ability] || [];
+            }
         } catch (e) {
             console.error('Error parsing auth config', e);
+            return { allowed: false, reason: 'Invalid auth configuration' };
         }
 
         try {

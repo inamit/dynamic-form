@@ -22,10 +22,7 @@ export interface EntityConfig {
   fields: Field[];
   presets: Preset[];
   defaultPresetId?: number | string | null;
-  authView: string;
-  authCreate: string;
-  authEdit: string;
-  authDelete: string;
+  auth: string;
 }
 
 export interface DataSource {

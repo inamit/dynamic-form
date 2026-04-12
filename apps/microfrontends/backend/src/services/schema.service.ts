@@ -10,10 +10,9 @@ export class SchemaService {
     async getSchemas() {
         const schemaApiUrl = process.env.SCHEMA_API_URL;
         if (!schemaApiUrl) throw new Error('Schema configuration not found');
-        const schemasApiUrl = schemaApiUrl.endsWith('s') ? schemaApiUrl : `${schemaApiUrl}s`;
 
         const headers = process.env.SCHEMA_API_HEADERS ? JSON.parse(process.env.SCHEMA_API_HEADERS) : {};
-        return await this.schemaClient.fetchSchemas(schemasApiUrl, headers);
+        return await this.schemaClient.fetchSchemas(schemaApiUrl, headers);
     }
 
     async getSchema(entityName: string) {

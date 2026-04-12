@@ -45,13 +45,13 @@ describe('SchemaController', () => {
             expect(mockSchemaService.getSchemas).toHaveBeenCalledTimes(1);
         });
 
-        it('should return 404 if data source not found', async () => {
-            mockSchemaService.getSchemas.mockRejectedValue(new Error('Data source not found'));
+        it('should return 404 if schema configuration not found', async () => {
+            mockSchemaService.getSchemas.mockRejectedValue(new Error('Schema configuration not found'));
 
             const response = await request(app).get('/schemas');
 
             expect(response.status).toBe(404);
-            expect(response.body).toEqual({ error: 'Data source not found' });
+            expect(response.body).toEqual({ error: 'Schema configuration not found' });
         });
     });
 

@@ -14,7 +14,7 @@ export class SchemaController {
             const schemas = await this.schemaService.getSchemas();
             res.json(schemas);
         } catch (error: any) {
-            if (error.message === 'Data source not found') {
+            if (error.message === 'Schema configuration not found') {
                 return res.status(404).json({ error: error.message });
             }
             console.error(`Error in GET /api/schemas:`, error.message);
@@ -32,7 +32,7 @@ export class SchemaController {
             const schema = await this.schemaService.getSchema(entityName);
             res.json(schema);
         } catch (error: any) {
-             if (error.message === 'Data source not found') {
+             if (error.message === 'Schema configuration not found') {
                 return res.status(404).json({ error: error.message });
             }
             console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
@@ -50,7 +50,7 @@ export class SchemaController {
             const enumData = await this.schemaService.getEnum(enumName);
             res.json(enumData);
         } catch (error: any) {
-            if (error.message === 'Data source not found') {
+            if (error.message === 'Enum configuration not found') {
                 return res.status(404).json({ error: error.message });
             }
             console.error(`Error in GET /api/enums/${req.params.enumName}:`, error.message);

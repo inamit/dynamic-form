@@ -61,17 +61,6 @@ async function main() {
         });
     }
 
-    // Enum DataSource
-    await prisma.dataSource.upsert({
-        where: {name: 'enum'},
-        update: {},
-        create: {
-            name: 'enum',
-            apiUrl: 'http://localhost:4000/api/enums',
-            apiType: 'REST'
-        }
-    });
-
     // REST DataSource for Candies
     const candyDs = await prisma.dataSource.upsert({
         where: {name: 'candy-api'},

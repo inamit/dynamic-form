@@ -29,10 +29,7 @@ model EntityConfig {
   defaultPresetId Int?
   schemaName      String?
   endpointsQueries String? // JSON string containing map of operation -> endpoint/query
-  authView        String? // JSON array of service names e.g., '["custom"]'
-  authCreate      String?
-  authEdit        String?
-  authDelete      String?
+  auth            String? // JSON string of { view: [], create: [], edit: [], delete: [] }
 }
 
 model Preset {

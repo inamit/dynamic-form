@@ -17,7 +17,7 @@ export class EntityConfigService {
     }
 
     async createConfig(data: any) {
-        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete, endpointsQueries } = data;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, auth, endpointsQueries } = data;
 
         const configData = {
             name,
@@ -32,7 +32,7 @@ export class EntityConfigService {
                     defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
                 }))
             },
-            authView, authCreate, authEdit, authDelete
+            auth
         };
 
         const config = await this.configRepo.createConfig(configData);
@@ -52,7 +52,7 @@ export class EntityConfigService {
     }
 
     async updateConfig(id: number, data: any) {
-        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, authView, authCreate, authEdit, authDelete, endpointsQueries } = data;
+        const { name, dataSourceId, schemaName, fields, presets, defaultPresetId, auth, endpointsQueries } = data;
 
         const updateData = {
             name,
@@ -67,7 +67,7 @@ export class EntityConfigService {
                     defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
                 }))
             },
-            authView, authCreate, authEdit, authDelete
+            auth
         };
 
         return await this.configRepo.updateConfigWithTransaction(id, updateData, defaultPresetId, presets || []);

@@ -289,13 +289,10 @@ app.get('/api/data/:entity', async (req, res) => {
         }
 
         // Filter list based on view permissions per row
-        const filteredList = [];
-        for (const item of dataList) {
-             const auth = await checkAuth(req, entity, 'view', config, item);
-             if (auth.allowed) {
-                 filteredList.push(item);
-             }
-        }
+        const authResults = await Promise.all(
+            dataList.map(item => checkAuth(req, entity, 'view', config, item))
+        );
+        const filteredList = dataList.filter((_, index) => authResults[index].allowed);
         res.json(filteredList);
 
     } catch (error: any) {

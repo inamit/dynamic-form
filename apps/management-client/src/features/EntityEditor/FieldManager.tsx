@@ -8,14 +8,16 @@ interface Props {
 }
 
 export default function FieldManager({ fields, onFieldsChange }: Props) {
-  const [newField, setNewField] = useState<Field>({ name: '', type: 'text', label: '', enumName: '' });
+  const [newField, setNewField] = useState<Field>({ name: '', type: 'text', label: '', enumName: '', parentField: null });
 
   const handleAddField = () => {
     if (newField.name && newField.label) {
       onFieldsChange([...fields, newField]);
-      setNewField({ name: '', type: 'text', label: '', enumName: '' });
+      setNewField({ name: '', type: 'text', label: '', enumName: '', parentField: null });
     }
   };
+
+  const listFields = fields.filter(f => f.type === 'list');
 
   const handleRemoveField = (index: number) => {
     const newFields = [...fields];
@@ -44,21 +46,37 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
           select
           label="Type"
           value={newField.type}
-          onChange={(e) => setNewField({ ...newField, type: e.target.value })}
+          onChange={(e) => setNewField({ ...newField, type: e.target.value, parentField: null })}
           size="small"
         >
           <MenuItem value="text">Text</MenuItem>
           <MenuItem value="number">Number</MenuItem>
           <MenuItem value="checkbox">Checkbox</MenuItem>
           <MenuItem value="enum">Enum</MenuItem>
+          <MenuItem value="list">List</MenuItem>
         </TextField>
         {newField.type === 'enum' && (
           <TextField
             label="Enum Name"
-            value={newField.enumName}
+            value={newField.enumName || ''}
             onChange={(e) => setNewField({ ...newField, enumName: e.target.value })}
             size="small"
           />
+        )}
+        {newField.type !== 'list' && listFields.length > 0 && (
+          <TextField
+            select
+            label="Parent Field"
+            value={newField.parentField || ''}
+            onChange={(e) => setNewField({ ...newField, parentField: e.target.value || null })}
+            size="small"
+            sx={{ minWidth: 120 }}
+          >
+            <MenuItem value=""><em>None</em></MenuItem>
+            {listFields.map(lf => (
+              <MenuItem key={lf.name} value={lf.name}>{lf.label} ({lf.name})</MenuItem>
+            ))}
+          </TextField>
         )}
         <Button variant="contained" onClick={handleAddField}>Add Manually</Button>
       </Box>
@@ -70,6 +88,7 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
               <TableCell>Name</TableCell>
               <TableCell>Label</TableCell>
               <TableCell>Type</TableCell>
+              <TableCell>Parent</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -79,6 +98,7 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
                 <TableCell>{f.name}</TableCell>
                 <TableCell>{f.label}</TableCell>
                 <TableCell>{f.type}</TableCell>
+                <TableCell>{f.parentField || '-'}</TableCell>
                 <TableCell>
                   <Button size="small" color="error" onClick={() => handleRemoveField(i)}>Remove</Button>
                 </TableCell>

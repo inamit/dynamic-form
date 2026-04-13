@@ -41,6 +41,11 @@ describe('AuthorizationController', () => {
             expect(response.status).toBe(400);
         });
 
+        it('should return 400 if entity contains URL-encoded path traversal characters', async () => {
+            const response = await request(app).get('/data/%2e%2e%2fetc%2fpasswd/abilities');
+            expect(response.status).toBe(400);
+        });
+
         it('should return abilities', async () => {
             const mockAbilities = { canView: true, canCreate: false, canEdit: false, canDelete: false };
             mockAuthorizationService.getEntityAbilities.mockResolvedValue(mockAbilities);

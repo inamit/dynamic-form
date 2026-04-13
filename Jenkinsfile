@@ -5,6 +5,10 @@ pipeline {
         DOCKER_REGISTRY = 'my-registry.com'
     }
 
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+    }
+
     stages {
         stage('Install and Lint') {
             steps {

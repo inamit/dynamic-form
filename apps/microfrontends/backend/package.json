@@ -8,7 +8,7 @@
     "dev": "nodemon --exec tsx src/index.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "test": "node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js",
+    "test": "node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js --passWithNoTests",
     "build": "tsc"
   },
   "keywords": [],

@@ -12,6 +12,7 @@ env:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
 
@@ -33,6 +34,7 @@ jobs:
   docker-build-push:
     needs: build-and-test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.ref == 'refs/heads/main'
     strategy:
       matrix:

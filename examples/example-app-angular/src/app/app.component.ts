@@ -25,6 +25,7 @@ import { loadWebComponents } from './load-web-component';
   `
 })
 export class AppComponent {
+  title = 'example-app-angular';
   constructor() {
     loadWebComponents();
   }

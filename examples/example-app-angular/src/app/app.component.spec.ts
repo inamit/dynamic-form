@@ -5,6 +5,9 @@ import { of } from 'rxjs';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
+    // Stub loadWebComponents since it fetches remotely
+    (window as any).loadWebComponents = jasmine.createSpy('loadWebComponents');
+
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [

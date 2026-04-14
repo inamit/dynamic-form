@@ -17,9 +17,22 @@ pipeline {
             }
         }
 
+        stage('Prepare Tests') {
+            steps {
+                sh 'npm run prisma:generate --workspaces --if-present'
+                sh 'npm run build -w apps/microfrontends/mfe-list'
+                sh 'npm run build -w apps/microfrontends/mfe-form'
+            }
+        }
+
         stage('Test') {
             steps {
-                sh 'npm run test --workspaces --if-present'
+                script {
+                    sh 'npm run preview -w apps/microfrontends/mfe-list &'
+                    sh 'npm run preview -w apps/microfrontends/mfe-form &'
+                    sh 'sleep 10'
+                    sh 'npm run test --workspaces --if-present'
+                }
             }
         }
 

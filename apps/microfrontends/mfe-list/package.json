@@ -8,7 +8,7 @@
     "build": "tsc -b && nx vite:build",
     "lint": "nx eslint:lint",
     "preview": "nx vite:preview",
-    "test": "node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js"
+    "test": "npm run build && (npm run preview &) && sleep 10 && node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js && kill $(lsof -t -i :5002) 2>/dev/null || true"
   },
   "dependencies": {
     "@dynamic-form/shared-ui": "*",

@@ -57,4 +57,24 @@ describe('useEntityForm', () => {
     expect(result.current.schema).toEqual(mockSchema);
     expect(result.current.formData).toEqual({ testField: '' }); // default empty init
   });
+
+  it('should initialize list field with empty array', async () => {
+    const mockConfig: any = { id: 1, name: 'users', fields: [{ name: 'testList', type: 'list' }] };
+    const mockAbilities: any = { canCreate: true };
+    const mockSchema: any = { properties: { testList: { type: 'array' } } };
+
+    mockGetConfig.mockResolvedValue(mockConfig);
+    mockGetAbilities.mockResolvedValue(mockAbilities);
+    mockGetSchema.mockResolvedValue(mockSchema);
+
+    let result: any;
+    await act(async () => {
+      const render = renderHook(() => useEntityForm('users'));
+      result = render.result;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.formData).toEqual({ testList: [] }); // default empty array for list
+  });
 });

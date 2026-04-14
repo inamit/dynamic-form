@@ -20,19 +20,12 @@ pipeline {
         stage('Prepare Tests') {
             steps {
                 sh 'npm run prisma:generate --workspaces --if-present'
-                sh 'npm run build -w apps/microfrontends/mfe-list'
-                sh 'npm run build -w apps/microfrontends/mfe-form'
             }
         }
 
         stage('Test') {
             steps {
                 script {
-                    sh 'npm run preview -w apps/microfrontends/mfe-list &'
-                    sh 'npm run preview -w apps/microfrontends/mfe-form &'
-                    sh 'sleep 10'
-                    sh 'kill $(lsof -t -i :5001) 2>/dev/null || true'
-                    sh 'kill $(lsof -t -i :5002) 2>/dev/null || true'
                     sh 'npm run test --workspaces --if-present'
                 }
             }

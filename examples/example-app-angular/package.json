@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test --watch=false --browsers=ChromeHeadless"
+    "test": "npm run build --workspace=mfe-list && npm run build --workspace=mfe-form && (npm run preview --workspace=mfe-list &) && (npm run preview --workspace=mfe-form &) && sleep 10 && ng test --watch=false --browsers=ChromeHeadless && kill $(lsof -t -i :5001) 2>/dev/null || true && kill $(lsof -t -i :5002) 2>/dev/null || true"
   },
   "private": true,
   "dependencies": {

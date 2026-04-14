@@ -8,7 +8,7 @@
     "build": "tsc -b && nx vite:build",
     "lint": "nx eslint:lint",
     "preview": "nx vite:preview",
-    "test": "npm run build && (npm run preview &) && sleep 10 && node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js && kill $(lsof -t -i :5001) 2>/dev/null || true"
+    "test": "node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js"
   },
   "dependencies": {
     "@dynamic-form/geo-utils": "*",

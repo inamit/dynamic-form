@@ -31,19 +31,6 @@ jobs:
       - name: Generate Prisma clients
         run: npm run prisma:generate --workspaces --if-present
 
-      - name: Build microfrontends
-        run: |
-          npm run build -w apps/microfrontends/mfe-list
-          npm run build -w apps/microfrontends/mfe-form
-
-      - name: Preview microfrontends
-        run: |
-          npm run preview -w apps/microfrontends/mfe-list &
-          npm run preview -w apps/microfrontends/mfe-form &
-
-      - name: Wait for preview servers
-        run: sleep 10
-
       - name: Test
         run: npm run test --workspaces --if-present
 

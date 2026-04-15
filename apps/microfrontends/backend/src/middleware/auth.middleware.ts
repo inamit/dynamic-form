@@ -10,3 +10,11 @@ export function extractUser(req: Request, res: Response, next: NextFunction) {
     (req as any).origin = req.headers.origin || 'http://localhost:5001';
     next();
 }
+
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+    const user = (req as any).user;
+    if (!user || user.id === 'anonymous') {
+        return res.status(401).json({ error: 'Unauthorized: Authentication required' });
+    }
+    next();
+}

@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import { DataSourceController } from '../controllers/data-source.controller.js';
 import { EntityConfigController } from '../controllers/entity-config.controller.js';
+import { extractUser, requireAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
 const dataSourceController = new DataSourceController();
 const entityConfigController = new EntityConfigController();
+
+router.use(extractUser);
+router.use(requireAuth);
 
 // Data Sources
 router.get('/data-sources', dataSourceController.getDataSources);

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { ConfigService } from '../services/config.service.js';
+import { isValidParam } from '../utils.js';
 
 export class ConfigController {
     private configService: ConfigService;
@@ -20,7 +21,11 @@ export class ConfigController {
 
     getConfigByName = async (req: Request, res: Response) => {
         try {
-            const config = await this.configService.getConfigByName(req.params.name as string);
+            const name = req.params.name as string;
+            if (!isValidParam(name)) {
+                return res.status(400).json({ error: 'Invalid name parameter' });
+            }
+            const config = await this.configService.getConfigByName(name);
             if (!config) {
                 return res.status(404).json({ error: 'Configuration not found' });
             }

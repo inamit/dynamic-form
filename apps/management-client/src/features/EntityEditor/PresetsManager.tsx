@@ -11,6 +11,7 @@ interface Preset {
   name: string;
   gridTemplate: string;
   defaultValues?: Record<string, any>;
+  listSubFields?: Record<string, string[]>;
 }
 
 interface Props {
@@ -64,7 +65,8 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
         id: newPresetId,
         name: presetName,
         gridTemplate: '', // default empty template, handled by grid preview
-        defaultValues: {}
+        defaultValues: {},
+        listSubFields: {}
       });
       setSelectedTab(newPresets.length - 1);
 
@@ -114,7 +116,18 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
   const handleDefaultValueChange = (fieldName: string, value: any) => {
     const newPresets = [...presets];
     const currentDefValues = newPresets[selectedTab].defaultValues || {};
-    newPresets[selectedTab].defaultValues = { ...currentDefValues, [fieldName]: value };
+
+    let processedValue = value;
+    const fieldConfig = fields.find(f => f.name === fieldName);
+
+    if (fieldConfig?.type === 'list' && Array.isArray(value)) {
+        processedValue = value.filter(item => !item._deleted).map(item => {
+            const { _id, _deleted, ...rest } = item;
+            return rest;
+        });
+    }
+
+    newPresets[selectedTab].defaultValues = { ...currentDefValues, [fieldName]: processedValue };
     onChange(newPresets, defaultPresetId);
   };
 
@@ -140,28 +153,53 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
 
   const activeFieldsSet = currentPreset ? parseFieldsInTemplate(currentPreset.gridTemplate) : new Set();
 
-  // If template is empty, ALL fields are assumed to be "about to be added" by GridPreview's auto-generation
+  // If template is empty, ALL top-level fields are assumed to be "about to be added" by GridPreview's auto-generation
   const isTemplateEmpty = !currentPreset?.gridTemplate;
 
-  const toggleField = (fieldName: string) => {
+  const toggleField = (field: any) => {
      if (!currentPreset) return;
-     if (schemaRequired.includes(fieldName)) return; // Don't allow toggling required fields
+     if (schemaRequired.includes(field.name)) return; // Don't allow toggling required fields
+
+     if (field.parentField) {
+         // Subfields toggling
+         const newPresets = [...presets];
+         const presetToUpdate = { ...newPresets[selectedTab] };
+         const currentListSubFields = { ...(presetToUpdate.listSubFields || {}) };
+
+         let currentActive = currentListSubFields[field.parentField];
+         if (!currentActive) {
+             // By default all subfields of this parent are active
+             currentActive = fields.filter(f => f.parentField === field.parentField).map(f => f.name);
+         }
+
+         if (currentActive.includes(field.name)) {
+             currentActive = currentActive.filter(name => name !== field.name);
+         } else {
+             currentActive = [...currentActive, field.name];
+         }
+
+         currentListSubFields[field.parentField] = currentActive;
+         presetToUpdate.listSubFields = currentListSubFields;
+         newPresets[selectedTab] = presetToUpdate;
+         onChange(newPresets, defaultPresetId);
+         return;
+     }
 
      let newTemplate = currentPreset.gridTemplate;
 
      if (isTemplateEmpty) {
         // If it's empty, we must first let GridPreview generate the default, or just build one manually.
         // It's easier to just build a simple one. But to stay consistent, we'll build a basic string.
-        const activeNames = fields.map(f => f.name).filter(n => n !== fieldName);
+        const activeNames = fields.filter(f => !f.parentField).map(f => f.name).filter(n => n !== field.name);
         newTemplate = `"${activeNames.join(' ')}"`;
      } else {
-        if (activeFieldsSet.has(fieldName)) {
+        if (activeFieldsSet.has(field.name)) {
             // Remove field: replace its occurrences with '.' (empty cell)
-            const regex = new RegExp(`\\b${fieldName}\\b`, 'g');
+            const regex = new RegExp(`\\b${field.name}\\b`, 'g');
             newTemplate = newTemplate.replace(regex, '.');
         } else {
             // Add field: append it to a new row at the bottom
-            newTemplate = `${newTemplate.trim()} "${fieldName}"`;
+            newTemplate = `${newTemplate.trim()} "${field.name}"`;
         }
      }
 
@@ -217,30 +255,89 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
                   Click a field to toggle it on or off for this preset. Required fields cannot be hidden.
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {fields.map(f => {
-                        const isActive = isTemplateEmpty || activeFieldsSet.has(f.name);
-                      const isRequired = schemaRequired.includes(f.name);
+                    {fields.filter(f => !f.parentField).map(mainField => {
+                        const isMainRequired = schemaRequired.includes(mainField.name);
+                        const isMainActive = isTemplateEmpty || activeFieldsSet.has(mainField.name);
+
+                        const subFields = fields.filter(f => f.parentField === mainField.name);
+                        const hasSubFields = subFields.length > 0;
+
+                        const renderMainChip = () => (
+                            <Tooltip key={mainField.name} title={isMainRequired ? "Required field cannot be hidden" : ""}>
+                                <Chip
+                                    label={mainField.label || mainField.name}
+                                    color={isMainActive ? "primary" : "default"}
+                                    variant={isMainActive ? "filled" : "outlined"}
+                                    onClick={() => toggleField(mainField)}
+                                    sx={{ cursor: isMainRequired ? 'not-allowed' : 'pointer' }}
+                                    onDelete={isMainRequired ? undefined : undefined} // just visual cue
+                                    icon={isMainRequired ? <StarIcon fontSize="small"/> : undefined}
+                                />
+                            </Tooltip>
+                        );
+
+                        if (!hasSubFields) {
+                            return renderMainChip();
+                        }
+
                         return (
-                          <Tooltip key={f.name} title={isRequired ? "Required field cannot be hidden" : ""}>
-                              <Chip
-                                  label={f.label || f.name}
-                                  color={isActive ? "primary" : "default"}
-                                  variant={isActive ? "filled" : "outlined"}
-                                  onClick={() => toggleField(f.name)}
-                                  sx={{ cursor: isRequired ? 'not-allowed' : 'pointer' }}
-                                  onDelete={isRequired ? undefined : undefined} // just visual cue
-                                  icon={isRequired ? <StarIcon fontSize="small"/> : undefined}
-                              />
-                          </Tooltip>
+                            <Box
+                                key={`container-${mainField.name}`}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    p: 0.5,
+                                    bgcolor: isMainActive ? 'action.hover' : 'transparent',
+                                    borderRadius: 1,
+                                    border: '1px solid',
+                                    borderColor: 'divider'
+                                }}
+                            >
+                                {renderMainChip()}
+
+                                {isMainActive && subFields.map(subField => {
+                                    const isSubRequired = schemaRequired.includes(subField.name);
+                                    let isSubActive = false;
+                                    const currentListSubFields = currentPreset.listSubFields || {};
+                                    const activeSubFields = currentListSubFields[mainField.name];
+
+                                    if (activeSubFields) {
+                                        isSubActive = activeSubFields.includes(subField.name);
+                                    } else {
+                                        isSubActive = true; // default is all subfields are active
+                                    }
+
+                                    return (
+                                        <Tooltip key={subField.name} title={isSubRequired ? "Required field cannot be hidden" : ""}>
+                                            <Chip
+                                                size="small"
+                                                label={subField.label || subField.name}
+                                                color={isSubActive ? "secondary" : "default"}
+                                                variant={isSubActive ? "filled" : "outlined"}
+                                                onClick={() => toggleField(subField)}
+                                                sx={{ cursor: isSubRequired ? 'not-allowed' : 'pointer' }}
+                                                icon={isSubRequired ? <StarIcon fontSize="small"/> : undefined}
+                                            />
+                                        </Tooltip>
+                                    );
+                                })}
+                            </Box>
                         );
                     })}
                 </Box>
               </Box>
 
               <Typography variant="subtitle2" gutterBottom>Grid Layout</Typography>
-              {/* Pass only the active fields to GridPreview to ensure hidden fields don't render */}
+              {/* Pass only the active fields to GridPreview to ensure hidden fields don't render. Also exclude subfields from the main grid layout */}
               <GridPreview
-                fields={fields.filter(f => isTemplateEmpty || activeFieldsSet.has(f.name))}
+                fields={fields.filter(f => {
+                   if (f.parentField) {
+                       const allowed = currentPreset.listSubFields?.[f.parentField];
+                       return allowed ? allowed.includes(f.name) : true;
+                   }
+                   return isTemplateEmpty || activeFieldsSet.has(f.name);
+                })}
                 gridTemplate={currentPreset.gridTemplate}
                 defaultValues={currentPreset.defaultValues}
                 onLayoutChange={handleLayoutChange}

@@ -15,7 +15,8 @@ export class EntityConfigController {
                 ...config,
                 presets: config.presets.map((p: any) => ({
                     ...p,
-                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
+                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined,
+                    listSubFields: p.listSubFields ? JSON.parse(p.listSubFields) : undefined
                 }))
             });
         } catch (e: any) {
@@ -33,7 +34,8 @@ export class EntityConfigController {
                 ...config,
                 presets: config.presets.map((p: any) => ({
                     ...p,
-                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
+                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined,
+                    listSubFields: p.listSubFields ? JSON.parse(p.listSubFields) : undefined
                 }))
             });
         } catch (e: any) {
@@ -48,7 +50,8 @@ export class EntityConfigController {
                 ...config,
                 presets: config.presets.map((p: any) => ({
                     ...p,
-                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined
+                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined,
+                    listSubFields: p.listSubFields ? JSON.parse(p.listSubFields) : undefined
                 }))
             });
         } catch (e: any) {

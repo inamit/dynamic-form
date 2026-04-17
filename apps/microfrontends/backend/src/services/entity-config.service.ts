@@ -37,7 +37,8 @@ export class EntityConfigService {
                 create: (presets || []).map((p: any) => ({
                     name: p.name,
                     gridTemplate: p.gridTemplate,
-                    defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
+                    defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null,
+                    listSubFields: p.listSubFields ? JSON.stringify(p.listSubFields) : null
                 }))
             },
             auth
@@ -80,7 +81,8 @@ export class EntityConfigService {
                 create: (presets || []).map((p: any) => ({
                     name: p.name,
                     gridTemplate: p.gridTemplate,
-                    defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null
+                    defaultValues: p.defaultValues ? JSON.stringify(p.defaultValues) : null,
+                    listSubFields: p.listSubFields ? JSON.stringify(p.listSubFields) : null
                 }))
             },
             auth

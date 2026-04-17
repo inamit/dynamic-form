@@ -136,14 +136,15 @@ export default function EntityForm() {
   let effectiveGridTemplate = injectedGridTemplate;
   let currentActivePresetId = activePresetId;
 
+  let activePreset: any = null;
   if (!effectiveGridTemplate) {
       if (currentActivePresetId && config.presets) {
-          const preset = config.presets.find(p => p.id === currentActivePresetId);
-          if (preset) effectiveGridTemplate = preset.gridTemplate;
+          activePreset = config.presets.find(p => p.id === currentActivePresetId);
+          if (activePreset) effectiveGridTemplate = activePreset.gridTemplate;
       } else if (config.defaultPresetId && config.presets) {
           currentActivePresetId = config.defaultPresetId as number;
-          const preset = config.presets.find(p => p.id === currentActivePresetId);
-          if (preset) effectiveGridTemplate = preset.gridTemplate;
+          activePreset = config.presets.find(p => p.id === currentActivePresetId);
+          if (activePreset) effectiveGridTemplate = activePreset.gridTemplate;
       } else {
           effectiveGridTemplate = config.gridTemplate; // Fallback to old field
       }
@@ -211,7 +212,12 @@ export default function EntityForm() {
           .map(field => {
           const isRequired = schema?.required?.includes(field.name);
           const errorMsg = validationErrors[field.name];
-          const subFields = config.fields.filter(f => f.parentField === field.name);
+
+          let subFields = config.fields.filter(f => f.parentField === field.name);
+          if (activePreset && activePreset.listSubFields && activePreset.listSubFields[field.name]) {
+              const allowedSubFields = activePreset.listSubFields[field.name];
+              subFields = subFields.filter(f => allowedSubFields.includes(f.name));
+          }
 
           return (
           <div key={field.name} style={{ display: 'flex', flexDirection: 'column', gridArea: field.name }}>

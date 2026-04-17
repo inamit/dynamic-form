@@ -13,6 +13,7 @@ interface Field {
   name: string;
   type: string;
   label: string;
+  parentField?: string | null;
 }
 
 interface GridItem {
@@ -34,7 +35,8 @@ function SortableItem(props: {
   defaultValue?: any;
   onChangeSpan: (id: string, col: number, row: number) => void;
   onDefaultValueChange?: (id: string, value: any) => void;
-  maxColumns: number
+  maxColumns: number;
+  subFields?: Field[];
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: props.item.id });
 
@@ -86,6 +88,7 @@ function SortableItem(props: {
             value={props.defaultValue}
             apiBaseUrl="http://localhost:3001/api"
             onChange={(name: string, value: any) => props.onDefaultValueChange!(name, value)}
+            subFields={props.subFields}
           />
         </Box>
       )}
@@ -228,14 +231,18 @@ export default function GridPreview({ fields, gridTemplate, defaultValues, onLay
 
     setMaxColumns(cols);
 
+    // Filter out subfields - they should not be in the grid layout
+    const mainFields = fields.filter(f => !f.parentField);
+
     // Sync fields with layout items
-    const fieldNames = new Set(fields.map(f => f.name));
+    const fieldNames = new Set(mainFields.map(f => f.name));
     const layoutNames = new Set(parsed.map(i => i.id));
 
     const updatedItems = parsed.filter(i => fieldNames.has(i.id));
-    fields.forEach(f => {
+    mainFields.forEach(f => {
       if (!layoutNames.has(f.name)) {
-        updatedItems.push({ id: f.name, colSpan: Math.min(cols, 1), rowSpan: 1 });
+        const defaultColSpan = f.type === 'list' ? cols : Math.min(cols, 1);
+        updatedItems.push({ id: f.name, colSpan: defaultColSpan, rowSpan: 1 });
       }
     });
 
@@ -310,6 +317,7 @@ export default function GridPreview({ fields, gridTemplate, defaultValues, onLay
                   onChangeSpan={handleChangeSpan}
                   onDefaultValueChange={onDefaultValueChange}
                   maxColumns={maxColumns}
+                  subFields={fields.filter(f => f.parentField === item.id)}
                 />
               );
             })}

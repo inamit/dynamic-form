@@ -22,7 +22,10 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "paths": {
+      "@dynamic-form/shared-ui": ["../../libs/shared-ui/src/index.ts"]
+    }
   },
   "include": ["src"]
 }

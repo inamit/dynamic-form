@@ -11,30 +11,33 @@ export interface ListFieldGridProps {
   onChange: (value: any[]) => void;
   subFields: FieldConfig[];
   apiBaseUrl?: string;
+  enumValues?: { code: string; value: string }[];
 }
 
-export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, subFields, apiBaseUrl }) => {
+export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, subFields, apiBaseUrl, enumValues }) => {
   const gridRef = useRef<any>(null);
 
   const rowData = Array.isArray(value) ? value : [];
   const [enumDictionaries, setEnumDictionaries] = React.useState<Record<string, { code: string; value: string }[]>>({});
 
   React.useEffect(() => {
-    if (!apiBaseUrl) return;
-
     subFields.forEach((field) => {
       if (field.type === 'enum' && field.enumName && !enumDictionaries[field.name]) {
-        fetch(`${apiBaseUrl}/enums/${field.enumName}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (Array.isArray(data)) {
-              setEnumDictionaries((prev) => ({ ...prev, [field.name]: data }));
-            }
-          })
-          .catch((err) => console.error(`Failed to fetch enum ${field.enumName}`, err));
+        if (enumValues && enumValues.length > 0) {
+            setEnumDictionaries((prev) => ({ ...prev, [field.name]: enumValues }));
+        } else if (apiBaseUrl) {
+            fetch(`${apiBaseUrl}/enums/${field.enumName}`)
+              .then((res) => res.json())
+              .then((data) => {
+                if (Array.isArray(data)) {
+                  setEnumDictionaries((prev) => ({ ...prev, [field.name]: data }));
+                }
+              })
+              .catch((err) => console.error(`Failed to fetch enum ${field.enumName}`, err));
+        }
       }
     });
-  }, [subFields, apiBaseUrl, enumDictionaries]);
+  }, [subFields, apiBaseUrl, enumDictionaries, enumValues]);
 
   const columnDefs: ColDef[] = subFields.map(field => {
     let colDef: ColDef = {

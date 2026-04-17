@@ -161,6 +161,7 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
           onChange={(newVal) => onChange(field.name, newVal)}
           subFields={subFields || []}
           apiBaseUrl={apiBaseUrl}
+          enumValues={enumValues}
         />
       ) : (
         <TextField

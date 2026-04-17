@@ -12,6 +12,7 @@ export interface Preset {
   name: string;
   gridTemplate: string;
   defaultValues?: Record<string, any>;
+  listSubFields?: Record<string, string[]>;
 }
 
 export interface EntityConfig {

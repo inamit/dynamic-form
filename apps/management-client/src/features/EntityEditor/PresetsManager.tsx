@@ -116,7 +116,18 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
   const handleDefaultValueChange = (fieldName: string, value: any) => {
     const newPresets = [...presets];
     const currentDefValues = newPresets[selectedTab].defaultValues || {};
-    newPresets[selectedTab].defaultValues = { ...currentDefValues, [fieldName]: value };
+
+    let processedValue = value;
+    const fieldConfig = fields.find(f => f.name === fieldName);
+
+    if (fieldConfig?.type === 'list' && Array.isArray(value)) {
+        processedValue = value.filter(item => !item._deleted).map(item => {
+            const { _id, _deleted, ...rest } = item;
+            return rest;
+        });
+    }
+
+    newPresets[selectedTab].defaultValues = { ...currentDefValues, [fieldName]: processedValue };
     onChange(newPresets, defaultPresetId);
   };
 

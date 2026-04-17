@@ -37,6 +37,7 @@ model Preset {
   name           String
   gridTemplate   String
   defaultValues  String?
+  listSubFields  String?
   entityConfigId Int
   entityConfig   EntityConfig @relation(fields: [entityConfigId], references: [id], onDelete: Cascade)
 }

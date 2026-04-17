@@ -124,7 +124,8 @@ export default function EntityForm() {
             const presetPayload: any = {
                 name: p.name,
                 gridTemplate: p.gridTemplate,
-                defaultValues: p.defaultValues
+                defaultValues: p.defaultValues,
+                listSubFields: p.listSubFields
             };
             if (typeof p.id === 'number') {
                 presetPayload.id = p.id;

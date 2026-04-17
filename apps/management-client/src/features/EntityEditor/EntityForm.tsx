@@ -137,7 +137,8 @@ export default function EntityForm() {
           name: f.name,
           type: f.type,
           label: f.label,
-          enumName: f.enumName || null
+          enumName: f.enumName || null,
+          parentField: f.parentField || null
         }))
       };
 

@@ -241,7 +241,8 @@ export default function GridPreview({ fields, gridTemplate, defaultValues, onLay
     const updatedItems = parsed.filter(i => fieldNames.has(i.id));
     mainFields.forEach(f => {
       if (!layoutNames.has(f.name)) {
-        updatedItems.push({ id: f.name, colSpan: Math.min(cols, 1), rowSpan: 1 });
+        const defaultColSpan = f.type === 'list' ? cols : Math.min(cols, 1);
+        updatedItems.push({ id: f.name, colSpan: defaultColSpan, rowSpan: 1 });
       }
     });
 

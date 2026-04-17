@@ -244,36 +244,74 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
                   Click a field to toggle it on or off for this preset. Required fields cannot be hidden.
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {fields.map(f => {
-                        const isRequired = schemaRequired.includes(f.name);
-                        let isActive = false;
+                    {fields.filter(f => !f.parentField).map(mainField => {
+                        const isMainRequired = schemaRequired.includes(mainField.name);
+                        const isMainActive = isTemplateEmpty || activeFieldsSet.has(mainField.name);
 
-                        if (f.parentField) {
-                            const currentListSubFields = currentPreset.listSubFields || {};
-                            const activeSubFields = currentListSubFields[f.parentField];
-                            if (activeSubFields) {
-                                isActive = activeSubFields.includes(f.name);
-                            } else {
-                                isActive = true; // default is all subfields are active
-                            }
-                        } else {
-                            isActive = isTemplateEmpty || activeFieldsSet.has(f.name);
+                        const subFields = fields.filter(f => f.parentField === mainField.name);
+                        const hasSubFields = subFields.length > 0;
+
+                        const renderMainChip = () => (
+                            <Tooltip key={mainField.name} title={isMainRequired ? "Required field cannot be hidden" : ""}>
+                                <Chip
+                                    label={mainField.label || mainField.name}
+                                    color={isMainActive ? "primary" : "default"}
+                                    variant={isMainActive ? "filled" : "outlined"}
+                                    onClick={() => toggleField(mainField)}
+                                    sx={{ cursor: isMainRequired ? 'not-allowed' : 'pointer' }}
+                                    onDelete={isMainRequired ? undefined : undefined} // just visual cue
+                                    icon={isMainRequired ? <StarIcon fontSize="small"/> : undefined}
+                                />
+                            </Tooltip>
+                        );
+
+                        if (!hasSubFields) {
+                            return renderMainChip();
                         }
 
-                        const label = f.parentField ? `${f.parentField} > ${f.label || f.name}` : (f.label || f.name);
-
                         return (
-                          <Tooltip key={f.name} title={isRequired ? "Required field cannot be hidden" : ""}>
-                              <Chip
-                                  label={label}
-                                  color={isActive ? "primary" : "default"}
-                                  variant={isActive ? "filled" : "outlined"}
-                                  onClick={() => toggleField(f)}
-                                  sx={{ cursor: isRequired ? 'not-allowed' : 'pointer' }}
-                                  onDelete={isRequired ? undefined : undefined} // just visual cue
-                                  icon={isRequired ? <StarIcon fontSize="small"/> : undefined}
-                              />
-                          </Tooltip>
+                            <Box
+                                key={`container-${mainField.name}`}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    p: 0.5,
+                                    bgcolor: isMainActive ? 'action.hover' : 'transparent',
+                                    borderRadius: 1,
+                                    border: '1px solid',
+                                    borderColor: 'divider'
+                                }}
+                            >
+                                {renderMainChip()}
+
+                                {isMainActive && subFields.map(subField => {
+                                    const isSubRequired = schemaRequired.includes(subField.name);
+                                    let isSubActive = false;
+                                    const currentListSubFields = currentPreset.listSubFields || {};
+                                    const activeSubFields = currentListSubFields[mainField.name];
+
+                                    if (activeSubFields) {
+                                        isSubActive = activeSubFields.includes(subField.name);
+                                    } else {
+                                        isSubActive = true; // default is all subfields are active
+                                    }
+
+                                    return (
+                                        <Tooltip key={subField.name} title={isSubRequired ? "Required field cannot be hidden" : ""}>
+                                            <Chip
+                                                size="small"
+                                                label={subField.label || subField.name}
+                                                color={isSubActive ? "secondary" : "default"}
+                                                variant={isSubActive ? "filled" : "outlined"}
+                                                onClick={() => toggleField(subField)}
+                                                sx={{ cursor: isSubRequired ? 'not-allowed' : 'pointer' }}
+                                                icon={isSubRequired ? <StarIcon fontSize="small"/> : undefined}
+                                            />
+                                        </Tooltip>
+                                    );
+                                })}
+                            </Box>
                         );
                     })}
                 </Box>

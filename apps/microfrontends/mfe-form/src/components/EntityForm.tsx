@@ -82,7 +82,19 @@ export default function EntityForm() {
 
   const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await handleSubmit();
+
+    const cleanedData = { ...formData };
+    config?.fields.forEach(f => {
+      if (f.type === 'list' && Array.isArray(cleanedData[f.name])) {
+        cleanedData[f.name] = cleanedData[f.name].filter((item: any) => !item._deleted).map((item: any) => {
+            delete item._deleted;
+            delete item._id;
+
+            return item;
+        });
+      }
+    });
+    await handleSubmit(cleanedData);
   };
 
   const handleCancel = () => {
@@ -98,6 +110,11 @@ export default function EntityForm() {
   };
 
   const handleSelectLocation = (field: string) => {
+      if (selectModeField === field) {
+        setSelectModeField(null);
+      } else {
+        setSelectModeField(field);
+      }
       postal.publish({
         channel: CHANNEL_NAME,
         topic: TOPICS.SELECT_LOCATION,
@@ -188,9 +205,13 @@ export default function EntityForm() {
           ? { display: 'grid', gridTemplateAreas: effectiveGridTemplate, gap: '20px' }
           : { display: 'flex', flexDirection: 'column', gap: '20px' }
       }>
-        {config.fields.filter(field => !isGrid || validGridAreas.has(field.name)).map(field => {
+        {config.fields
+          .filter(field => !field.parentField)
+          .filter(field => !isGrid || validGridAreas.has(field.name))
+          .map(field => {
           const isRequired = schema?.required?.includes(field.name);
           const errorMsg = validationErrors[field.name];
+          const subFields = config.fields.filter(f => f.parentField === field.name);
 
           return (
           <div key={field.name} style={{ display: 'flex', flexDirection: 'column', gridArea: field.name }}>
@@ -207,6 +228,7 @@ export default function EntityForm() {
               onCoordinateFormatChange={handleCoordinateFormatChange}
               isSelectMode={selectModeField === field.name}
               onSelectLocation={handleSelectLocation}
+              subFields={subFields}
             />
           </div>
         )})}

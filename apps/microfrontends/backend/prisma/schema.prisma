@@ -44,9 +44,10 @@ model Preset {
 model Field {
   id             Int          @id @default(autoincrement())
   name           String
-  type           String // "text", "number", "checkbox", "enum"
+  type           String // "text", "number", "checkbox", "enum", "list"
   label          String
   enumName       String?
+  parentField    String?
   entityConfigId Int
   entityConfig   EntityConfig @relation(fields: [entityConfigId], references: [id], onDelete: Cascade)
 

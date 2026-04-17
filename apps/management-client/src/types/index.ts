@@ -3,6 +3,7 @@ export interface Field {
   type: string;
   label: string;
   enumName?: string | null;
+  parentField?: string | null;
   entityConfigId?: number;
 }
 

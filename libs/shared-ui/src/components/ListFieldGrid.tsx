@@ -10,11 +10,10 @@ export interface ListFieldGridProps {
   value: any[];
   onChange: (value: any[]) => void;
   subFields: FieldConfig[];
-  apiBaseUrl?: string;
   enumValues?: { code: string; value: string }[];
 }
 
-export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, subFields, apiBaseUrl, enumValues }) => {
+export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, subFields, enumValues }) => {
   const gridRef = useRef<any>(null);
 
   const rowData = Array.isArray(value) ? value : [];
@@ -25,19 +24,10 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
       if (field.type === 'enum' && field.enumName && !enumDictionaries[field.name]) {
         if (enumValues && enumValues.length > 0) {
             setEnumDictionaries((prev) => ({ ...prev, [field.name]: enumValues }));
-        } else if (apiBaseUrl) {
-            fetch(`${apiBaseUrl}/enums/${field.enumName}`)
-              .then((res) => res.json())
-              .then((data) => {
-                if (Array.isArray(data)) {
-                  setEnumDictionaries((prev) => ({ ...prev, [field.name]: data }));
-                }
-              })
-              .catch((err) => console.error(`Failed to fetch enum ${field.enumName}`, err));
         }
       }
     });
-  }, [subFields, apiBaseUrl, enumDictionaries, enumValues]);
+  }, [subFields, enumDictionaries, enumValues]);
 
   const columnDefs: ColDef[] = subFields.map(field => {
     let colDef: ColDef = {
@@ -78,7 +68,7 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
   }, [onChange]);
 
   const addRow = useCallback(() => {
-    const newRow: Record<string, any> = {};
+    const newRow: Record<string, any> = { _id: Date.now(), _deleted: false };
     subFields.forEach(f => {
       newRow[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
     });
@@ -86,15 +76,54 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
     onChange([...rowData, newRow]);
   }, [onChange, rowData, subFields]);
 
-  const deleteSelectedRows = useCallback(() => {
-    const selectedNodes = gridRef.current!.api.getSelectedNodes();
-    if (!selectedNodes.length) return;
-
-    // For simplicity, we actually remove them rather than mark deleted.
-    const selectedData = selectedNodes.map((node: any) => node.data);
-    const updatedData = rowData.filter(row => !selectedData.includes(row));
+  const handleRowDeleteToggle = useCallback((node: any) => {
+    const updatedData = rowData.map(row => {
+      if (row === node.data) {
+        return { ...row, _deleted: !row._deleted };
+      }
+      return row;
+    });
     onChange(updatedData);
   }, [onChange, rowData]);
+
+  const finalColumnDefs = [
+    {
+      headerName: '',
+      field: '_action',
+      width: 100,
+      editable: false,
+      filter: false,
+      sortable: false,
+      cellRenderer: (params: any) => {
+        const isDeleted = params.data?._deleted;
+        const btnText = isDeleted ? 'Restore' : 'Delete';
+        const color = isDeleted ? 'primary' : 'error';
+
+        return (
+          <Button
+            size="small"
+            color={color as any}
+            onClick={() => handleRowDeleteToggle(params.node)}
+          >
+            {btnText}
+          </Button>
+        );
+      },
+      headerComponent: () => {
+        return (
+           <Button size="small" variant="contained" onClick={addRow}>Add</Button>
+        );
+      }
+    },
+    ...columnDefs
+  ];
+
+  const getRowStyle = (params: any) => {
+    if (params.data?._deleted) {
+      return { textDecoration: 'line-through', opacity: 0.5 };
+    }
+    return undefined;
+  };
 
   // Use a workaround typecast for AgGridReact to bypass TypeScript react 18/19 incompatibility
   const Grid = AgGridReact as any;
@@ -105,17 +134,14 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
         <Grid
           ref={gridRef}
           rowData={rowData}
-          columnDefs={columnDefs}
+          columnDefs={finalColumnDefs}
           theme={themeMaterial}
           onCellValueChanged={onCellValueChanged}
           rowSelection={{ mode: "multiRow" }}
           stopEditingWhenCellsLoseFocus={true}
+          getRowStyle={getRowStyle}
         />
       </div>
-      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-start' }}>
-         <Button variant="outlined" size="small" onClick={addRow}>Add Row</Button>
-         <Button variant="outlined" color="error" size="small" onClick={deleteSelectedRows}>Delete Selected</Button>
-      </Box>
     </Box>
   );
 };

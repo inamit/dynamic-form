@@ -81,7 +81,33 @@ export default function EntityForm() {
 
   const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await handleSubmit();
+
+    // Clean up deleted items from nested list fields before submitting
+    const cleanedData = { ...formData };
+    config?.fields.forEach(f => {
+       if (f.type === 'list' && Array.isArray(cleanedData[f.name])) {
+           cleanedData[f.name] = cleanedData[f.name].filter((item: any) => !item._deleted);
+       }
+    });
+
+    // In a real application, we would probably pass `cleanedData` to `handleSubmit` explicitly,
+    // but `handleSubmit` in `useEntityForm` reads directly from `formData` state.
+    // Instead of duplicating `handleSubmit` logic, we temporarily update the state before submitting.
+    // However, updating state is async, so we'll just update it and await its effect.
+    const finalData = config?.fields.reduce((acc: any, f) => {
+      if (f.type === 'list' && Array.isArray(acc[f.name])) {
+         acc[f.name] = acc[f.name].filter((item: any) => !item._deleted);
+      }
+      return acc;
+    }, { ...formData });
+
+    Object.keys(finalData).forEach(key => {
+        setFormData(key, finalData[key]);
+    });
+
+    setTimeout(async () => {
+        await handleSubmit();
+    }, 0);
   };
 
   const handleCancel = () => {

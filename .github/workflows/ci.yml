@@ -14,10 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -25,51 +27,98 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Calculate base and head SHAs
+        id: calc_shas
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BASE_SHA=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
+            echo "HEAD_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+          else
+            echo "BASE_SHA=${{ github.event.before }}" >> $GITHUB_ENV
+            echo "HEAD_SHA=${{ github.sha }}" >> $GITHUB_ENV
+          fi
+
       - name: Lint
-        run: npm run lint --workspaces --if-present
+        run: npx nx affected -t lint --base=$BASE_SHA --head=$HEAD_SHA
 
       - name: Prepare Backend Tests
-        run: DATABASE_URL=postgresql://foo:bar@localhost:5432/db npm run prisma:generate --workspaces --if-present
+        run: DATABASE_URL=postgresql://foo:bar@localhost:5432/db npx nx affected -t prisma:generate --base=$BASE_SHA --head=$HEAD_SHA
 
       - name: Test
-        run: npm run test --workspaces --if-present
+        run: npx nx affected -t test --base=$BASE_SHA --head=$HEAD_SHA
+
+  setup-matrix:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Calculate base and head SHAs
+        id: calc_shas
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BASE_SHA=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
+            echo "HEAD_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+          else
+            echo "BASE_SHA=${{ github.event.before }}" >> $GITHUB_ENV
+            echo "HEAD_SHA=${{ github.sha }}" >> $GITHUB_ENV
+          fi
+      - id: set-matrix
+        run: |
+          AFFECTED=$(npx nx show projects --affected --with-target=docker:build --json --base=$BASE_SHA --head=$HEAD_SHA)
+          if [ -z "$AFFECTED" ] || [ "$AFFECTED" == "[]" ]; then
+            echo "matrix={\"app\":[]}" >> $GITHUB_OUTPUT
+          else
+            echo "matrix={\"app\":$AFFECTED}" >> $GITHUB_OUTPUT
+          fi
 
   docker-build-push:
-    needs: build-and-test
+    needs: setup-matrix
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && needs.setup-matrix.outputs.matrix != '{"app":[]}'
     strategy:
-      matrix:
-        app:
-          - apps/microfrontends/backend
-          - apps/management-client
-          - apps/microfrontends/mfe-form
-          - apps/microfrontends/mfe-list
-          - apps/permissions/custom-permissions-service
-          - apps/permissions/permissions-orchestrator-service
-          - apps/permissions/external1-service
-          - apps/permissions/external2-service
+      matrix: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Log in to Docker Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract app name
+      - name: Extract app name and path
         id: extract_name
         run: |
-          APP_NAME=$(basename ${{ matrix.app }})
-          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
+          PROJECT_ROOT=$(npx nx show project ${{ matrix.app }} --json | node -e "console.log(JSON.parse(require('fs').readFileSync(0, 'utf-8')).root)")
+          echo "APP_NAME=${{ matrix.app }}" >> $GITHUB_ENV
+          echo "APP_PATH=$PROJECT_ROOT" >> $GITHUB_ENV
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
-          file: ${{ matrix.app }}/Dockerfile
+          file: ${{ env.APP_PATH }}/Dockerfile
           push: true
           tags: ${{ env.DOCKER_REGISTRY }}/${{ env.APP_NAME }}:latest,${{ env.DOCKER_REGISTRY }}/${{ env.APP_NAME }}:${{ github.sha }}

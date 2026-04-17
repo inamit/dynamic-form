@@ -92,6 +92,8 @@ export function useEntityForm(
             }
           } else if (f.type === 'enum') {
             initData[f.name] = '';
+          } else if (f.type === 'list') {
+            initData[f.name] = [];
           } else {
             initData[f.name] = f.type === 'checkbox' ? false : (f.type === 'number' ? 0 : '');
           }
@@ -155,7 +157,7 @@ export function useEntityForm(
     return '';
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData: Record<string, any>) => {
     if (!entity) return;
     setValidationErrors({});
     let isValid = true;

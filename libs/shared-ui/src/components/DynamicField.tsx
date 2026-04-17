@@ -2,12 +2,14 @@ import React from 'react';
 import { TextField, Checkbox, FormControlLabel, Select, MenuItem, Typography, Box, IconButton } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CloseIcon from '@mui/icons-material/Close';
+import { ListFieldGrid } from './ListFieldGrid';
 
 export interface FieldConfig {
   name: string;
-  type: 'text' | 'number' | 'checkbox' | 'enum' | 'coordinate' | string;
+  type: 'text' | 'number' | 'checkbox' | 'enum' | 'coordinate' | 'list' | string;
   label?: string;
   enumName?: string;
+  parentField?: string | null;
 }
 
 export interface DynamicFieldProps {
@@ -22,6 +24,7 @@ export interface DynamicFieldProps {
   onCoordinateFormatChange?: (fieldName: string, format: 'WGS84' | 'UTM') => void;
   isSelectMode?: boolean;
   onSelectLocation?: (fieldName: string) => void;
+  subFields?: FieldConfig[];
 }
 
 export const DynamicField: React.FC<DynamicFieldProps> = ({
@@ -35,7 +38,8 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
   coordinateFormat = 'UTM',
   onCoordinateFormatChange,
   isSelectMode,
-  onSelectLocation
+  onSelectLocation,
+  subFields
 }) => {
   const [fetchedEnumValues, setFetchedEnumValues] = React.useState<{ code: string; value: string }[]>([]);
 
@@ -151,6 +155,13 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             <MenuItem key={opt.code} value={opt.code}>{opt.value}</MenuItem>
           ))}
         </Select>
+      ) : field.type === 'list' ? (
+        <ListFieldGrid
+          value={value || []}
+          onChange={(newVal) => onChange(field.name, newVal)}
+          subFields={subFields || []}
+          enumValues={enumValues}
+        />
       ) : (
         <TextField
           type={field.type === 'number' ? 'number' : 'text'}

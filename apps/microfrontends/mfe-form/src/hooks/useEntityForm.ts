@@ -157,7 +157,7 @@ export function useEntityForm(
     return '';
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData: Record<string, any>) => {
     if (!entity) return;
     setValidationErrors({});
     let isValid = true;

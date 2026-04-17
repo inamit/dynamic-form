@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Typography, Box, Alert, Paper, CircularProgress } from '@mui/material';
+import { Button, Typography, Box, Alert, CircularProgress, Stepper, Step, StepLabel, Card, Divider } from '@mui/material';
+import {
+  ArrowForward as ArrowForwardIcon,
+  ArrowBack as ArrowBackIcon,
+  Save as SaveIcon
+} from '@mui/icons-material';
 import GraphQLIntrospection from './GraphQLIntrospection';
 import FieldManager from './FieldManager';
 import PresetsManager from './PresetsManager';
@@ -154,62 +159,183 @@ export default function EntityForm() {
     }
   };
 
-  if (loadingEntity || loadingDataSources) return <CircularProgress />;
+  const [activeStep, setActiveStep] = useState(0);
+
+  const steps = [
+    'Metadata',
+    'Authorization',
+    'Introspection',
+    'Endpoints & Queries',
+    'Fields',
+    'Presets'
+  ];
+
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  if (loadingEntity || loadingDataSources) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+      <CircularProgress color="primary" />
+    </Box>
+  );
+
+  const getStepContent = (step: number) => {
+    switch (step) {
+      case 0:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography variant="h6" color="primary" gutterBottom>Basic Information</Typography>
+            <EntityBasicInfo
+              formData={formData}
+              dataSources={dataSources}
+              availableSchemas={availableSchemas}
+              onChange={handleChange}
+            />
+          </Box>
+        );
+      case 1:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography variant="h6" color="primary" gutterBottom>Role-Based Access Control</Typography>
+            <EntityAuthorizationConfig
+              formData={formData}
+              onChange={handleAuthChange}
+            />
+          </Box>
+        );
+      case 2:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography variant="h6" color="primary" gutterBottom>Schema Introspection</Typography>
+            {selectedDataSource && selectedDataSource.apiType === 'GRAPHQL' ? (
+              <GraphQLIntrospection
+                dataSourceUrl={selectedDataSource.apiUrl}
+                dataSourceHeaders={selectedDataSource.headers || ''}
+                onFieldsSelected={handleFieldsAdded}
+                onOperationsSelected={handleOperationsSelected}
+              />
+            ) : (
+              <Alert severity="info" variant="outlined" sx={{ borderRadius: 2 }}>
+                Introspection is only available for GraphQL data sources.
+              </Alert>
+            )}
+          </Box>
+        );
+      case 3:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Typography variant="h6" color="primary" gutterBottom>API Endpoints & Queries</Typography>
+            {selectedDataSource ? (
+              <EndpointsQueriesConfig
+                  apiType={selectedDataSource.apiType}
+                  entityName={formData.name}
+                  value={formData.endpointsQueries || ''}
+                  onChange={handleEndpointsQueriesChange}
+              />
+            ) : (
+              <Alert severity="warning" variant="outlined" sx={{ borderRadius: 2 }}>
+                Please select a Data Source in the Metadata step first.
+              </Alert>
+            )}
+          </Box>
+        );
+      case 4:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+             <Typography variant="h6" color="primary" gutterBottom>Field Management</Typography>
+             <FieldManager fields={formData.fields} onFieldsChange={(fields) => setFormData({ ...formData, fields })} />
+          </Box>
+        );
+      case 5:
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+             <Typography variant="h6" color="primary" gutterBottom>UI Presets & Layouts</Typography>
+             <PresetsManager
+              fields={formData.fields}
+              presets={formData.presets}
+              defaultPresetId={formData.defaultPresetId as any}
+              schemaRequired={schemaDef?.required || []}
+              onChange={(presets, defaultPresetId) => setFormData({ ...formData, presets, defaultPresetId: defaultPresetId as number | null })}
+            />
+          </Box>
+        );
+      default:
+        return 'Unknown step';
+    }
+  };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, pb: 10 }}>
-      <Typography variant="h4">{isEdit ? 'Edit Entity' : 'New Entity'}</Typography>
-      {fetchError && <Alert severity="error">{fetchError}</Alert>}
-      {submitError && <Alert severity="error">{submitError}</Alert>}
-
-      <EntityBasicInfo
-        formData={formData}
-        dataSources={dataSources}
-        availableSchemas={availableSchemas}
-        onChange={handleChange}
-      />
-
-      <EntityAuthorizationConfig
-        formData={formData}
-        onChange={handleAuthChange}
-      />
-
-      {selectedDataSource && (
-        <EndpointsQueriesConfig
-            apiType={selectedDataSource.apiType}
-            entityName={formData.name}
-            value={formData.endpointsQueries || ''}
-            onChange={handleEndpointsQueriesChange}
-        />
-      )}
-
-      {selectedDataSource && selectedDataSource.apiType === 'GRAPHQL' && (
-        <Paper sx={{ p: 2 }}>
-          <GraphQLIntrospection
-            dataSourceUrl={selectedDataSource.apiUrl}
-            dataSourceHeaders={selectedDataSource.headers || ''}
-            onFieldsSelected={handleFieldsAdded}
-            onOperationsSelected={handleOperationsSelected}
-          />
-        </Paper>
-      )}
-
-      <Paper sx={{ p: 2 }}>
-        <FieldManager fields={formData.fields} onFieldsChange={(fields) => setFormData({ ...formData, fields })} />
-      </Paper>
-
-      <PresetsManager
-        fields={formData.fields}
-        presets={formData.presets}
-        defaultPresetId={formData.defaultPresetId as any}
-        schemaRequired={schemaDef?.required || []}
-        onChange={(presets, defaultPresetId) => setFormData({ ...formData, presets, defaultPresetId: defaultPresetId as number | null })}
-      />
-
-      <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-        <Button variant="contained" type="submit">Save Entity</Button>
-        <Button variant="outlined" onClick={() => navigate('/entities')}>Cancel</Button>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, pb: 10, maxWidth: 1200, margin: '0 auto' }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Typography variant="h4" fontWeight="bold">
+          {isEdit ? `Edit Entity: ${entity?.name || ''}` : 'Create New Entity'}
+        </Typography>
+        <Button variant="text" onClick={() => navigate('/entities')} color="inherit">
+          Cancel
+        </Button>
       </Box>
+
+      {fetchError && <Alert severity="error" sx={{ borderRadius: 2 }}>{fetchError}</Alert>}
+      {submitError && <Alert severity="error" sx={{ borderRadius: 2 }}>{submitError}</Alert>}
+
+      <Card elevation={0} sx={{ p: { xs: 2, md: 4 } }}>
+        <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 6 }}>
+          {steps.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+
+        <Divider sx={{ mb: 4, opacity: 0.5 }} />
+
+        <Box component="form" onSubmit={handleSubmit} sx={{ minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+
+          <Box sx={{ flexGrow: 1 }}>
+            {getStepContent(activeStep)}
+          </Box>
+
+          <Divider sx={{ my: 4, opacity: 0.5 }} />
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
+            <Button
+              color="inherit"
+              disabled={activeStep === 0}
+              onClick={handleBack}
+              startIcon={<ArrowBackIcon />}
+              sx={{ mr: 1 }}
+            >
+              Back
+            </Button>
+            <Box>
+              {activeStep === steps.length - 1 ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  endIcon={<SaveIcon />}
+                  disabled={!formData.name || !formData.dataSourceId}
+                >
+                  Save Entity
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  endIcon={<ArrowForwardIcon />}
+                >
+                  Next
+                </Button>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Card>
     </Box>
   );
 }

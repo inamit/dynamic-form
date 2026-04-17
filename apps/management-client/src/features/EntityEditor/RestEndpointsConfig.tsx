@@ -25,20 +25,12 @@ export default function RestEndpointsConfig({ ops, onChange }: RestEndpointsConf
             label="Method"
             value={ops[op]?.method || 'GET'}
             onChange={(e) => handleChange(op, 'method', e.target.value)}
-            sx={{ width: 100 }}
+            sx={{ flexGrow: 1 }}
           >
             {METHODS.map(m => (
               <MenuItem key={m} value={m}>{m}</MenuItem>
             ))}
           </TextField>
-          <TextField
-            size="small"
-            label="Endpoint"
-            value={ops[op]?.endpoint || ''}
-            onChange={(e) => handleChange(op, 'endpoint', e.target.value)}
-            sx={{ flexGrow: 1 }}
-            required
-          />
         </Box>
       ))}
     </>

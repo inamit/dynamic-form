@@ -5,7 +5,8 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import type { FieldConfig } from './DynamicField';
-import { ColDef, ModuleRegistry, AllCommunityModule, themeMaterial } from 'ag-grid-community';
+import { ModuleRegistry, AllCommunityModule, themeMaterial } from 'ag-grid-community';
+import type { ColDef } from 'ag-grid-community';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 

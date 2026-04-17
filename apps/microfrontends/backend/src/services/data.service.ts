@@ -38,7 +38,7 @@ export class DataService {
         let dataList = await client.getData(ds.apiUrl, queryStr, entityName);
 
         const filteredList: any[] = [];
-        const CONCURRENCY_LIMIT = 5;
+        const CONCURRENCY_LIMIT = parseInt(process.env.CONCURRENCY_LIMIT || '5', 10);
         for (let i = 0; i < dataList.length; i += CONCURRENCY_LIMIT) {
             const chunk = dataList.slice(i, i + CONCURRENCY_LIMIT);
             const authResults = await Promise.all(

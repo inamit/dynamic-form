@@ -37,12 +37,20 @@ export class DataService {
         const queryStr = this.getQueryString(config, 'list', ds.apiType);
         let dataList = await client.getData(ds.apiUrl, queryStr, entityName);
 
-        const filteredList = [];
-        for (const item of dataList) {
-            const auth = await OrchestratorService.checkAuth(userId, origin, entityName, 'view', config, item);
-            if (auth.allowed) {
-                filteredList.push(item);
-            }
+        const filteredList: any[] = [];
+        const CONCURRENCY_LIMIT = parseInt(process.env.DATA_AUTH_ORCHESTRATOR_CONCURRENCY || '5', 10);
+        for (let i = 0; i < dataList.length; i += CONCURRENCY_LIMIT) {
+            const chunk = dataList.slice(i, i + CONCURRENCY_LIMIT);
+            const authResults = await Promise.all(
+                chunk.map((item: any) =>
+                    OrchestratorService.checkAuth(userId, origin, entityName, 'view', config, item)
+                )
+            );
+            chunk.forEach((item: any, index: number) => {
+                if (authResults[index].allowed) {
+                    filteredList.push(item);
+                }
+            });
         }
         return filteredList;
     }

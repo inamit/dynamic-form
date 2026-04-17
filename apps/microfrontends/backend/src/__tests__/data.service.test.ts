@@ -42,10 +42,16 @@ jest.unstable_mockModule('../services/orchestrator.service.js', () => {
 describe('DataService', () => {
     let DataService: any;
     let service: any;
+    let RestDataClientMock: any;
+    let OrchestratorServiceMock: any;
 
     beforeAll(async () => {
         const mod = await import('../services/data.service.js');
         DataService = mod.DataService;
+        const restClientMod = await import('../clients/rest-data.client.js');
+        RestDataClientMock = restClientMod.RestDataClient;
+        const orchServiceMod = await import('../services/orchestrator.service.js');
+        OrchestratorServiceMock = orchServiceMod.OrchestratorService;
     });
 
     beforeEach(() => {
@@ -91,5 +97,31 @@ describe('DataService', () => {
 
         expect(error).toBeDefined();
         expect((error as Error).message).toBe("Missing 'get' query configuration");
+    });
+
+    test('getData processes chunks correctly and handles mixed allowed/denied results', async () => {
+        const mockData = [
+            { id: 1, name: 'Item 1' },
+            { id: 2, name: 'Item 2' },
+            { id: 3, name: 'Item 3' },
+            { id: 4, name: 'Item 4' },
+            { id: 5, name: 'Item 5' },
+            { id: 6, name: 'Item 6' },
+            { id: 7, name: 'Item 7' }
+        ];
+
+        RestDataClientMock.mockImplementationOnce(() => ({
+            getData: jest.fn().mockResolvedValue(mockData as never)
+        }));
+
+        OrchestratorServiceMock.checkAuth.mockImplementation((userId: any, origin: any, entityName: any, action: any, config: any, item: any) => {
+            return Promise.resolve({ allowed: item.id % 2 !== 0 }); // Allow odd IDs, deny even IDs
+        });
+
+        process.env.DATA_AUTH_ORCHESTRATOR_CONCURRENCY = '3';
+        const result = await service.getData('person', 'user1', 'origin');
+
+        expect(result.length).toBe(4);
+        expect(result.map((r: any) => r.id)).toEqual([1, 3, 5, 7]);
     });
 });

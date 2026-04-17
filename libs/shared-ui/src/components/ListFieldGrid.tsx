@@ -65,7 +65,7 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
     return colDef;
   });
 
-  const onCellValueChanged = useCallback((event: any) => {
+  const onCellValueChanged = useCallback((_: any) => {
     const updatedData: any[] = [];
     gridRef.current!.api.forEachNode((node: any) => updatedData.push(node.data));
     onChange(updatedData);

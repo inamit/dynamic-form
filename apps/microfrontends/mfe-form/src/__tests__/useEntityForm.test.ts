@@ -1,13 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { renderHook, act } from '@testing-library/react';
 import { jest } from '@jest/globals';
-const mockGetConfig = jest.fn() as jest.Mock<any>;
-const mockGetAbilities = jest.fn() as jest.Mock<any>;
-const mockGetSchema = jest.fn() as jest.Mock<any>;
-const mockGetDataById = jest.fn() as jest.Mock<any>;
 import { useEntityForm } from '../hooks/useEntityForm';
 import { ApiService } from '../services/api.service';
-import * as postal from 'postal';
 
 jest.mock('postal', () => {
   const mockPostal = {
@@ -22,22 +17,17 @@ jest.mock('postal', () => {
   };
 });
 
-jest.unstable_mockModule('../services/api.service', () => ({
-  ApiService: {
-    getConfig: mockGetConfig,
-    getAbilities: mockGetAbilities,
-    getSchema: mockGetSchema,
-    getDataById: mockGetDataById,
-    createData: jest.fn(),
-    updateData: jest.fn()
-  }
-}));
-
 describe('useEntityForm', () => {
   let mockGetConfig: any, mockGetAbilities: any, mockGetSchema: any, mockGetDataById: any, mockCreateData: any, mockUpdateData: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetConfig = jest.spyOn(ApiService, 'getConfig').mockImplementation(jest.fn() as any);
+    mockGetAbilities = jest.spyOn(ApiService, 'getAbilities').mockImplementation(jest.fn() as any);
+    mockGetSchema = jest.spyOn(ApiService, 'getSchema').mockImplementation(jest.fn() as any);
+    mockGetDataById = jest.spyOn(ApiService, 'getDataById').mockImplementation(jest.fn() as any);
+    mockCreateData = jest.spyOn(ApiService, 'createData').mockImplementation(jest.fn() as any);
+    mockUpdateData = jest.spyOn(ApiService, 'updateData').mockImplementation(jest.fn() as any);
   });
 
   it('should initialize with default state', async () => {

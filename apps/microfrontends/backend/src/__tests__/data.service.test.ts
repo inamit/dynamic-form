@@ -118,7 +118,7 @@ describe('DataService', () => {
             return Promise.resolve({ allowed: item.id % 2 !== 0 }); // Allow odd IDs, deny even IDs
         });
 
-        process.env.CONCURRENCY_LIMIT = '3';
+        process.env.DATA_AUTH_ORCHESTRATOR_CONCURRENCY = '3';
         const result = await service.getData('person', 'user1', 'origin');
 
         expect(result.length).toBe(4);

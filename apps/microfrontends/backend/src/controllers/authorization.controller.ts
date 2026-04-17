@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { AuthorizationService } from '../services/authorization.service.js';
-import { isValidParam } from '../utils.js';
 
 export class AuthorizationController {
     private authorizationService: AuthorizationService;
@@ -12,7 +11,7 @@ export class AuthorizationController {
     getAbilities = async (req: Request, res: Response) => {
         try {
             const entity = req.params.entity as string;
-            if (!isValidParam(entity)) {
+            if (entity.includes('/') || entity.includes('..')) {
                 return res.status(400).json({ error: 'Invalid entity' });
             }
 

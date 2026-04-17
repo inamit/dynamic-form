@@ -24,15 +24,7 @@ export class EntityConfigService {
             dataSourceId,
             schemaName,
             endpointsQueries,
-            fields: {
-                create: fields.map((f: any) => ({
-                    name: f.name,
-                    type: f.type,
-                    label: f.label,
-                    enumName: f.enumName,
-                    parentField: f.parentField || null
-                }))
-            },
+            fields: { create: fields },
             presets: {
                 create: (presets || []).map((p: any) => ({
                     name: p.name,
@@ -67,15 +59,7 @@ export class EntityConfigService {
             dataSourceId,
             schemaName,
             endpointsQueries,
-            fields: {
-                create: fields.map((f: any) => ({
-                    name: f.name,
-                    type: f.type,
-                    label: f.label,
-                    enumName: f.enumName,
-                    parentField: f.parentField || null
-                }))
-            },
+            fields: { create: fields },
             presets: {
                 create: (presets || []).map((p: any) => ({
                     name: p.name,

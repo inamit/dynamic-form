@@ -17,8 +17,6 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
-    "ag-grid-community": "^35.2.1",
-    "ag-grid-react": "^35.2.1",
     "axios": "^1.13.6",
     "mgrs": "^2.1.0",
     "postal": "^3.2.0",

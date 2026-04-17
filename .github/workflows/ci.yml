@@ -28,8 +28,21 @@ jobs:
       - name: Lint
         run: npm run lint --workspaces --if-present
 
-      - name: Prepare Backend Tests
-        run: DATABASE_URL=postgresql://foo:bar@localhost:5432/db npm run prisma:generate --workspaces --if-present
+      - name: Generate Prisma clients
+        run: npm run prisma:generate --workspaces --if-present
+
+      - name: Build microfrontends
+        run: |
+          npm run build -w apps/microfrontends/mfe-list
+          npm run build -w apps/microfrontends/mfe-form
+
+      - name: Preview microfrontends
+        run: |
+          npm run preview -w apps/microfrontends/mfe-list &
+          npm run preview -w apps/microfrontends/mfe-form &
+          sleep 10
+          kill $(lsof -t -i :5001) 2>/dev/null || true
+          kill $(lsof -t -i :5002) 2>/dev/null || true
 
       - name: Test
         run: npm run test --workspaces --if-present

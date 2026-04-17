@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 export interface EntityField {
   name: string;
-  type: 'text' | 'number' | 'checkbox' | 'enum' | 'coordinate' | 'list';
+  type: 'text' | 'number' | 'checkbox' | 'enum' | 'coordinate';
   label: string;
   enumName?: string;
-  parentField?: string;
 }
 
 export interface Preset {

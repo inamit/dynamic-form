@@ -19,7 +19,7 @@ pipeline {
 
         stage('Prepare Tests') {
             steps {
-                sh 'npm run prisma:generate --workspaces --if-present'
+                sh 'DATABASE_URL=postgresql://foo:bar@localhost:5432/db npm run prisma:generate --workspaces --if-present'
             }
         }
 

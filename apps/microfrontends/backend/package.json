@@ -6,9 +6,9 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "nodemon --exec tsx src/index.ts",
-    "prisma:generate": "DATABASE_URL=postgresql://foo:bar@localhost:5432/db prisma generate",
+    "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "test": "npm run prisma:generate && node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js",
+    "test": "node --experimental-vm-modules ../../../node_modules/jest/bin/jest.js",
     "build": "tsc"
   },
   "keywords": [],

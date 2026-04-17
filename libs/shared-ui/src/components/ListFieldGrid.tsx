@@ -2,9 +2,9 @@ import React, { useCallback, useRef } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { Box, Button } from '@mui/material';
 import type { FieldConfig } from './DynamicField';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
-import { ColDef } from 'ag-grid-community';
+import { ColDef, ModuleRegistry, AllCommunityModule, themeMaterial } from 'ag-grid-community';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 export interface ListFieldGridProps {
   value: any[];
@@ -22,12 +22,17 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
       field: field.name,
       headerName: field.label || field.name,
       editable: true,
+      filter: true,
     };
 
     if (field.type === 'number') {
       colDef.valueParser = (params: any) => Number(params.newValue);
     } else if (field.type === 'checkbox') {
       colDef.cellEditor = 'agCheckboxCellEditor';
+    } else if (field.type === 'enum' && field.enumName) {
+      // NOTE: For enum filtering, we could use agSelectCellEditor, but without full async enum fetching in this isolated grid context,
+      // text input is a safe fallback. We'll use text filter.
+      colDef.filter = 'agTextColumnFilter';
     }
 
     return colDef;
@@ -50,6 +55,9 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
 
   const deleteSelectedRows = useCallback(() => {
     const selectedNodes = gridRef.current!.api.getSelectedNodes();
+    if (!selectedNodes.length) return;
+
+    // For simplicity, we actually remove them rather than mark deleted.
     const selectedData = selectedNodes.map((node: any) => node.data);
     const updatedData = rowData.filter(row => !selectedData.includes(row));
     onChange(updatedData);
@@ -60,20 +68,21 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <Box sx={{ display: 'flex', gap: 1 }}>
-         <Button variant="outlined" size="small" onClick={addRow}>Add Row</Button>
-         <Button variant="outlined" color="error" size="small" onClick={deleteSelectedRows}>Delete Selected</Button>
-      </Box>
-      <div className="ag-theme-alpine" style={{ height: 300, width: '100%' }}>
+      <div style={{ height: 300, width: '100%' }} data-ag-theme-mode="system">
         <Grid
           ref={gridRef}
           rowData={rowData}
           columnDefs={columnDefs}
+          theme={themeMaterial}
           onCellValueChanged={onCellValueChanged}
-          rowSelection="multiple"
+          rowSelection={{ mode: "multiRow" }}
           stopEditingWhenCellsLoseFocus={true}
         />
       </div>
+      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-start' }}>
+         <Button variant="outlined" size="small" onClick={addRow}>Add Row</Button>
+         <Button variant="outlined" color="error" size="small" onClick={deleteSelectedRows}>Delete Selected</Button>
+      </Box>
     </Box>
   );
 };

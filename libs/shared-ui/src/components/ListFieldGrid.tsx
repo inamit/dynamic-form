@@ -10,12 +10,31 @@ export interface ListFieldGridProps {
   value: any[];
   onChange: (value: any[]) => void;
   subFields: FieldConfig[];
+  apiBaseUrl?: string;
 }
 
-export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, subFields }) => {
+export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, subFields, apiBaseUrl }) => {
   const gridRef = useRef<any>(null);
 
   const rowData = Array.isArray(value) ? value : [];
+  const [enumDictionaries, setEnumDictionaries] = React.useState<Record<string, { code: string; value: string }[]>>({});
+
+  React.useEffect(() => {
+    if (!apiBaseUrl) return;
+
+    subFields.forEach((field) => {
+      if (field.type === 'enum' && field.enumName && !enumDictionaries[field.name]) {
+        fetch(`${apiBaseUrl}/enums/${field.enumName}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (Array.isArray(data)) {
+              setEnumDictionaries((prev) => ({ ...prev, [field.name]: data }));
+            }
+          })
+          .catch((err) => console.error(`Failed to fetch enum ${field.enumName}`, err));
+      }
+    });
+  }, [subFields, apiBaseUrl, enumDictionaries]);
 
   const columnDefs: ColDef[] = subFields.map(field => {
     let colDef: ColDef = {
@@ -30,9 +49,20 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
     } else if (field.type === 'checkbox') {
       colDef.cellEditor = 'agCheckboxCellEditor';
     } else if (field.type === 'enum' && field.enumName) {
-      // NOTE: For enum filtering, we could use agSelectCellEditor, but without full async enum fetching in this isolated grid context,
-      // text input is a safe fallback. We'll use text filter.
-      colDef.filter = 'agTextColumnFilter';
+      colDef.cellEditor = 'agSelectCellEditor';
+      colDef.cellEditorParams = {
+        values: enumDictionaries[field.name] ? enumDictionaries[field.name].map(e => e.code) : []
+      };
+      colDef.valueFormatter = (params: any) => {
+          if (!params.value) return '';
+          const dict = enumDictionaries[field.name];
+          if (dict) {
+              const matched = dict.find(e => e.code === params.value);
+              if (matched) return matched.value;
+          }
+          return params.value;
+      };
+      colDef.filter = 'agSetColumnFilter';
     }
 
     return colDef;

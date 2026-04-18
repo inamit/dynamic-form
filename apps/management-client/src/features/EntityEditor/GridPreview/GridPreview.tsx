@@ -298,13 +298,45 @@ export default function GridPreview({ fields, gridTemplate, defaultValues, onLay
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Typography variant="body2">Max Columns:</Typography>
-        <input type="number" value={maxColumns} onChange={handleMaxColumnsChange} style={{ width: 60 }} />
+      <Box sx={{
+        mb: 3,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        bgcolor: 'background.paper',
+        p: 2,
+        borderRadius: 2
+      }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Grid Layout Configuration</Typography>
+        <Box sx={{ flexGrow: 1 }} />
+        <Typography variant="body2" color="text.secondary">Max Columns:</Typography>
+        <input
+          type="number"
+          value={maxColumns}
+          onChange={handleMaxColumnsChange}
+          style={{
+            width: 70,
+            padding: '6px 12px',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,255,255,0.2)',
+            backgroundColor: 'rgba(0,0,0,0.2)',
+            color: 'inherit',
+            fontFamily: 'inherit'
+          }}
+        />
       </Box>
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${maxColumns}, 1fr)`, gap: 2, minHeight: 200, p: 2, border: '1px dashed grey' }}>
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${maxColumns}, 1fr)`,
+            gap: 2,
+            minHeight: 200,
+            p: 3,
+            borderRadius: 3,
+            bgcolor: 'rgba(0, 0, 0, 0.1)',
+            border: '1px dashed rgba(255,255,255,0.1)'
+          }}>
             {items.map(item => {
               const field = fields.find(f => f.name === item.id);
               if (!field) return null;

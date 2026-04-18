@@ -231,16 +231,21 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
                             onClick={(e) => handleSetDefault(preset.id!, e)}
                             color={preset.id === defaultPresetId ? "warning" : "default"}
                             sx={{ p: 0.5 }}
+                            aria-label={preset.id === defaultPresetId ? "Default Preset" : "Set as Default"}
                         >
                             {preset.id === defaultPresetId ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
                         </IconButton>
                     </Tooltip>
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleOpenDialog(index); }} sx={{ p: 0.5 }}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" onClick={(e) => handleDeletePreset(index, e)} color="error" sx={{ p: 0.5 }}>
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                    <Tooltip title="Edit Preset Name">
+                        <IconButton size="small" aria-label="Edit Preset Name" onClick={(e) => { e.stopPropagation(); handleOpenDialog(index); }} sx={{ p: 0.5 }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Preset">
+                        <IconButton size="small" aria-label="Delete Preset" onClick={(e) => handleDeletePreset(index, e)} color="error" sx={{ p: 0.5 }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
                   </Box>
                 }
               />

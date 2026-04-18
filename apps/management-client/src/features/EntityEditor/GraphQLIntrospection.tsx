@@ -34,7 +34,8 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     try {
       const res = await axios.post('http://localhost:3001/api/introspect', {
         url: dataSourceUrl,
-        headers: dataSourceHeaders
+        headers: dataSourceHeaders,
+        type: 'GRAPHQL'
       });
       setSchema(res.data.__schema);
     } catch (e: any) {
@@ -71,7 +72,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
           const isObject = baseType.kind === 'OBJECT';
           const fieldPath = parentPath ? `${parentPath}.${field.name}` : field.name;
           const isSelected = !!selectedFields[fieldPath];
-          const isExpanded = !!expandedNodes[fieldPath];
+          const isExpanded = expandedNodes[fieldPath];
 
           return (
             <Box key={fieldPath} sx={{ my: 1 }}>
@@ -154,8 +155,8 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     );
   };
 
-  const queryFields = schema ? getTypeByName(schema.queryType?.name)?.fields || [] : [];
-  const mutationFields = schema ? getTypeByName(schema.mutationType?.name)?.fields || [] : [];
+  const queryFields = schema ? getTypeByName('Query')?.fields || [] : [];
+  const mutationFields = schema ? getTypeByName('Mutation')?.fields || [] : [];
 
   return (
     <Box sx={{ mt: 2 }}>

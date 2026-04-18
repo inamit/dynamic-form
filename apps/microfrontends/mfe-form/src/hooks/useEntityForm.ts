@@ -6,6 +6,7 @@ import { parseCoordinate, formatCoordinate } from '@dynamic-form/geo-utils';
 import 'postal';
 const postal = (window as any).postal;
 import { CHANNEL_NAME, TOPICS } from "../utils/topic.js";
+import { Enums } from "@dynamic-form/shared-ui";
 
 export function useEntityForm(
   entity: string | null,
@@ -19,6 +20,7 @@ export function useEntityForm(
   const [loading, setLoading] = useState(true);
   const [coordinateFormats, setCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>(initialCoordinateFormats || {});
   const [schema, setSchema] = useState<any>(null);
+  const [enums, setEnums] = useState<Enums>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [abilities, setAbilities] = useState({ canCreate: false, canEdit: false, canDelete: false, canView: false });
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +44,14 @@ export function useEntityForm(
       } catch (err) {
         console.error(`Failed to fetch schema for ${currentEntity}`, err);
         setSchema(null);
+      }
+
+      try {
+        const enumsData = await ApiService.getEnums();
+        setEnums(enumsData);
+      } catch (err) {
+        console.error(`Failed to fetch enums for ${currentEntity}`, err);
+        setEnums({});
       }
 
       const defaultFormat = coordinateFormats._default || 'UTM';
@@ -237,6 +247,7 @@ export function useEntityForm(
     coordinateFormats,
     updateCoordinateFormat,
     schema,
+    enums,
     validationErrors,
     handleSubmit,
     validateField

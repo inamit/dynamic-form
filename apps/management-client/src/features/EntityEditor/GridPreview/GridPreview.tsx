@@ -7,13 +7,14 @@ import { Box, Paper, Typography, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 
-import { DynamicField } from '@dynamic-form/shared-ui';
+import {DynamicField, type Enums} from '@dynamic-form/shared-ui';
 
 interface Field {
   name: string;
   type: string;
   label: string;
   parentField?: string | null;
+  enumName?: string;
 }
 
 interface GridItem {
@@ -23,6 +24,7 @@ interface GridItem {
 }
 interface Props {
   fields: Field[];
+  enums: Enums;
   gridTemplate: string;
   defaultValues?: Record<string, any>;
   onLayoutChange: (template: string) => void;
@@ -32,6 +34,7 @@ interface Props {
 function SortableItem(props: {
   item: GridItem;
   field: Field;
+  enums: Enums;
   defaultValue?: any;
   onChangeSpan: (id: string, col: number, row: number) => void;
   onDefaultValueChange?: (id: string, value: any) => void;
@@ -99,8 +102,8 @@ function SortableItem(props: {
         <Box sx={{ zIndex: 1, mt: 1 }} onPointerDown={(e) => e.stopPropagation()}>
           <DynamicField
             field={props.field}
+            enums={props.enums}
             value={props.defaultValue}
-            apiBaseUrl="http://localhost:3001/api"
             onChange={(name: string, value: any) => props.onDefaultValueChange!(name, value)}
             subFields={props.subFields}
           />
@@ -110,7 +113,7 @@ function SortableItem(props: {
   );
 }
 
-export default function GridPreview({ fields, gridTemplate, defaultValues, onLayoutChange, onDefaultValueChange }: Props) {
+export default function GridPreview({ fields, enums, gridTemplate, defaultValues, onLayoutChange, onDefaultValueChange }: Props) {
   const [items, setItems] = useState<GridItem[]>([]);
   const [maxColumns, setMaxColumns] = useState<number>(3);
 
@@ -358,6 +361,7 @@ export default function GridPreview({ fields, gridTemplate, defaultValues, onLay
                 <SortableItem
                   key={item.id}
                   item={item}
+                  enums={enums}
                   field={field}
                   defaultValue={defaultValues?.[item.id]}
                   onChangeSpan={handleChangeSpan}

@@ -16,6 +16,7 @@ import { useEntity } from '../../hooks/useEntities';
 import { useDataSources } from '../../hooks/useDataSources';
 import { entityService } from '../../services/entityService';
 import type { EntityConfig, SchemaDefinition, Field } from '../../types';
+import type {Enums} from "@dynamic-form/shared-ui";
 
 export default function EntityForm() {
   const { id } = useParams();
@@ -28,6 +29,7 @@ export default function EntityForm() {
 
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
   const [schemaDef, setSchemaDef] = useState<SchemaDefinition | null>(null);
+  const [enums, setEnums] = useState<Enums>({});
 
   const [formData, setFormData] = useState<EntityConfig>({
     name: '',
@@ -47,6 +49,12 @@ export default function EntityForm() {
     entityService.getAvailableSchemas()
       .then(setAvailableSchemas)
       .catch(e => console.error("Failed to fetch schemas", e));
+  }, []);
+
+  useEffect(() => {
+    entityService.getEnums()
+        .then(setEnums)
+        .catch(e => console.error("Failed to fetch enums", e));
   }, []);
 
   useEffect(() => {
@@ -259,6 +267,7 @@ export default function EntityForm() {
              <Typography variant="h6" color="primary" gutterBottom>UI Presets & Layouts</Typography>
              <PresetsManager
               fields={formData.fields}
+              enums={enums}
               presets={formData.presets}
               defaultPresetId={formData.defaultPresetId as any}
               schemaRequired={schemaDef?.required || []}
@@ -301,7 +310,7 @@ export default function EntityForm() {
 
         <Divider sx={{ mb: 4, opacity: 0.5 }} />
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
 
           <Box sx={{ flexGrow: 1 }}>
             {getStepContent(activeStep)}
@@ -325,7 +334,8 @@ export default function EntityForm() {
                 <Button
                   variant="contained"
                   color="primary"
-                  type="submit"
+                  type="button"
+                  onClick={handleSubmit}
                   endIcon={<SaveIcon />}
                   disabled={!formData.name || !formData.dataSourceId}
                 >

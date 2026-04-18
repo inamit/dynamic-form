@@ -105,14 +105,13 @@ export class EntityConfigService {
             const firstItem = Array.isArray(res.data) ? res.data[0] : null;
             if (!firstItem) throw new Error("No data found to introspect");
 
-            const fields = Object.keys(firstItem).map(k => {
+            return Object.keys(firstItem).map(k => {
                 const val = firstItem[k];
                 let ftype = 'text';
                 if (typeof val === 'number') ftype = 'number';
                 if (typeof val === 'boolean') ftype = 'checkbox';
                 return { name: k, type: ftype, label: k.charAt(0).toUpperCase() + k.slice(1) };
             });
-            return fields;
         } else if (type === 'GRAPHQL') {
             const query = gql`
                 query IntrospectionQuery {
@@ -135,8 +134,7 @@ export class EntityConfigService {
                     }
                 }
             `;
-            const data = await request(validatedUrl, query) as any;
-            return data.__schema.types.filter((t: any) => t.kind === 'OBJECT' && !t.name.startsWith('__'));
+            return await request(validatedUrl, query) as any;
         } else {
             throw new Error("Invalid type");
         }

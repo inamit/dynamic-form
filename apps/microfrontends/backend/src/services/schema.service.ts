@@ -8,7 +8,7 @@ export class SchemaService {
     }
 
     async getSchemas() {
-        const schemaApiUrl = process.env.SCHEMA_API_URL;
+        const schemaApiUrl = process.env.SCHEMA_API_URL || 'http://localhost:4000/api/schemas';
         if (!schemaApiUrl) throw new Error('Schema configuration not found');
 
         const headers = process.env.SCHEMA_API_HEADERS ? JSON.parse(process.env.SCHEMA_API_HEADERS) : {};
@@ -16,7 +16,7 @@ export class SchemaService {
     }
 
     async getSchema(entityName: string) {
-        const schemaApiUrl = process.env.SCHEMA_API_URL;
+        const schemaApiUrl = process.env.SCHEMA_API_URL || 'http://localhost:4000/api/schema';
         if (!schemaApiUrl) throw new Error('Schema configuration not found');
 
         const headers = process.env.SCHEMA_API_HEADERS ? JSON.parse(process.env.SCHEMA_API_HEADERS) : {};
@@ -24,10 +24,18 @@ export class SchemaService {
     }
 
     async getEnum(enumName: string) {
-        const enumApiUrl = process.env.ENUM_API_URL;
+        const enumApiUrl = process.env.ENUM_API_URL || 'http://localhost:4000/api/enums';
         if (!enumApiUrl) throw new Error('Enum configuration not found');
 
         const headers = process.env.ENUM_API_HEADERS ? JSON.parse(process.env.ENUM_API_HEADERS) : {};
         return await this.schemaClient.fetchEnum(enumApiUrl, headers, enumName);
+    }
+
+    async getAllEnums() {
+        const enumApiUrl = process.env.ENUM_API_URL || 'http://localhost:4000/api/enums';
+        if (!enumApiUrl) throw new Error('Enum configuration not found');
+
+        const headers = process.env.ENUM_API_HEADERS ? JSON.parse(process.env.ENUM_API_HEADERS) : {};
+        return await this.schemaClient.fetchEnums(enumApiUrl, headers);
     }
 }

@@ -7,13 +7,14 @@ import { Box, Paper, Typography, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 
-import { DynamicField } from '@dynamic-form/shared-ui';
+import {DynamicField, type Enums} from '@dynamic-form/shared-ui';
 
 interface Field {
   name: string;
   type: string;
   label: string;
   parentField?: string | null;
+  enumName?: string;
 }
 
 interface GridItem {
@@ -23,6 +24,7 @@ interface GridItem {
 }
 interface Props {
   fields: Field[];
+  enums: Enums;
   gridTemplate: string;
   defaultValues?: Record<string, any>;
   onLayoutChange: (template: string) => void;
@@ -32,6 +34,7 @@ interface Props {
 function SortableItem(props: {
   item: GridItem;
   field: Field;
+  enums: Enums;
   defaultValue?: any;
   onChangeSpan: (id: string, col: number, row: number) => void;
   onDefaultValueChange?: (id: string, value: any) => void;
@@ -51,15 +54,29 @@ function SortableItem(props: {
     <Paper
       ref={setNodeRef}
       style={style}
-      sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, backgroundColor: 'grey.100', cursor: 'grab', position: 'relative' }}
+      elevation={0}
+      sx={{
+        p: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: 2,
+        cursor: 'grab',
+        position: 'relative',
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        }
+      }}
     >
-      <Box sx={{ position: 'absolute', right: 0, bottom: 0, opacity: 0.1, pointerEvents: 'none' }}>
+      <Box sx={{ position: 'absolute', right: 0, bottom: 0, opacity: 0.05, pointerEvents: 'none' }}>
          <Typography variant="h1" sx={{ fontSize: '4rem', lineHeight: 1 }}>{props.item.rowSpan}</Typography>
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} {...attributes} {...listeners}>
         <Typography variant="subtitle2" noWrap>{props.field.label}</Typography>
-        <Typography variant="caption" color="text.secondary">[{props.field.type}]</Typography>
+        <Typography variant="caption" color="primary">[{props.field.type}]</Typography>
       </Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', zIndex: 1 }}>
         <Typography variant="caption">Cols:</Typography>
@@ -85,8 +102,8 @@ function SortableItem(props: {
         <Box sx={{ zIndex: 1, mt: 1 }} onPointerDown={(e) => e.stopPropagation()}>
           <DynamicField
             field={props.field}
+            enums={props.enums}
             value={props.defaultValue}
-            apiBaseUrl="http://localhost:3001/api"
             onChange={(name: string, value: any) => props.onDefaultValueChange!(name, value)}
             subFields={props.subFields}
           />
@@ -96,7 +113,7 @@ function SortableItem(props: {
   );
 }
 
-export default function GridPreview({ fields, gridTemplate, defaultValues, onLayoutChange, onDefaultValueChange }: Props) {
+export default function GridPreview({ fields, enums, gridTemplate, defaultValues, onLayoutChange, onDefaultValueChange }: Props) {
   const [items, setItems] = useState<GridItem[]>([]);
   const [maxColumns, setMaxColumns] = useState<number>(3);
 
@@ -298,13 +315,45 @@ export default function GridPreview({ fields, gridTemplate, defaultValues, onLay
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Typography variant="body2">Max Columns:</Typography>
-        <input type="number" value={maxColumns} onChange={handleMaxColumnsChange} style={{ width: 60 }} />
+      <Box sx={{
+        mb: 3,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        bgcolor: 'background.paper',
+        p: 2,
+        borderRadius: 2
+      }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Grid Layout Configuration</Typography>
+        <Box sx={{ flexGrow: 1 }} />
+        <Typography variant="body2" color="text.secondary">Max Columns:</Typography>
+        <input
+          type="number"
+          value={maxColumns}
+          onChange={handleMaxColumnsChange}
+          style={{
+            width: 70,
+            padding: '6px 12px',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,255,255,0.2)',
+            backgroundColor: 'rgba(0,0,0,0.2)',
+            color: 'inherit',
+            fontFamily: 'inherit'
+          }}
+        />
       </Box>
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${maxColumns}, 1fr)`, gap: 2, minHeight: 200, p: 2, border: '1px dashed grey' }}>
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${maxColumns}, 1fr)`,
+            gap: 2,
+            minHeight: 200,
+            p: 3,
+            borderRadius: 3,
+            bgcolor: 'rgba(0, 0, 0, 0.1)',
+            border: '1px dashed rgba(255,255,255,0.1)'
+          }}>
             {items.map(item => {
               const field = fields.find(f => f.name === item.id);
               if (!field) return null;
@@ -312,6 +361,7 @@ export default function GridPreview({ fields, gridTemplate, defaultValues, onLay
                 <SortableItem
                   key={item.id}
                   item={item}
+                  enums={enums}
                   field={field}
                   defaultValue={defaultValues?.[item.id]}
                   onChangeSpan={handleChangeSpan}

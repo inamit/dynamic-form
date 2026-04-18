@@ -1,5 +1,6 @@
 import apiClient from './apiClient';
 import type { EntityConfig, SchemaDefinition } from '../types';
+import type {Enums} from "@dynamic-form/shared-ui";
 
 export const entityService = {
   getAll: async (): Promise<EntityConfig[]> => {
@@ -31,6 +32,11 @@ export const entityService = {
 
   getSchemaDefinition: async (schemaName: string): Promise<SchemaDefinition> => {
     const response = await apiClient.get<SchemaDefinition>(`/schema/${schemaName}`);
+    return response.data;
+  },
+
+  getEnums: async (): Promise<Enums> => {
+    const response = await apiClient.get<Enums>(`/enums`);
     return response.data;
   },
 

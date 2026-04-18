@@ -57,4 +57,17 @@ export class SchemaController {
             res.status(500).json({ error: 'Failed to fetch enum' });
         }
     };
+
+    getEnums = async (req: Request, res: Response) => {
+        try {
+            const enumData = await this.schemaService.getAllEnums();
+            res.json(enumData);
+        } catch (error: any) {
+            if (error.message === 'Enum configuration not found') {
+                return res.status(404).json({ error: error.message });
+            }
+            console.error(`Error in GET /api/enums:`, error.message);
+            res.status(500).json({ error: 'Failed to fetch enum' });
+        }
+    }
 }

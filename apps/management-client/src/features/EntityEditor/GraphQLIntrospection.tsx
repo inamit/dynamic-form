@@ -34,7 +34,8 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     try {
       const res = await axios.post('http://localhost:3001/api/introspect', {
         url: dataSourceUrl,
-        headers: dataSourceHeaders
+        headers: dataSourceHeaders,
+        type: 'GRAPHQL'
       });
       setSchema(res.data.__schema);
     } catch (e: any) {
@@ -71,7 +72,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
           const isObject = baseType.kind === 'OBJECT';
           const fieldPath = parentPath ? `${parentPath}.${field.name}` : field.name;
           const isSelected = !!selectedFields[fieldPath];
-          const isExpanded = !!expandedNodes[fieldPath];
+          const isExpanded = expandedNodes[fieldPath];
 
           return (
             <Box key={fieldPath} sx={{ my: 1 }}>
@@ -138,7 +139,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                 </FormControl>
 
                 {isObject && !isSelected && (
-                   <Button size="small" onClick={() => toggleNode(fieldPath)}>
+                   <Button type="button" size="small" onClick={() => toggleNode(fieldPath)}>
                      {isExpanded ? 'Collapse' : 'Expand'}
                    </Button>
                 )}
@@ -154,13 +155,13 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     );
   };
 
-  const queryFields = schema ? getTypeByName(schema.queryType?.name)?.fields || [] : [];
-  const mutationFields = schema ? getTypeByName(schema.mutationType?.name)?.fields || [] : [];
+  const queryFields = schema ? getTypeByName('Query')?.fields || [] : [];
+  const mutationFields = schema ? getTypeByName('Mutation')?.fields || [] : [];
 
   return (
     <Box sx={{ mt: 2 }}>
       <Typography variant="h6">GraphQL Introspection</Typography>
-      <Button variant="contained" onClick={handleIntrospect} disabled={loading} sx={{ mt: 1, mb: 2 }}>
+      <Button type="button" variant="contained" onClick={handleIntrospect} disabled={loading} sx={{ mt: 1, mb: 2 }}>
         {loading ? 'Loading...' : 'Introspect Schema'}
       </Button>
       {error && <Typography color="error">{error}</Typography>}
@@ -228,6 +229,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
             </Box>
 
             <Button
+              type="button"
               variant="contained"
               color="secondary"
               sx={{ mt: 3 }}

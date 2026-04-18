@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
 import 'postal';
 const postal = (window as any).postal;
-import EntityList from 'dynamic_form/EntityList';
+import EntityList from 'dynamic_list/EntityList';
 import EntityForm from 'dynamic_form/EntityForm';
 import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';

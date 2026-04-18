@@ -20,13 +20,10 @@ export default function GraphqlQueriesConfig({ ops, onChange }: GraphqlQueriesCo
           <Typography sx={{ width: 80, fontWeight: 'bold' }}>{op.toUpperCase()}</Typography>
           <TextField
             size="small"
-            label={`Query/Mutation for ${op}`}
+            label={`Operation Name`}
             value={ops[op] || ''}
             onChange={(e) => handleChange(op, e.target.value)}
-            multiline
-            rows={2}
             sx={{ flexGrow: 1 }}
-            required
           />
         </Box>
       ))}

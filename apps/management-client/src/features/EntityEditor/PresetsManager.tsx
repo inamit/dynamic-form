@@ -5,6 +5,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import GridPreview from './GridPreview/GridPreview';
+import type {Enums} from "@dynamic-form/shared-ui";
 
 interface Preset {
   id?: number | string;
@@ -16,13 +17,14 @@ interface Preset {
 
 interface Props {
   fields: any[];
+  enums: Enums;
   presets: Preset[];
   defaultPresetId: number | string;
   schemaRequired?: string[];
   onChange: (presets: Preset[], defaultPresetId: number | string) => void;
 }
 
-export default function PresetsManager({ fields, presets, defaultPresetId, schemaRequired = [], onChange }: Props) {
+export default function PresetsManager({ fields, enums, presets, defaultPresetId, schemaRequired = [], onChange }: Props) {
   const [selectedTab, setSelectedTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
@@ -211,7 +213,7 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
     <Paper sx={{ p: 2, minHeight: 400 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">Grid Presets</Typography>
-        <Button variant="outlined" size="small" onClick={() => handleOpenDialog()}>
+        <Button type="button" variant="outlined" size="small" onClick={() => handleOpenDialog()}>
           Add Preset
         </Button>
       </Box>
@@ -343,6 +345,7 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
                    }
                    return isTemplateEmpty || activeFieldsSet.has(f.name);
                 })}
+                enums={enums}
                 gridTemplate={currentPreset.gridTemplate}
                 defaultValues={currentPreset.defaultValues}
                 onLayoutChange={handleLayoutChange}
@@ -367,8 +370,8 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSavePresetName} variant="contained" disabled={!presetName.trim()}>Save</Button>
+          <Button type="button" onClick={handleCloseDialog}>Cancel</Button>
+          <Button type="button" onClick={handleSavePresetName} variant="contained" disabled={!presetName.trim()}>Save</Button>
         </DialogActions>
       </Dialog>
     </Paper>

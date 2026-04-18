@@ -165,7 +165,13 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     let fieldsToRender = typeObj.fields;
     if (depth === 0 && viewMode === 'tree') {
       const seenTypes = new Set<string>();
-      fieldsToRender = fieldsToRender.filter((f: any) => {
+            fieldsToRender = fieldsToRender.map((f: any) => {
+        // If it's a list, unwrap the list so the UI sees it as an object
+        if (isListType(f.type)) {
+           return { ...f, type: getBaseType(f.type) };
+        }
+        return f;
+      }).filter((f: any) => {
         const baseType = getBaseType(f.type);
         if (!baseType || !baseType.name) return false;
         if (seenTypes.has(baseType.name)) return false;

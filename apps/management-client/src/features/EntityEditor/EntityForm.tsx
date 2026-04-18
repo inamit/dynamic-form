@@ -43,7 +43,7 @@ export default function EntityForm() {
   });
 
   // Track operations if they get updated from Introspection
-  const [graphqlOperations, setGraphqlOperations] = useState<any>(null);
+  const [_graphqlOperations_unused, setGraphqlOperations] = useState<any>(null);
   const [hasPromptedOverwrite, setHasPromptedOverwrite] = useState(false);
 
   useEffect(() => {

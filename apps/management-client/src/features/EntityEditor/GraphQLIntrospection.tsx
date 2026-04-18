@@ -177,7 +177,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                         const newSelected = { ...selectedFields };
 
                         // Helper to recursively toggle fields
-                                                const toggleFields = (tName: string, currentPath: string, check: boolean, depth: number = 0) => {
+                                                const toggleFields = (tName: string, cPath: string, check: boolean, depth: number = 0) => {
                             if (depth > 5) return;
                             const tObj = getTypeByName(tName);
                             if (!tObj || !tObj.fields) return;
@@ -185,7 +185,6 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                             tObj.fields.forEach((f: any) => {
                                 const fBase = getBaseType(f.type);
                                 const fIsList = isListType(f.type);
-                                const fTypeStr = getTypeString(f.type);
                                 const fPath = `\${currentPath}.\${f.name}`;
 
                                 if (check) {
@@ -211,7 +210,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                           newSelected[fieldPath] = {
                             name: field.name,
                             label: field.description || field.name,
-                            type: inferredType,
+                            type: inferFieldType(getBaseType(field.type), isListType(field.type)),
                             targetType: baseType.kind === 'OBJECT' || baseType.kind === 'ENUM' ? baseType.name : null
                           };
                           // If it's an object, auto-select subfields
@@ -250,7 +249,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                 <FormControl size="small" sx={{ minWidth: 120 }}>
                   <InputLabel>Type</InputLabel>
                   <Select
-                      value={selectedFields[fieldPath]?.type || inferredType}
+                      value={selectedFields[fieldPath]?.type || inferFieldType(getBaseType(field.type), isListType(field.type))}
                     label="Type"
                       disabled={!isSelected}
                     onChange={(e) => {

@@ -6,7 +6,7 @@ import { parseCoordinate, formatCoordinate } from '@dynamic-form/geo-utils';
 import 'postal';
 const postal = (window as any).postal;
 import { CHANNEL_NAME, TOPICS } from "../utils/topic.js";
-import { Enums } from "@dynamic-form/shared-ui";
+import type { Enums } from "@dynamic-form/shared-ui";
 
 export function useEntityForm(
   entity: string | null,

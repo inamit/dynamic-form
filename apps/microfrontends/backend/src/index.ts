@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { initTracing, observabilityMiddleware, globalErrorInterceptor, getMetricsHandler } from '@myorg/observability';
+import { initTracing, observabilityMiddleware, globalErrorInterceptor, getMetricsHandler, logger } from '@myorg/observability';
 initTracing('backend-service');
 import { getPrisma } from './db/prisma.js';
 import apiRoutes from './routes/index.js';
@@ -15,7 +15,7 @@ app.use(cookieParser());
 app.use(observabilityMiddleware);
 
 app.get('/metrics', async (req, res) => {
-
+    logger.info('Metrics endpoint accessed');
     getMetricsHandler(req, res);
 });
 
@@ -32,6 +32,7 @@ app.use(globalErrorInterceptor);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
+    logger.info(`Backend server started on port ${PORT}`);
     console.log(`Backend server running on http://localhost:${PORT}`);
 });
 

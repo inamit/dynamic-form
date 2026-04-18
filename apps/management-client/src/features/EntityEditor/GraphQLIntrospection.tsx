@@ -200,51 +200,60 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                         const newSelected = { ...selectedFields };
 
                         // Helper to recursively toggle fields
-                                                const toggleFields = (tName: string, check: boolean, depth: number = 0) => {
-                            if (depth > 5) return;
+                                                                        const toggleFields = (tName: string, cPath: string, check: boolean, isParentList: boolean, toggleDepth: number = 0) => {
+                            if (toggleDepth > 5) return;
                             const tObj = getTypeByName(tName);
                             if (!tObj || !tObj.fields) return;
 
                             tObj.fields.forEach((f: any) => {
                                 const fBase = getBaseType(f.type);
                                 const fIsList = isListType(f.type);
-                                const fPath = `\${currentPath}.\${f.name}`;
+                                const fPath = `${cPath}.${f.name}`;
 
                                 if (check) {
                                     newSelected[fPath] = {
                                         name: f.name,
                                         label: f.description || f.name,
                                         type: inferFieldType(fBase, fIsList),
-                                        targetType: fBase.kind === 'OBJECT' || fBase.kind === 'ENUM' ? fBase.name : null
+                                        targetType: fBase.kind === 'OBJECT' || fBase.kind === 'ENUM' || fBase.name === 'Enum' ? fBase.name : null,
+                                        parentField: isParentList ? cPath : null
                                     };
-                                    if (fBase.kind === 'OBJECT' && fBase.name !== 'Location') {
-                                        toggleFields(fBase.name, check, depth + 1);
+                                    if (fBase.kind === 'OBJECT' && fBase.name !== 'Location' && fBase.name !== 'Enum') {
+                                        toggleFields(fBase.name, fPath, check, isParentList || fIsList, toggleDepth + 1);
                                     }
                                 } else {
                                     delete newSelected[fPath];
-                                    if (fBase.kind === 'OBJECT' && fBase.name !== 'Location') {
-                                        toggleFields(fBase.name, check, depth + 1);
+                                    if (fBase.kind === 'OBJECT' && fBase.name !== 'Location' && fBase.name !== 'Enum') {
+                                        toggleFields(fBase.name, fPath, check, isParentList || fIsList, toggleDepth + 1);
                                     }
                                 }
                             });
                         };
 
                         if (e.target.checked) {
-                          newSelected[fieldPath] = {
-                            name: field.name,
-                            label: field.description || field.name,
-                            type: inferFieldType(getBaseType(field.type), isListType(field.type)),
-                            targetType: baseType.kind === 'OBJECT' || baseType.kind === 'ENUM' ? baseType.name : null
-                          };
-                          // If it's an object, auto-select subfields
-                          if (baseType.kind === 'OBJECT' && baseType.name !== 'Location') {
-                              toggleFields(baseType.name, true);
+                          if (isListType(field.type)) {
+                            newSelected[fieldPath] = {
+                              name: field.name,
+                              label: field.description || field.name,
+                              type: inferFieldType(getBaseType(field.type), true),
+                              targetType: baseType.kind === 'OBJECT' || baseType.kind === 'ENUM' || baseType.name === 'Enum' ? baseType.name : null
+                            };
+                          } else if (baseType.kind !== 'OBJECT' || baseType.name === 'Location' || baseType.name === 'Enum') {
+                            newSelected[fieldPath] = {
+                              name: field.name,
+                              label: field.description || field.name,
+                              type: inferFieldType(getBaseType(field.type), false),
+                              targetType: baseType.kind === 'ENUM' || baseType.name === 'Enum' ? baseType.name : null
+                            };
+                          }
+
+                          if (baseType.kind === 'OBJECT' && baseType.name !== 'Location' && baseType.name !== 'Enum') {
+                              toggleFields(baseType.name, fieldPath, true, isListType(field.type));
                           }
                         } else {
                           delete newSelected[fieldPath];
-                          // If it's an object, auto-deselect subfields
-                          if (baseType.kind === 'OBJECT' && baseType.name !== 'Location') {
-                              toggleFields(baseType.name, false);
+                          if (baseType.kind === 'OBJECT' && baseType.name !== 'Location' && baseType.name !== 'Enum') {
+                              toggleFields(baseType.name, fieldPath, false, isListType(field.type));
                           }
                         }
                         setSelectedFields(newSelected);

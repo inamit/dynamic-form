@@ -38,7 +38,6 @@
 **Learning:** Sequential async operations inside loops over potentially large collections drastically impact performance and can cause timeouts or exhaust connections when relying on external or internal services for validation.
 **Prevention:** Always batch independent asynchronous operations using `Promise.all()` (or similar constructs) when iterating over collections, executing them concurrently to minimize latency and improve scalability.
 
-## 2024-05-28 - Overly Permissive CORS Configuration
-**Vulnerability:** The backend APIs (`apps/microfrontends/backend`, `apps/permissions/custom-permissions-service`, and `apps/permissions/permissions-orchestrator-service`) were using a wildcard CORS configuration via `app.use(cors())`. This allows any malicious website to send authenticated requests (if credentials are included) or read sensitive responses from the APIs, exposing the application to data exfiltration and unauthorized cross-origin requests.
-**Learning:** Defaulting to `cors()` without options is insecure as it essentially translates to `Access-Control-Allow-Origin: *`. APIs containing sensitive or authorization data must restrict origin access to trusted domains.
-**Prevention:** Always implement a strict whitelist-based CORS configuration. Parse explicitly allowed domains (e.g. from an `ALLOWED_ORIGINS` environment variable) and validate incoming origins dynamically, rejecting those that do not match known and trusted frontend application URLs.
+## 2024-05-28 - Note on CORS with TYK API Gateway
+**Learning:** While wildcard CORS (`app.use(cors())`) is generally insecure, in this architecture, the TYK API Gateway sits in front of the backend services and handles allowed origins centrally. Therefore, implementing a local CORS whitelist inside the Node.js backend services themselves is redundant and can conflict with the intended API Gateway management strategy.
+**Prevention:** Always verify the network architecture and gateway responsibilities before applying standard security controls like CORS whitelists at the application layer, as they may already be managed upstream.

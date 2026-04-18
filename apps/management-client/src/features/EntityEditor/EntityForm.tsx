@@ -311,6 +311,7 @@ export default function EntityForm() {
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto' }}>
             <Button
+              type="button"
               color="inherit"
               disabled={activeStep === 0}
               onClick={handleBack}
@@ -332,6 +333,7 @@ export default function EntityForm() {
                 </Button>
               ) : (
                 <Button
+                  type="button"
                   variant="contained"
                   onClick={handleNext}
                   endIcon={<ArrowForwardIcon />}

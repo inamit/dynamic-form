@@ -138,7 +138,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                 </FormControl>
 
                 {isObject && !isSelected && (
-                   <Button size="small" onClick={() => toggleNode(fieldPath)}>
+                   <Button type="button" size="small" onClick={() => toggleNode(fieldPath)}>
                      {isExpanded ? 'Collapse' : 'Expand'}
                    </Button>
                 )}
@@ -160,7 +160,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
   return (
     <Box sx={{ mt: 2 }}>
       <Typography variant="h6">GraphQL Introspection</Typography>
-      <Button variant="contained" onClick={handleIntrospect} disabled={loading} sx={{ mt: 1, mb: 2 }}>
+      <Button type="button" variant="contained" onClick={handleIntrospect} disabled={loading} sx={{ mt: 1, mb: 2 }}>
         {loading ? 'Loading...' : 'Introspect Schema'}
       </Button>
       {error && <Typography color="error">{error}</Typography>}
@@ -228,6 +228,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
             </Box>
 
             <Button
+              type="button"
               variant="contained"
               color="secondary"
               sx={{ mt: 3 }}

@@ -122,9 +122,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     typeObj.fields.forEach((field: any) => {
         const baseType = getBaseType(field.type);
           const isList = isListType(field.type);
-          const inferredType = inferFieldType(baseType, isList);
-          const typeString = getTypeString(field.type);
-        const fieldPath = currentPath ? `${currentPath}.${field.name}` : field.name;
+          const fieldPath = currentPath ? `${currentPath}.${field.name}` : field.name;
 
         if (baseType.kind === 'OBJECT') {
             newExpanded[fieldPath] = true;
@@ -177,7 +175,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                         const newSelected = { ...selectedFields };
 
                         // Helper to recursively toggle fields
-                                                const toggleFields = (tName: string, cPath: string, check: boolean, depth: number = 0) => {
+                                                const toggleFields = (tName: string, check: boolean, depth: number = 0) => {
                             if (depth > 5) return;
                             const tObj = getTypeByName(tName);
                             if (!tObj || !tObj.fields) return;
@@ -195,12 +193,12 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                                         targetType: fBase.kind === 'OBJECT' || fBase.kind === 'ENUM' ? fBase.name : null
                                     };
                                     if (fBase.kind === 'OBJECT' && fBase.name !== 'Location') {
-                                        toggleFields(fBase.name, fPath, check, depth + 1);
+                                        toggleFields(fBase.name, check, depth + 1);
                                     }
                                 } else {
                                     delete newSelected[fPath];
                                     if (fBase.kind === 'OBJECT' && fBase.name !== 'Location') {
-                                        toggleFields(fBase.name, fPath, check, depth + 1);
+                                        toggleFields(fBase.name, check, depth + 1);
                                     }
                                 }
                             });
@@ -215,20 +213,20 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                           };
                           // If it's an object, auto-select subfields
                           if (baseType.kind === 'OBJECT' && baseType.name !== 'Location') {
-                              toggleFields(baseType.name, fieldPath, true);
+                              toggleFields(baseType.name, true);
                           }
                         } else {
                           delete newSelected[fieldPath];
                           // If it's an object, auto-deselect subfields
                           if (baseType.kind === 'OBJECT' && baseType.name !== 'Location') {
-                              toggleFields(baseType.name, fieldPath, false);
+                              toggleFields(baseType.name, false);
                           }
                         }
                         setSelectedFields(newSelected);
                       }}
                     />
                   }
-                  label={`${field.name} (${typeString}) - ${field.description || ''}`}
+                  label={`${field.name} (${getTypeString(field.type)}) - ${field.description || ''}`}
                 />
 
                   {isSelected && (

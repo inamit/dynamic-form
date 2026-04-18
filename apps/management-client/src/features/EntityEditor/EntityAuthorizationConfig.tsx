@@ -1,4 +1,4 @@
-import { TextField, MenuItem, Typography, Paper } from '@mui/material';
+import { TextField, MenuItem, Typography, Box } from '@mui/material';
 import type { EntityConfig } from '../../types';
 
 interface Props {
@@ -27,22 +27,53 @@ export default function EntityAuthorizationConfig({ formData, onChange }: Props)
   const authObject = getAuthObject();
 
   return (
-    <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 600 }}>
-       <Typography variant="h6">Authorization Configuration</Typography>
-       <Typography variant="body2" color="textSecondary">Select the authorization services to use for each action. The orchestrator will check all selected services.</Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+       <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+         Select the authorization services to use for each CRUD action. The orchestrator will evaluate the request against all selected services.
+       </Typography>
 
-       <TextField select label="View Authorization" value={authObject.view || []} onChange={(e) => handleAuthChange('view', e)} SelectProps={{ multiple: true }}>
-          {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-       </TextField>
-       <TextField select label="Create Authorization" value={authObject.create || []} onChange={(e) => handleAuthChange('create', e)} SelectProps={{ multiple: true }}>
-          {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-       </TextField>
-       <TextField select label="Edit Authorization" value={authObject.edit || []} onChange={(e) => handleAuthChange('edit', e)} SelectProps={{ multiple: true }}>
-          {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-       </TextField>
-       <TextField select label="Delete Authorization" value={authObject.delete || []} onChange={(e) => handleAuthChange('delete', e)} SelectProps={{ multiple: true }}>
-          {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-       </TextField>
-    </Paper>
+       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+         <TextField
+           select
+           label="View Authorization"
+           value={authObject.view || []}
+           onChange={(e) => handleAuthChange('view', e)}
+           SelectProps={{ multiple: true }}
+           fullWidth
+         >
+            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+         </TextField>
+         <TextField
+           select
+           label="Create Authorization"
+           value={authObject.create || []}
+           onChange={(e) => handleAuthChange('create', e)}
+           SelectProps={{ multiple: true }}
+           fullWidth
+         >
+            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+         </TextField>
+         <TextField
+           select
+           label="Edit Authorization"
+           value={authObject.edit || []}
+           onChange={(e) => handleAuthChange('edit', e)}
+           SelectProps={{ multiple: true }}
+           fullWidth
+         >
+            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+         </TextField>
+         <TextField
+           select
+           label="Delete Authorization"
+           value={authObject.delete || []}
+           onChange={(e) => handleAuthChange('delete', e)}
+           SelectProps={{ multiple: true }}
+           fullWidth
+         >
+            {authOptions.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+         </TextField>
+       </Box>
+    </Box>
   );
 }

@@ -13,6 +13,11 @@ export class SchemaClient {
         return response.data;
     }
 
+    async fetchEnums(enumApiUrl: string, headers: any) {
+        const response = await axios.get(validateUrl(enumApiUrl), { headers });
+        return response.data;
+    }
+
     async fetchEnum(enumApiUrl: string, headers: any, enumName: string) {
         const url = `${enumApiUrl}/${enumName}`;
         const response = await axios.get(validateUrl(url), { headers });

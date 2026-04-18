@@ -17,14 +17,17 @@ jest.mock('postal', () => {
   };
 });
 
+const mockEnum = {'enum-mock': []};
+
 describe('useEntityForm', () => {
-  let mockGetConfig: any, mockGetAbilities: any, mockGetSchema: any, mockGetDataById: any, mockCreateData: any, mockUpdateData: any;
+  let mockGetConfig: any, mockGetAbilities: any, mockGetSchema: any, mockGetEnums: any, mockGetDataById: any, mockCreateData: any, mockUpdateData: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetConfig = jest.spyOn(ApiService, 'getConfig').mockImplementation(jest.fn() as any);
     mockGetAbilities = jest.spyOn(ApiService, 'getAbilities').mockImplementation(jest.fn() as any);
     mockGetSchema = jest.spyOn(ApiService, 'getSchema').mockImplementation(jest.fn() as any);
+    mockGetEnums = jest.spyOn(ApiService, 'getEnums').mockImplementation(jest.fn() as any);
     mockGetDataById = jest.spyOn(ApiService, 'getDataById').mockImplementation(jest.fn() as any);
     mockCreateData = jest.spyOn(ApiService, 'createData').mockImplementation(jest.fn() as any);
     mockUpdateData = jest.spyOn(ApiService, 'updateData').mockImplementation(jest.fn() as any);
@@ -34,6 +37,7 @@ describe('useEntityForm', () => {
     mockGetConfig.mockResolvedValue({ fields: [], permissions: {}, schemaName: 'TestEntity' });
     mockGetAbilities.mockResolvedValue({});
     mockGetSchema.mockResolvedValue({ type: 'object', properties: {} });
+    mockGetEnums.mockResolvedValue(mockEnum);
 
     const { result } = renderHook(() => useEntityForm('TestEntity'));
 
@@ -53,6 +57,7 @@ describe('useEntityForm', () => {
     mockGetConfig.mockResolvedValue(mockConfig);
     mockGetAbilities.mockResolvedValue(mockAbilities);
     mockGetSchema.mockResolvedValue(mockSchema);
+    mockGetEnums.mockResolvedValue(mockEnum);
 
     const { result } = renderHook(() => useEntityForm('TestEntity'));
 
@@ -73,6 +78,7 @@ describe('useEntityForm', () => {
     mockGetConfig.mockResolvedValue(mockConfig);
     mockGetAbilities.mockResolvedValue(mockAbilities);
     mockGetSchema.mockResolvedValue(mockSchema);
+    mockGetEnums.mockResolvedValue(mockEnum);
 
     let result: any;
     await act(async () => {

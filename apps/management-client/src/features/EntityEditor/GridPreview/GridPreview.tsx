@@ -51,15 +51,29 @@ function SortableItem(props: {
     <Paper
       ref={setNodeRef}
       style={style}
-      sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, backgroundColor: 'grey.100', cursor: 'grab', position: 'relative' }}
+      elevation={0}
+      sx={{
+        p: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: 2,
+        cursor: 'grab',
+        position: 'relative',
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        }
+      }}
     >
-      <Box sx={{ position: 'absolute', right: 0, bottom: 0, opacity: 0.1, pointerEvents: 'none' }}>
+      <Box sx={{ position: 'absolute', right: 0, bottom: 0, opacity: 0.05, pointerEvents: 'none' }}>
          <Typography variant="h1" sx={{ fontSize: '4rem', lineHeight: 1 }}>{props.item.rowSpan}</Typography>
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} {...attributes} {...listeners}>
         <Typography variant="subtitle2" noWrap>{props.field.label}</Typography>
-        <Typography variant="caption" color="text.secondary">[{props.field.type}]</Typography>
+        <Typography variant="caption" color="primary">[{props.field.type}]</Typography>
       </Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', zIndex: 1 }}>
         <Typography variant="caption">Cols:</Typography>

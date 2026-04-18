@@ -143,7 +143,7 @@ export default function EntityForm() {
     setSubmitError('');
     try {
 
-      let finalEndpointsQueries = formData.endpointsQueries;
+      const finalEndpointsQueries = formData.endpointsQueries;
 
       // Operations are now built and applied immediately in handleOperationsSelected
 

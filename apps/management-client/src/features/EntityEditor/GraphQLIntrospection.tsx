@@ -174,7 +174,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                     <Checkbox
                       checked={isSelected}
                       onChange={(e) => {
-                        let newSelected = { ...selectedFields };
+                        const newSelected = { ...selectedFields };
 
                         // Helper to recursively toggle fields
                                                 const toggleFields = (tName: string, currentPath: string, check: boolean, depth: number = 0) => {

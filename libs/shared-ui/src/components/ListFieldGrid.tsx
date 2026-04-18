@@ -4,27 +4,67 @@ import {Box, IconButton} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
-import type {Enums, FieldConfig} from './DynamicField';
-import {ModuleRegistry, themeMaterial} from 'ag-grid-community';
-import { AllEnterpriseModule } from 'ag-grid-enterprise';
+import type { FieldConfig } from './DynamicField';
+import { ModuleRegistry, AllCommunityModule, themeMaterial } from 'ag-grid-community';
 import type { ColDef } from 'ag-grid-community';
-import {subFieldsToColDefs} from "../utils/agGridUtils";
 
-ModuleRegistry.registerModules([AllEnterpriseModule]);
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 export interface ListFieldGridProps {
   value: any[];
   onChange: (value: any[]) => void;
   subFields: FieldConfig[];
-  enums: Enums;
+  enumValues?: { code: string; value: string }[];
 }
 
-export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, subFields, enums }) => {
+export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, subFields, enumValues }) => {
   const gridRef = useRef<any>(null);
 
   const rowData = Array.isArray(value) ? value : [];
+  const [enumDictionaries, setEnumDictionaries] = React.useState<Record<string, { code: string; value: string }[]>>({});
 
-  const columnDefs: ColDef[] = subFieldsToColDefs(enums, subFields);
+  React.useEffect(() => {
+    subFields.forEach((field) => {
+      if (field.type === 'enum' && field.enumName && !enumDictionaries[field.name]) {
+        if (enumValues && enumValues.length > 0) {
+            setEnumDictionaries((prev) => ({ ...prev, [field.name]: enumValues }));
+        }
+      }
+    });
+  }, [subFields, enumDictionaries, enumValues]);
+
+  const columnDefs: ColDef[] = subFields.map(field => {
+    let colDef: ColDef = {
+      field: field.name,
+      headerName: field.label || field.name,
+      editable: (params) => !params.data._deleted,
+      filter: true,
+      cellDataType: field.type === 'checkbox' ? 'boolean' : field.type
+    };
+
+    if (field.type === 'number') {
+      colDef.valueParser = (params: any) => Number(params.newValue);
+    } else if (field.type === 'checkbox') {
+      colDef.cellEditor = 'agCheckboxCellEditor';
+    } else if (field.type === 'enum' && field.enumName) {
+      colDef.cellEditor = 'agSelectCellEditor';
+      colDef.cellEditorParams = {
+        values: enumDictionaries[field.name] ? enumDictionaries[field.name].map(e => e.code) : []
+      };
+      colDef.valueFormatter = (params: any) => {
+          if (!params.value) return '';
+          const dict = enumDictionaries[field.name];
+          if (dict) {
+              const matched = dict.find(e => e.code === params.value);
+              if (matched) return matched.value;
+          }
+          return params.value;
+      };
+      colDef.filter = 'agSetColumnFilter';
+    }
+
+    return colDef;
+  });
 
   const onCellValueChanged = useCallback((_: any) => {
     const updatedData: any[] = [];

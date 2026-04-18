@@ -24,11 +24,6 @@ export const ApiService = {
     return res.data;
   },
 
-  getEnums: async () => {
-    const res = await axios.get(`${API_BASE}/enums`);
-    return res.data;
-  },
-
   getDataById: async (entity: string, id: string) => {
     const res = await axios.get(`${API_BASE}/data/${entity}/${id}`);
     return res.data;

@@ -19,7 +19,6 @@ router.post('/config', (req, res) => res.status(501).json({ error: 'Creating end
 
 router.get('/schemas', schemaController.getSchemas);
 router.get('/schema/:entityName', schemaController.getSchema);
-router.get('/enums', schemaController.getEnums);
 router.get('/enums/:enumName', schemaController.getEnum);
 
 router.get('/data/:entity/abilities', authorizationController.getAbilities);

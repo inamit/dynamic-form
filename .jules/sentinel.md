@@ -37,7 +37,3 @@
 **Vulnerability:** The application was vulnerable to an N+1 performance bottleneck and potential Denial of Service (DoS) due to performing row-level authorization sequentially in a `for...of` loop when fetching data from the external source via `data.service.ts` (`getData`). This resulted in an HTTP request to the external orchestrator service for every single item fetched, scaling linearly and significantly increasing response time for large datasets.
 **Learning:** Sequential async operations inside loops over potentially large collections drastically impact performance and can cause timeouts or exhaust connections when relying on external or internal services for validation.
 **Prevention:** Always batch independent asynchronous operations using `Promise.all()` (or similar constructs) when iterating over collections, executing them concurrently to minimize latency and improve scalability.
-
-## 2024-05-28 - Note on CORS with TYK API Gateway
-**Learning:** While wildcard CORS (`app.use(cors())`) is generally insecure, in this architecture, the TYK API Gateway sits in front of the backend services and handles allowed origins centrally. Therefore, implementing a local CORS whitelist inside the Node.js backend services themselves is redundant and can conflict with the intended API Gateway management strategy.
-**Prevention:** Always verify the network architecture and gateway responsibilities before applying standard security controls like CORS whitelists at the application layer, as they may already be managed upstream.

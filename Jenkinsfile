@@ -26,7 +26,6 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    sh 'npx nx affected -t build --base=origin/main --head=HEAD'
                     sh 'npx nx affected -t test --base=origin/main --head=HEAD'
                 }
             }

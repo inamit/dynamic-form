@@ -7,6 +7,8 @@ import { formatCoordinate } from '@dynamic-form/geo-utils';
 import { DynamicField } from '@dynamic-form/shared-ui';
 import { useEntityForm } from '../hooks/useEntityForm';
 
+const API_BASE = 'http://localhost:3001/api';
+
 export default function EntityForm() {
   const [entity, setEntity] = useState<string | null>(null);
   const [id, setId] = useState<string | undefined>(undefined);
@@ -29,7 +31,6 @@ export default function EntityForm() {
     coordinateFormats,
     updateCoordinateFormat,
     schema,
-    enums,
     validationErrors,
     handleSubmit
   } = useEntityForm(entity, id, initialCoordinateFormats, initialDefaultValues, injectedPresetId);
@@ -226,9 +227,9 @@ export default function EntityForm() {
               onChange={(name: any, value: any) => {
                  setFormData(name, value);
               }}
-              enums={enums}
               errorMsg={errorMsg}
               isRequired={isRequired}
+              apiBaseUrl={API_BASE}
               coordinateFormat={coordinateFormats[field.name]}
               onCoordinateFormatChange={handleCoordinateFormatChange}
               isSelectMode={selectModeField === field.name}

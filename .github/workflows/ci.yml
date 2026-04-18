@@ -44,9 +44,6 @@ jobs:
       - name: Prepare Backend Tests
         run: DATABASE_URL=postgresql://foo:bar@localhost:5432/db npx nx affected -t prisma:generate --base=$BASE_SHA --head=$HEAD_SHA
 
-      - name: Build
-        run: npx nx affected -t build --base=$BASE_SHA --head=$HEAD_SHA
-
       - name: Test
         run: npx nx affected -t test --base=$BASE_SHA --head=$HEAD_SHA
 

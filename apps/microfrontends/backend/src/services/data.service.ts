@@ -39,37 +39,19 @@ export class DataService {
 
         const filteredList: any[] = [];
         const CONCURRENCY_LIMIT = parseInt(process.env.DATA_AUTH_ORCHESTRATOR_CONCURRENCY || '5', 10);
-
-        // ⚡ Bolt Optimization: Replace sequential chunking with a sliding-window promise pool.
-        // This keeps exactly `CONCURRENCY_LIMIT` tasks in flight at all times, avoiding pipeline stalls
-        // caused by waiting for the slowest task in a chunk before starting the next batch.
-        const executing: Promise<any>[] = [];
-        const results: Promise<{ allowed: boolean, item: any }>[] = [];
-
-        for (const item of dataList) {
-            const p = OrchestratorService.checkAuth(userId, origin, entityName, 'view', config, item)
-                .then(authResult => ({ allowed: authResult.allowed, item }))
-                .catch(() => ({ allowed: false, item })); // Fail open/closed gracefully without crashing process
-
-            results.push(p);
-
-            const e = p.then(() => {
-                executing.splice(executing.indexOf(e), 1);
+        for (let i = 0; i < dataList.length; i += CONCURRENCY_LIMIT) {
+            const chunk = dataList.slice(i, i + CONCURRENCY_LIMIT);
+            const authResults = await Promise.all(
+                chunk.map((item: any) =>
+                    OrchestratorService.checkAuth(userId, origin, entityName, 'view', config, item)
+                )
+            );
+            chunk.forEach((item: any, index: number) => {
+                if (authResults[index].allowed) {
+                    filteredList.push(item);
+                }
             });
-            executing.push(e);
-
-            if (executing.length >= CONCURRENCY_LIMIT) {
-                await Promise.race(executing);
-            }
         }
-
-        const authResults = await Promise.all(results);
-        authResults.forEach(res => {
-            if (res.allowed) {
-                filteredList.push(res.item);
-            }
-        });
-
         return filteredList;
     }
 

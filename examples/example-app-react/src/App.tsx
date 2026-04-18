@@ -90,7 +90,7 @@ function MapPicker() {
 
   const MapEvents = () => {
     useMapEvents({
-      click(e) {
+      click(e: any) {
         if (selectModeField) {
           (postal as any).publish({
             channel: 'dynamic_form',

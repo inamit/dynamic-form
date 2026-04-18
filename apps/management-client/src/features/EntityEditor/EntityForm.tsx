@@ -100,8 +100,10 @@ export default function EntityForm() {
     setGraphqlOperations(ops);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     setSubmitError('');
     try {
 
@@ -285,9 +287,14 @@ export default function EntityForm() {
 
       <Card elevation={0} sx={{ p: { xs: 2, md: 4 } }}>
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 6 }}>
-          {steps.map((label) => (
+          {steps.map((label, index) => (
             <Step key={label}>
-              <StepLabel>{label}</StepLabel>
+              <StepLabel
+                onClick={() => setActiveStep(index)}
+                sx={{ cursor: 'pointer' }}
+              >
+                {label}
+              </StepLabel>
             </Step>
           ))}
         </Stepper>
@@ -328,6 +335,7 @@ export default function EntityForm() {
                   variant="contained"
                   onClick={handleNext}
                   endIcon={<ArrowForwardIcon />}
+                  disabled={activeStep === 0 && (!formData.name || !formData.dataSourceId)}
                 >
                   Next
                 </Button>

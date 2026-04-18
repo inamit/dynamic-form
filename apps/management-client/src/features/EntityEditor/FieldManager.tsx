@@ -6,10 +6,12 @@ import {
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   SubdirectoryArrowRight as SubIcon,
-  DataObject as DataObjectIcon
+  DataObject as DataObjectIcon,
+  DataArray as DataArrayIcon
 } from '@mui/icons-material';
 import type { Field } from '../../types';
 
@@ -51,6 +53,14 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
     setExpandedNodes(newSet);
   };
 
+  const handleEditField = (fieldName: string) => {
+    const fieldToEdit = fields.find(f => f.name === fieldName);
+    if (fieldToEdit) {
+      setNewField(fieldToEdit);
+      handleRemoveField(fieldName);
+    }
+  };
+
   const fieldTree = useMemo(() => {
     const tree: TreeField[] = [];
     const lookup: Record<string, TreeField> = {};
@@ -90,7 +100,11 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
         >
           {level > 0 && <SubIcon sx={{ mr: 1, color: 'text.secondary', opacity: 0.5 }} fontSize="small" />}
 
-          <DataObjectIcon sx={{ mr: 2, color: 'primary.main', opacity: 0.8 }} fontSize="small" />
+          {node.type === 'list' ? (
+            <DataArrayIcon sx={{ mr: 2, color: 'primary.main', opacity: 0.8 }} fontSize="small" />
+          ) : (
+            <DataObjectIcon sx={{ mr: 2, color: 'primary.main', opacity: 0.8 }} fontSize="small" />
+          )}
 
           <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{node.name}</Typography>
@@ -118,6 +132,12 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
                 {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
               </IconButton>
             )}
+            <IconButton
+              size="small"
+              onClick={() => handleEditField(node.name)}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
             <IconButton
               size="small"
               color="error"

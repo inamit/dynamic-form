@@ -15,6 +15,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
   const [schema, setSchema] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState<'tree' | 'object'>('object');
 
   // Track selected queries/mutations
   const [selectedOperations, setSelectedOperations] = useState({
@@ -90,6 +91,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
 
     if (baseType.kind === 'ENUM') return 'enum';
     if (baseType.kind === 'OBJECT') {
+        if (baseType.name === 'Enum') return 'enum';
         if (baseType.name === 'Location') return 'coordinate';
         return 'object';
     }
@@ -132,12 +134,17 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     return newExpanded;
   };
 
-  const handleExpandAll = () => {
-    const rootTypes = schema.types.filter((t: any) => t.kind === 'OBJECT' && !t.name.startsWith('__') && !['Query', 'Mutation', 'Subscription'].includes(t.name));
-    let allExpanded = {};
-    rootTypes.forEach((t: any) => {
-        allExpanded = { ...allExpanded, ...expandAllFields(t.name) };
-    });
+    const handleExpandAll = () => {
+    let allExpanded: Record<string, boolean> = {};
+    if (viewMode === 'object') {
+       const rootTypes = schema.types.filter((t: any) => t.kind === 'OBJECT' && !t.name.startsWith('__') && !['Query', 'Mutation', 'Subscription'].includes(t.name));
+       rootTypes.forEach((t: any) => {
+           allExpanded[t.name] = true;
+           allExpanded = { ...allExpanded, ...expandAllFields(t.name) };
+       });
+    } else {
+       allExpanded = expandAllFields(schema.queryType?.name || 'Query');
+    }
     setExpandedNodes(allExpanded);
   };
 
@@ -356,18 +363,30 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
             </Typography>
 
 
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+
+            <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+                <Button variant="outlined" size="small" onClick={() => setViewMode(viewMode === 'object' ? 'tree' : 'object')}>
+                   Switch to {viewMode === 'object' ? 'Tree View' : 'Object View'}
+                </Button>
                 <Button variant="outlined" size="small" onClick={handleExpandAll}>Expand All</Button>
                 <Button variant="outlined" size="small" onClick={handleCollapseAll}>Collapse All</Button>
             </Box>
 
+
             <Box sx={{ mt: 2 }}>
-              {schema.types.filter((t: any) => t.kind === 'OBJECT' && !t.name.startsWith('__') && !['Query', 'Mutation', 'Subscription'].includes(t.name)).map((t: any) => (
-                <Box key={t.name} sx={{ mb: 4 }}>
-                  <Typography variant="subtitle1" fontWeight="bold" sx={{ bgcolor: 'action.hover', p: 1, borderRadius: 1 }}>{t.name}</Typography>
-                  {renderTypeNode(t.name)}
-                </Box>
-              ))}
+                            {viewMode === 'object' ? (
+                schema.types.filter((t: any) => t.kind === 'OBJECT' && !t.name.startsWith('__') && !['Query', 'Mutation', 'Subscription'].includes(t.name)).map((t: any) => (
+                  <Box key={t.name} sx={{ mb: 4 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" sx={{ bgcolor: 'action.hover', p: 1, borderRadius: 1 }}>
+                      {t.name}
+                      <Button size="small" onClick={() => toggleNode(t.name)} sx={{ ml: 2 }}>{expandedNodes[t.name] ? 'Collapse' : 'Expand'}</Button>
+                    </Typography>
+                    {expandedNodes[t.name] && renderTypeNode(t.name)}
+                  </Box>
+                ))
+              ) : (
+                renderTypeNode(schema.queryType?.name || 'Query')
+              )}
             </Box>
 
             <Button

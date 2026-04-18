@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Button, Typography, Checkbox, FormControlLabel, Select, MenuItem, Paper, FormControl, InputLabel, TextField } from '@mui/material';
+import { Box, Button, Typography, Checkbox, FormControlLabel, Select, MenuItem, Paper, FormControl, InputLabel, TextField, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import axios from 'axios';
 
 interface Props {
@@ -15,7 +15,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
   const [schema, setSchema] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [viewMode, setViewMode] = useState<'tree' | 'object'>('object');
+  const [viewMode, setViewMode] = useState<'tree' | 'object'>('tree');
 
   // Track selected queries/mutations
   const [selectedOperations, setSelectedOperations] = useState({
@@ -162,9 +162,21 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     const typeObj = getTypeByName(typeName);
     if (!typeObj || !typeObj.fields) return null;
 
+    let fieldsToRender = typeObj.fields;
+    if (depth === 0 && viewMode === 'tree') {
+      const seenTypes = new Set<string>();
+      fieldsToRender = fieldsToRender.filter((f: any) => {
+        const baseType = getBaseType(f.type);
+        if (!baseType || !baseType.name) return false;
+        if (seenTypes.has(baseType.name)) return false;
+        seenTypes.add(baseType.name);
+        return true;
+      });
+    }
+
     return (
       <Box sx={{ ml: depth > 0 ? 3 : 0, mt: 1, borderLeft: depth > 0 ? '1px dashed #ccc' : 'none', pl: depth > 0 ? 2 : 0 }}>
-        {typeObj.fields.map((field: any) => {
+        {fieldsToRender.map((field: any) => {
           const baseType = getBaseType(field.type);
           const isObject = baseType.kind === 'OBJECT';
           const fieldPath = parentPath ? `${parentPath}.${field.name}` : field.name;
@@ -276,14 +288,14 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                   </Select>
                 </FormControl>
 
-                {isObject && !isSelected && (
+                {isObject && (
                    <Button type="button" size="small" onClick={() => toggleNode(fieldPath)}>
                      {isExpanded ? 'Collapse' : 'Expand'}
                    </Button>
                 )}
               </Paper>
 
-              {isObject && isExpanded && !isSelected && (
+              {isObject && isExpanded && (
                 renderTypeNode(baseType.name, fieldPath, depth + 1)
               )}
             </Box>
@@ -365,9 +377,21 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
 
 
             <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
-                <Button variant="outlined" size="small" onClick={() => setViewMode(viewMode === 'object' ? 'tree' : 'object')}>
-                   Switch to {viewMode === 'object' ? 'Tree View' : 'Object View'}
-                </Button>
+                <ToggleButtonGroup
+                  color="primary"
+                  value={viewMode}
+                  exclusive
+                  onChange={(e: any, newValue: any) => {
+                    if (newValue !== null) {
+                      setViewMode(newValue);
+                    }
+                  }}
+                  aria-label="View Mode"
+                  size="small"
+                >
+                  <ToggleButton value="tree">Tree View</ToggleButton>
+                  <ToggleButton value="object">Object View</ToggleButton>
+                </ToggleButtonGroup>
                 <Button variant="outlined" size="small" onClick={handleExpandAll}>Expand All</Button>
                 <Button variant="outlined" size="small" onClick={handleCollapseAll}>Collapse All</Button>
             </Box>

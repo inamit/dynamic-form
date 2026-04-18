@@ -211,7 +211,7 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
     <Paper sx={{ p: 2, minHeight: 400 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">Grid Presets</Typography>
-        <Button variant="outlined" size="small" onClick={() => handleOpenDialog()}>
+        <Button type="button" variant="outlined" size="small" onClick={() => handleOpenDialog()}>
           Add Preset
         </Button>
       </Box>
@@ -362,8 +362,8 @@ export default function PresetsManager({ fields, presets, defaultPresetId, schem
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSavePresetName} variant="contained" disabled={!presetName.trim()}>Save</Button>
+          <Button type="button" onClick={handleCloseDialog}>Cancel</Button>
+          <Button type="button" onClick={handleSavePresetName} variant="contained" disabled={!presetName.trim()}>Save</Button>
         </DialogActions>
       </Dialog>
     </Paper>

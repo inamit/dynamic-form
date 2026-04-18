@@ -231,6 +231,7 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
         ) : <Box />}
 
         <Button
+          type="button"
           variant="contained"
           onClick={handleAddField}
           startIcon={<AddIcon />}

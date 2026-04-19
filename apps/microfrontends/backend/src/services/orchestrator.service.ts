@@ -4,6 +4,8 @@ export class OrchestratorService {
     // ⚡ Bolt Optimization: Cache parsed auth config to avoid repeated JSON.parse overhead
     // during bulk data authorization (O(n) operations -> O(1) operations).
     // Using WeakMap ensures we don't leak memory if the config object is garbage collected.
+    // It is also safe against DB updates because each fetch returns a new object reference,
+    // resulting in a cache miss and forcing a fresh parse of the updated config.
     private static parsedAuthCache = new WeakMap<any, any>();
 
     static async checkAuth(userId: string, origin: string, entityName: string, ability: string, config: any, data?: any) {

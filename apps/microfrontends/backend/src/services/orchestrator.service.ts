@@ -1,11 +1,22 @@
 import axios from 'axios';
 
+// ⚡ Bolt Optimization: Use WeakMap to cache parsed config auth
+// DataService.getData loops over lists and calls checkAuth for each item,
+// leading to O(N) redundant JSON parses of the same config.auth string.
+// WeakMap gives us O(1) retrieval without memory leaks since keys are GC-able objects.
+const authCache = new WeakMap<any, any>();
+
 export class OrchestratorService {
     static async checkAuth(userId: string, origin: string, entityName: string, ability: string, config: any, data?: any) {
         let services: string[] = [];
         try {
             if (config.auth) {
-                services = JSON.parse(config.auth)[ability] || [];
+                let parsedAuth = authCache.get(config);
+                if (!parsedAuth) {
+                    parsedAuth = JSON.parse(config.auth);
+                    authCache.set(config, parsedAuth);
+                }
+                services = parsedAuth[ability] || [];
             }
         } catch (e) {
             console.error('Error parsing auth config', e);

@@ -1,11 +1,18 @@
 import axios from 'axios';
 
+const authCache = new WeakMap<object, Record<string, string[]>>();
+
 export class OrchestratorService {
     static async checkAuth(userId: string, origin: string, entityName: string, ability: string, config: any, data?: any) {
         let services: string[] = [];
         try {
-            if (config.auth) {
-                services = JSON.parse(config.auth)[ability] || [];
+            if (config && config.auth) {
+                let parsedAuth = authCache.get(config);
+                if (!parsedAuth) {
+                    parsedAuth = JSON.parse(config.auth);
+                    authCache.set(config, parsedAuth || {});
+                }
+                services = parsedAuth![ability] || [];
             }
         } catch (e) {
             console.error('Error parsing auth config', e);

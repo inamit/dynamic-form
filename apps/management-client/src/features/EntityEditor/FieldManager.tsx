@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import {
   Box, Button, Typography, TextField, MenuItem, Paper,
-  IconButton, Chip, Collapse
+  IconButton, Chip, Collapse, Tooltip
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -124,27 +124,36 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {node.type === 'list' && (
+              <Tooltip title={isExpanded ? "Collapse" : "Expand"}>
+                <IconButton
+                  size="small"
+                  aria-label={isExpanded ? "Collapse" : "Expand"}
+                  onClick={() => toggleExpand(node.name)}
+                  sx={{ ml: 1 }}
+                >
+                  {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip title="Edit Field">
               <IconButton
                 size="small"
-                onClick={() => toggleExpand(node.name)}
-                sx={{ ml: 1 }}
+                aria-label="Edit Field"
+                onClick={() => handleEditField(node.name)}
               >
-                {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                <EditIcon fontSize="small" />
               </IconButton>
-            )}
-            <IconButton
-              size="small"
-              onClick={() => handleEditField(node.name)}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => handleRemoveField(node.name)}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete Field">
+              <IconButton
+                size="small"
+                aria-label="Delete Field"
+                color="error"
+                onClick={() => handleRemoveField(node.name)}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Paper>
 

@@ -124,35 +124,35 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {node.type === 'list' && (
-              <Tooltip title={isExpanded ? "Collapse List" : "Expand List"}>
-              <IconButton
-                size="small"
-                aria-label={isExpanded ? "Collapse List" : "Expand List"}
-                onClick={() => toggleExpand(node.name)}
-                sx={{ ml: 1 }}
-              >
-                {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </IconButton>
-              </Tooltip>
+                <Tooltip title={isExpanded ? "Collapse list" : "Expand list"}>
+                  <IconButton
+                      size="small"
+                      aria-label={isExpanded ? "Collapse list" : "Expand list"}
+                      onClick={() => toggleExpand(node.name)}
+                      sx={{ ml: 1 }}
+                  >
+                    {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                  </IconButton>
+                </Tooltip>
             )}
-            <Tooltip title="Edit Field">
-            <IconButton
-              size="small"
-              aria-label="Edit Field"
-              onClick={() => handleEditField(node.name)}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title="Edit field">
+              <IconButton
+                  size="small"
+                  aria-label="Edit field"
+                  onClick={() => handleEditField(node.name)}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
             </Tooltip>
-            <Tooltip title="Delete Field">
-            <IconButton
-              size="small"
-              color="error"
-              aria-label="Delete Field"
-              onClick={() => handleRemoveField(node.name)}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title="Delete field">
+              <IconButton
+                  size="small"
+                  color="error"
+                  aria-label="Delete field"
+                  onClick={() => handleRemoveField(node.name)}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
             </Tooltip>
           </Box>
         </Paper>

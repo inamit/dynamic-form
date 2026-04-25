@@ -80,30 +80,30 @@ function SortableItem(props: {
       </Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', zIndex: 1 }}>
         <Typography variant="caption">Cols:</Typography>
-        <Tooltip title="Decrease columns">
-        <IconButton size="small" aria-label="Decrease columns" onClick={() => props.onChangeSpan(props.item.id, Math.max(1, props.item.colSpan - 1), props.item.rowSpan)}>
-          <RemoveIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Decrease column span">
+          <IconButton aria-label="Decrease column span" size="small" onClick={() => props.onChangeSpan(props.item.id, Math.max(1, props.item.colSpan - 1), props.item.rowSpan)}>
+            <RemoveIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
         <Typography variant="caption">{props.item.colSpan}</Typography>
-        <Tooltip title="Increase columns">
-        <IconButton size="small" aria-label="Increase columns" onClick={() => props.onChangeSpan(props.item.id, Math.min(props.maxColumns, props.item.colSpan + 1), props.item.rowSpan)}>
-          <AddIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Increase column span">
+          <IconButton aria-label="Increase column span" size="small" onClick={() => props.onChangeSpan(props.item.id, Math.min(props.maxColumns, props.item.colSpan + 1), props.item.rowSpan)}>
+            <AddIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
       </Box>
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', zIndex: 1 }}>
         <Typography variant="caption">Rows:</Typography>
-        <Tooltip title="Decrease rows">
-        <IconButton size="small" aria-label="Decrease rows" onClick={() => props.onChangeSpan(props.item.id, props.item.colSpan, Math.max(1, props.item.rowSpan - 1))}>
-          <RemoveIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Decrease row span">
+          <IconButton aria-label="Decrease row span" size="small" onClick={() => props.onChangeSpan(props.item.id, props.item.colSpan, Math.max(1, props.item.rowSpan - 1))}>
+            <RemoveIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
         <Typography variant="caption">{props.item.rowSpan}</Typography>
-        <Tooltip title="Increase rows">
-        <IconButton size="small" aria-label="Increase rows" onClick={() => props.onChangeSpan(props.item.id, props.item.colSpan, props.item.rowSpan + 1)}>
-          <AddIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title="Increase row span">
+          <IconButton aria-label="Increase row span" size="small" onClick={() => props.onChangeSpan(props.item.id, props.item.colSpan, props.item.rowSpan + 1)}>
+            <AddIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
       </Box>
       {props.onDefaultValueChange && (

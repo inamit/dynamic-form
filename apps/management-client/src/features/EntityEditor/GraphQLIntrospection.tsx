@@ -125,7 +125,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
         const { base: baseType } = getBaseType(field.type);
         const fieldPath = currentPath ? `${currentPath}.${field.name}` : field.name;
 
-        if (baseType.kind === 'OBJECT') {
+        if (baseType?.kind === 'OBJECT') {
             newExpanded[fieldPath] = true;
             Object.assign(newExpanded, expandAllFields(baseType.name, fieldPath, depth + 1, newExpanded));
         }
@@ -199,7 +199,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                         const newSelected = { ...selectedFields };
 
                         // Helper to recursively toggle fields
-                                                                        const toggleFields = (tName: string, cPath: string, check: boolean, isParentList: boolean, toggleDepth: number = 0) => {
+                        const toggleFields = (tName: string, cPath: string, check: boolean, isParentList: boolean, toggleDepth: number = 0) => {
                             if (toggleDepth > 5) return;
                             const tObj = getTypeByName(tName);
                             if (!tObj || !tObj.fields) return;
@@ -215,7 +215,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                                         label: f.description || f.name,
                                         type: inferFieldType(fBase, fIsList),
                                         targetType: fBase.kind === 'OBJECT' || fBase.kind === 'ENUM' || fBase.name === 'Enum' ? fBase.name : null,
-                                        parentField: isParentList ? cPath : null
+                                        parentField: isParentList ? cPath.split('.').slice(-1)[0] : null
                                     };
                                     if (fBase.kind === 'OBJECT' && fBase.name !== 'Location' && fBase.name !== 'Enum') {
                                         toggleFields(fBase.name, fPath, check, isParentList || fIsList, toggleDepth + 1);

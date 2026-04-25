@@ -1,18 +1,21 @@
-import { useState } from "react";
-import { Box, Button, Typography, Checkbox, FormControlLabel, Select, MenuItem, Paper, FormControl, InputLabel, TextField } from '@mui/material';
+import { useState, useEffect } from "react";
+import { Box, Button, Typography, Checkbox, FormControlLabel, Select, MenuItem, Paper, FormControl, InputLabel, TextField, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import axios from 'axios';
 
 interface Props {
   dataSourceUrl: string;
+  existingFields?: any[];
   dataSourceHeaders: string;
   onFieldsSelected: (fields: any[]) => void;
   onOperationsSelected: (ops: Record<string, string>) => void;
 }
 
-export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders, onFieldsSelected, onOperationsSelected }: Props) {
+export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders, onFieldsSelected, onOperationsSelected, existingFields }: Props) {
+  const [hasInitializedFields, setHasInitializedFields] = useState(false);
   const [schema, setSchema] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState<'tree' | 'object'>('tree');
 
   // Track selected queries/mutations
   const [selectedOperations, setSelectedOperations] = useState({
@@ -27,6 +30,29 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
   const [selectedFields, setSelectedFields] = useState<{ [key: string]: any }>({});
 
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!schema || !existingFields || hasInitializedFields) return;
+    const newSelected: { [key: string]: any } = {};
+
+    // We will loosely map existing fields if they exist
+    existingFields.forEach(f => {
+       // Only standard mapping possible here without knowing deep paths,
+       // but typically top level fields will match exactly.
+       newSelected[f.name] = {
+          name: f.name,
+          label: f.label || f.name,
+          type: f.type || 'text',
+          targetType: f.type === 'list' || f.type === 'object' ? null : null // Target type logic is complex here
+       };
+    });
+
+    if (Object.keys(newSelected).length > 0) {
+       setSelectedFields(newSelected);
+    }
+    setHasInitializedFields(true);
+  }, [schema, existingFields, hasInitializedFields]);
+
 
   const handleIntrospect = async () => {
     setLoading(true);
@@ -51,8 +77,78 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     return type;
   };
 
+
+  const isListType = (type: any): boolean => {
+    if (!type) return false;
+    if (type.kind === 'LIST') return true;
+    if (type.ofType) return isListType(type.ofType);
+    return false;
+  };
+
+  const inferFieldType = (baseType: any, isList: boolean) => {
+    if (isList) return 'list';
+    if (!baseType) return 'text';
+
+    if (baseType.kind === 'ENUM') return 'enum';
+    if (baseType.kind === 'OBJECT') {
+        if (baseType.name === 'Enum') return 'enum';
+        if (baseType.name === 'Location') return 'coordinate';
+        return 'object';
+    }
+
+    if (baseType.name === 'String') return 'text';
+    if (baseType.name === 'Boolean') return 'checkbox';
+    if (baseType.name === 'Int' || baseType.name === 'Float') return 'number';
+
+    return 'text';
+  };
+
+  const getTypeString = (type: any): string => {
+    if (!type) return '';
+    if (type.kind === 'NON_NULL') return getTypeString(type.ofType) + '!';
+    if (type.kind === 'LIST') return '[' + getTypeString(type.ofType) + ']';
+    return type.name || '';
+  };
+
   const getTypeByName = (typeName: string) => {
     return schema?.types.find((t: any) => t.name === typeName);
+  };
+
+
+  const expandAllFields = (typeName: string, currentPath: string = '', depth: number = 0, currentExpanded: Record<string, boolean> = {}): Record<string, boolean> => {
+    if (depth > 5) return currentExpanded;
+    const typeObj = getTypeByName(typeName);
+    if (!typeObj || !typeObj.fields) return currentExpanded;
+
+    const newExpanded = { ...currentExpanded };
+    typeObj.fields.forEach((field: any) => {
+        const { base: baseType } = getBaseType(field.type);
+        const fieldPath = currentPath ? `${currentPath}.${field.name}` : field.name;
+
+        if (baseType?.kind === 'OBJECT') {
+            newExpanded[fieldPath] = true;
+            Object.assign(newExpanded, expandAllFields(baseType.name, fieldPath, depth + 1, newExpanded));
+        }
+    });
+    return newExpanded;
+  };
+
+    const handleExpandAll = () => {
+    let allExpanded: Record<string, boolean> = {};
+    if (viewMode === 'object') {
+       const rootTypes = schema.types.filter((t: any) => t.kind === 'OBJECT' && !t.name.startsWith('__') && !['Query', 'Mutation', 'Subscription'].includes(t.name));
+       rootTypes.forEach((t: any) => {
+           allExpanded[t.name] = true;
+           allExpanded = { ...allExpanded, ...expandAllFields(t.name) };
+       });
+    } else {
+       allExpanded = expandAllFields(schema.queryType?.name || 'Query');
+    }
+    setExpandedNodes(allExpanded);
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedNodes({});
   };
 
   const toggleNode = (path: string) => {
@@ -65,9 +161,27 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
     const typeObj = getTypeByName(typeName);
     if (!typeObj || !typeObj.fields) return null;
 
+    let fieldsToRender = typeObj.fields;
+    if (depth === 0 && viewMode === 'tree') {
+      const seenTypes = new Set<string>();
+            fieldsToRender = fieldsToRender.map((f: any) => {
+        // If it's a list, unwrap the list so the UI sees it as an object
+        if (isListType(f.type)) {
+           return { ...f, type: getBaseType(f.type) };
+        }
+        return f;
+      }).filter((f: any) => {
+        const baseType = getBaseType(f.type);
+        if (!baseType || !baseType.name) return false;
+        if (seenTypes.has(baseType.name)) return false;
+        seenTypes.add(baseType.name);
+        return true;
+      });
+    }
+
     return (
       <Box sx={{ ml: depth > 0 ? 3 : 0, mt: 1, borderLeft: depth > 0 ? '1px dashed #ccc' : 'none', pl: depth > 0 ? 2 : 0 }}>
-        {typeObj.fields.map((field: any) => {
+        {fieldsToRender.map((field: any) => {
           const baseType = getBaseType(field.type);
           const isObject = baseType.kind === 'OBJECT';
           const fieldPath = parentPath ? `${parentPath}.${field.name}` : field.name;
@@ -83,21 +197,69 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                       checked={isSelected}
                       onChange={(e) => {
                         const newSelected = { ...selectedFields };
+
+                        // Helper to recursively toggle fields
+                        const toggleFields = (tName: string, cPath: string, check: boolean, isParentList: boolean, toggleDepth: number = 0) => {
+                            if (toggleDepth > 5) return;
+                            const tObj = getTypeByName(tName);
+                            if (!tObj || !tObj.fields) return;
+
+                            tObj.fields.forEach((f: any) => {
+                                const fBase = getBaseType(f.type);
+                                const fIsList = isListType(f.type);
+                                const fPath = `${cPath}.${f.name}`;
+
+                                if (check) {
+                                    newSelected[fPath] = {
+                                        name: f.name,
+                                        label: f.description || f.name,
+                                        type: inferFieldType(fBase, fIsList),
+                                        targetType: fBase.kind === 'OBJECT' || fBase.kind === 'ENUM' || fBase.name === 'Enum' ? fBase.name : null,
+                                        parentField: isParentList ? cPath.split('.').slice(-1)[0] : null
+                                    };
+                                    if (fBase.kind === 'OBJECT' && fBase.name !== 'Location' && fBase.name !== 'Enum') {
+                                        toggleFields(fBase.name, fPath, check, isParentList || fIsList, toggleDepth + 1);
+                                    }
+                                } else {
+                                    delete newSelected[fPath];
+                                    if (fBase.kind === 'OBJECT' && fBase.name !== 'Location' && fBase.name !== 'Enum') {
+                                        toggleFields(fBase.name, fPath, check, isParentList || fIsList, toggleDepth + 1);
+                                    }
+                                }
+                            });
+                        };
+
                         if (e.target.checked) {
-                          newSelected[fieldPath] = {
-                            name: field.name,
-                            label: field.description || field.name,
-                            type: isObject ? 'object' : 'text',
-                            targetType: isObject ? baseType.name : null
-                          };
+                          if (isListType(field.type)) {
+                            newSelected[fieldPath] = {
+                              name: field.name,
+                              label: field.description || field.name,
+                              type: inferFieldType(getBaseType(field.type), true),
+                              targetType: baseType.kind === 'OBJECT' || baseType.kind === 'ENUM' || baseType.name === 'Enum' ? baseType.name : null
+                            };
+                          } else if (baseType.kind !== 'OBJECT' || baseType.name === 'Location' || baseType.name === 'Enum') {
+                            newSelected[fieldPath] = {
+                              name: field.name,
+                              label: field.description || field.name,
+                              type: inferFieldType(getBaseType(field.type), false),
+                              targetType: baseType.kind === 'ENUM' || baseType.name === 'Enum' ? baseType.name : null
+                            };
+                          }
+
+                          if (baseType.kind === 'OBJECT' && baseType.name !== 'Location' && baseType.name !== 'Enum') {
+                              toggleFields(baseType.name, fieldPath, true, isListType(field.type));
+                          }
                         } else {
                           delete newSelected[fieldPath];
+                          if (baseType.kind === 'OBJECT' && baseType.name !== 'Location' && baseType.name !== 'Enum') {
+                              toggleFields(baseType.name, fieldPath, false, isListType(field.type));
+                          }
                         }
                         setSelectedFields(newSelected);
                       }}
                     />
                   }
-                  label={`${field.name} (${baseType.name}) - ${field.description || ''}`}
+                  label={`${field.name} (${getTypeString(field.type)}) - ${field.description || ''}`}
                 />
 
                   {isSelected && (
@@ -118,7 +280,7 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                 <FormControl size="small" sx={{ minWidth: 120 }}>
                   <InputLabel>Type</InputLabel>
                   <Select
-                      value={selectedFields[fieldPath]?.targetType || (isObject ? 'text' : 'text')}
+                      value={selectedFields[fieldPath]?.type || inferFieldType(getBaseType(field.type), isListType(field.type))}
                     label="Type"
                       disabled={!isSelected}
                     onChange={(e) => {
@@ -135,17 +297,19 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
                       <MenuItem value="checkbox">Checkbox</MenuItem>
                       <MenuItem value="enum">Enum</MenuItem>
                       <MenuItem value="coordinate">Coordinate</MenuItem>
+                      <MenuItem value="list">List</MenuItem>
+                      <MenuItem value="object">Object</MenuItem>
                   </Select>
                 </FormControl>
 
-                {isObject && !isSelected && (
+                {isObject && (
                    <Button type="button" size="small" onClick={() => toggleNode(fieldPath)}>
                      {isExpanded ? 'Collapse' : 'Expand'}
                    </Button>
                 )}
               </Paper>
 
-              {isObject && isExpanded && !isSelected && (
+              {isObject && isExpanded && (
                 renderTypeNode(baseType.name, fieldPath, depth + 1)
               )}
             </Box>
@@ -224,8 +388,43 @@ export default function GraphQLIntrospection({ dataSourceUrl, dataSourceHeaders,
               Select fields to add to the Entity. If you select an object, you cannot map its subfields individually.
             </Typography>
 
+
+
+            <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+                <ToggleButtonGroup
+                  color="primary"
+                  value={viewMode}
+                  exclusive
+                  onChange={(_, newValue: any) => {
+                    if (newValue !== null) {
+                      setViewMode(newValue);
+                    }
+                  }}
+                  aria-label="View Mode"
+                  size="small"
+                >
+                  <ToggleButton value="tree">Tree View</ToggleButton>
+                  <ToggleButton value="object">Object View</ToggleButton>
+                </ToggleButtonGroup>
+                <Button variant="outlined" size="small" onClick={handleExpandAll}>Expand All</Button>
+                <Button variant="outlined" size="small" onClick={handleCollapseAll}>Collapse All</Button>
+            </Box>
+
+
             <Box sx={{ mt: 2 }}>
-              {renderTypeNode(schema.queryType?.name || 'Query')}
+                            {viewMode === 'object' ? (
+                schema.types.filter((t: any) => t.kind === 'OBJECT' && !t.name.startsWith('__') && !['Query', 'Mutation', 'Subscription'].includes(t.name)).map((t: any) => (
+                  <Box key={t.name} sx={{ mb: 4 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" sx={{ bgcolor: 'action.hover', p: 1, borderRadius: 1 }}>
+                      {t.name}
+                      <Button size="small" onClick={() => toggleNode(t.name)} sx={{ ml: 2 }}>{expandedNodes[t.name] ? 'Collapse' : 'Expand'}</Button>
+                    </Typography>
+                    {expandedNodes[t.name] && renderTypeNode(t.name)}
+                  </Box>
+                ))
+              ) : (
+                renderTypeNode(schema.queryType?.name || 'Query')
+              )}
             </Box>
 
             <Button

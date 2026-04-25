@@ -24,6 +24,13 @@ export class OrchestratorService {
             return { allowed: false, reason: 'Invalid auth configuration' };
         }
 
+        // ⚡ Bolt Optimization: Early return if no authorization services are configured.
+        // This skips the HTTP call to the orchestrator, avoiding an O(n) network bottleneck
+        // when checking lists of data without active authorization layers.
+        if (services.length === 0) {
+            return { allowed: true };
+        }
+
         try {
             const orchestratorUrl = process.env.ORCHESTRATOR_URL || 'http://localhost:3005/api/authorize';
             const res = await axios.post(orchestratorUrl, {

@@ -5,3 +5,7 @@
 ## 2024-04-19 - Caching parsed values in DataServices loop
 **Learning:** In backend data loops fetching entities where we perform orchestrator checks, `JSON.parse` can become an O(n) overhead if called on every row using a shared entity config object.
 **Action:** Use a `WeakMap` mapped to the `config` reference to cache parsed items without mutating the `config` object which is dangerous and can lead to bugs down the line or leak memory.
+
+## 2024-04-25 - [Backend] Skip orchestrator network call when no auth services exist
+**Learning:** Checking authorization using an orchestrator creates an O(n) network bottleneck when validating lists of rows. If an entity configures no authorization services for an action, it defaults to allowed, but previously we still made the HTTP request just for the orchestrator to resolve to `{allowed: true}`.
+**Action:** Implemented early return `if (services.length === 0)` directly in the backend `OrchestratorService` client to bypass the network entirely for unprotected endpoints/actions.

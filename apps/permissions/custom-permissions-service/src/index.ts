@@ -1,3 +1,5 @@
+import { initTracing, observabilityMiddleware, globalErrorInterceptor, getMetricsHandler } from '@myorg/observability';
+initTracing('custom-permissions-service');
 import express from 'express';
 import cors from 'cors';
 import {PrismaClient} from '@prisma/client';
@@ -22,6 +24,12 @@ if (process.env.NODE_ENV === 'production' || process.env.USE_REAL_POSTGRES === '
 
 app.use(cors());
 app.use(express.json());
+app.use(observabilityMiddleware);
+
+app.get('/metrics', async (req, res) => {
+
+    getMetricsHandler(req, res);
+});
 
 // --- Management API for UI ---
 
@@ -147,6 +155,8 @@ app.post('/api/check', async (req, res) => {
 
     return res.json({allowed: true});
 });
+
+app.use(globalErrorInterceptor);
 
 const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {

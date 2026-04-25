@@ -1,3 +1,5 @@
+import { initTracing, observabilityMiddleware, globalErrorInterceptor, getMetricsHandler } from '@myorg/observability';
+initTracing('permissions-orchestrator-service');
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
@@ -7,6 +9,12 @@ import { parseCoordinate } from '@dynamic-form/geo-utils';
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(observabilityMiddleware);
+
+app.get('/metrics', async (req, res) => {
+
+    getMetricsHandler(req, res);
+});
 
 const SERVICE_URLS: Record<string, string> = {
     custom: process.env.CUSTOM_PERMISSIONS_URL || 'http://localhost:3002/api/check',
@@ -102,6 +110,8 @@ app.post('/api/authorize', async (req, res) => {
         res.status(500).json({ allowed: false, reason: 'Internal orchestrator error' });
     }
 });
+
+app.use(globalErrorInterceptor);
 
 const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => {

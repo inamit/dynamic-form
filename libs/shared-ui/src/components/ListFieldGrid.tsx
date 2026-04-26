@@ -1,6 +1,6 @@
 import React, {useCallback, useMemo, useRef} from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import {Box, IconButton} from '@mui/material';
+import {Box, IconButton, Tooltip} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
@@ -80,20 +80,28 @@ export const ListFieldGrid: React.FC<ListFieldGridProps> = ({ value, onChange, s
         const isDeleted = params.data?._deleted;
         const btnIcon = isDeleted ? <RestoreIcon /> : <DeleteIcon />;
         const color = isDeleted ? 'primary' : 'error';
+        const label = isDeleted ? "Restore row" : "Delete row";
 
         return (
-          <IconButton
-            size="small"
-            color={color as any}
-            onClick={() => handleRowDeleteToggle(params.node)}
-          >
-            {btnIcon}
-          </IconButton>
+          <Tooltip title={label}>
+            <IconButton
+              size="small"
+              color={color as any}
+              onClick={() => handleRowDeleteToggle(params.node)}
+              aria-label={label}
+            >
+              {btnIcon}
+            </IconButton>
+          </Tooltip>
         );
       },
       headerComponent: () => {
         return (
-           <IconButton size="small" color="primary" onClick={addRow}><AddIcon /></IconButton>
+           <Tooltip title="Add row">
+             <IconButton size="small" color="primary" onClick={addRow} aria-label="Add row">
+               <AddIcon />
+             </IconButton>
+           </Tooltip>
         );
       }
     },

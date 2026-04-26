@@ -7,6 +7,12 @@ import { OrchestratorService } from './orchestrator.service.js';
 export class DataService {
     private entityRepository: EntityRepository;
 
+    // ⚡ Bolt Optimization: Cache parsed endpointsQueries config to avoid repeated JSON.parse overhead
+    // (O(n) string parsing operations -> O(1) object lookups).
+    // Using WeakMap prevents memory leaks and ensures safety against DB updates because
+    // updated config objects will have a new reference, leading to a cache miss.
+    private static parsedEndpointsQueriesCache = new WeakMap<any, any>();
+
     constructor() {
         this.entityRepository = new EntityRepository();
     }
@@ -21,7 +27,11 @@ export class DataService {
     }
 
     private getQueryString(config: any, operation: string, apiType: string): any {
-        const ops = JSON.parse(config.endpointsQueries || '{}');
+        let ops = DataService.parsedEndpointsQueriesCache.get(config);
+        if (!ops) {
+            ops = JSON.parse(config.endpointsQueries || '{}');
+            DataService.parsedEndpointsQueriesCache.set(config, ops);
+        }
         const queryStr = ops[operation];
         if (!queryStr) throw new Error(`Missing '${operation}' query configuration`);
         return apiType === 'REST' ? JSON.stringify(queryStr) : queryStr;

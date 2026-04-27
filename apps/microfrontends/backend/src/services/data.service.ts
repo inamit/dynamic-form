@@ -20,8 +20,16 @@ export class DataService {
         throw new Error('Unsupported API type');
     }
 
+    // ⚡ Bolt Optimization: Cache parsed endpoint queries to avoid repeated JSON.parse overhead.
+    // Using WeakMap ensures we don't leak memory if the config object is garbage collected.
+    private static parsedQueriesCache = new WeakMap<any, any>();
+
     private getQueryString(config: any, operation: string, apiType: string): any {
-        const ops = JSON.parse(config.endpointsQueries || '{}');
+        let ops = DataService.parsedQueriesCache.get(config);
+        if (!ops) {
+            ops = JSON.parse(config.endpointsQueries || '{}');
+            DataService.parsedQueriesCache.set(config, ops);
+        }
         const queryStr = ops[operation];
         if (!queryStr) throw new Error(`Missing '${operation}' query configuration`);
         return apiType === 'REST' ? JSON.stringify(queryStr) : queryStr;

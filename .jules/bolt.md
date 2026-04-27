@@ -9,3 +9,6 @@
 ## 2024-04-25 - [Backend] Skip orchestrator network call when no auth services exist
 **Learning:** Checking authorization using an orchestrator creates an O(n) network bottleneck when validating lists of rows. If an entity configures no authorization services for an action, it defaults to allowed, but previously we still made the HTTP request just for the orchestrator to resolve to `{allowed: true}`.
 **Action:** Implemented early return `if (services.length === 0)` directly in the backend `OrchestratorService` client to bypass the network entirely for unprotected endpoints/actions.
+## 2024-04-27 - [Backend Data Service JSON.parse Cache]
+**Learning:** In scenarios where shared configuration objects are read frequently (e.g., config endpointsQueries in the `DataService`), repeating synchronous `JSON.parse` operations causes significant overhead.
+**Action:** Use a `WeakMap` keyed by the shared configuration object reference to cache the parsed output. This changes the complexity from O(n) parsing overhead to O(1) retrieval per configuration instance, avoiding repeated parsing while naturally preventing memory leaks when objects are garbage collected.

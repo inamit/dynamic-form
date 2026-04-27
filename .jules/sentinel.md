@@ -41,3 +41,8 @@
 ## 2024-05-28 - Note on CORS with TYK API Gateway
 **Learning:** While wildcard CORS (`app.use(cors())`) is generally insecure, in this architecture, the TYK API Gateway sits in front of the backend services and handles allowed origins centrally. Therefore, implementing a local CORS whitelist inside the Node.js backend services themselves is redundant and can conflict with the intended API Gateway management strategy.
 **Prevention:** Always verify the network architecture and gateway responsibilities before applying standard security controls like CORS whitelists at the application layer, as they may already be managed upstream.
+
+## 2024-05-29 - [SSRF Service Key Lookup via Prototype Pollution]
+**Vulnerability:** In the Orchestrator service, user-provided service names were used to look up URLs directly from a `SERVICE_URLS` object (`SERVICE_URLS[service]`). Without checking if the property actually exists as an own property, an attacker passing prototype keys like `toString` could trigger unexpected behavior or potential SSRF if `axios.post` attempts to call or fetch a string representation of native code.
+**Learning:** Object key lookups using unvalidated, user-supplied strings can access inherited properties from the prototype chain in JavaScript.
+**Prevention:** Always validate that keys exist natively on an object using `Object.prototype.hasOwnProperty.call(obj, key)` and verify the input type (e.g., `typeof service === 'string'`) before trusting the lookup result for sensitive operations like HTTP requests.

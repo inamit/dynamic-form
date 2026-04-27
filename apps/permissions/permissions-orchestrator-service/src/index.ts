@@ -67,6 +67,10 @@ app.post('/api/authorize', async (req, res) => {
     try {
         // Check all required services concurrently
         const checks = services.map(async (service: string) => {
+            if (typeof service !== 'string' || !Object.prototype.hasOwnProperty.call(SERVICE_URLS, service)) {
+                console.warn(`Unknown or invalid service requested: ${service}`);
+                return { service, allowed: false, reason: 'Unknown service' };
+            }
             const url = SERVICE_URLS[service];
             if (!url) {
                 console.warn(`Unknown service requested: ${service}`);

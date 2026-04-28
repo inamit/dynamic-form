@@ -41,3 +41,8 @@
 ## 2024-05-28 - Note on CORS with TYK API Gateway
 **Learning:** While wildcard CORS (`app.use(cors())`) is generally insecure, in this architecture, the TYK API Gateway sits in front of the backend services and handles allowed origins centrally. Therefore, implementing a local CORS whitelist inside the Node.js backend services themselves is redundant and can conflict with the intended API Gateway management strategy.
 **Prevention:** Always verify the network architecture and gateway responsibilities before applying standard security controls like CORS whitelists at the application layer, as they may already be managed upstream.
+
+## 2024-05-28 - [Information Leakage via Error Messages]
+**Vulnerability:** The application was exposing internal error messages (`e.message`) and potentially downstream service error payloads (`e.response?.data?.errors`) directly to the client in HTTP 500 responses within `DataSourceController` and `EntityConfigController`. This could inadvertently expose sensitive information about the backend infrastructure, database configuration, or third-party API specifics to potential attackers.
+**Learning:** Returning raw error objects or detailed error strings from internal catch blocks directly in the API response is a common information disclosure vulnerability.
+**Prevention:** Always log detailed error information securely on the server-side (e.g., using `console.error` or a logging framework) for debugging purposes, and return a sanitized, generic error message (e.g., "An internal server error occurred") to the client.

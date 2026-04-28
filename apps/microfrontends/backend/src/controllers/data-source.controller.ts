@@ -13,7 +13,8 @@ export class DataSourceController {
             const ds = await this.dataSourceService.getDataSources();
             res.json(ds);
         } catch (e: any) {
-            res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
+            console.error('Error fetching data sources:', e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -25,7 +26,8 @@ export class DataSourceController {
             if (e.message === 'Invalid URL format' || e.message.includes('Invalid URL')) {
                 return res.status(400).json({ error: 'Invalid URL format' });
             }
-            res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
+            console.error('Error creating data source:', e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -37,7 +39,8 @@ export class DataSourceController {
             if (e.message === 'Invalid URL format' || e.message.includes('Invalid URL')) {
                 return res.status(400).json({ error: 'Invalid URL format' });
             }
-            res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
+            console.error(`Error updating data source ${req.params.id}:`, e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -46,7 +49,8 @@ export class DataSourceController {
             await this.dataSourceService.deleteDataSource(parseInt(req.params.id as string));
             res.json({ success: true });
         } catch (e: any) {
-            res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
+            console.error(`Error deleting data source ${req.params.id}:`, e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 }

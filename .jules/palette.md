@@ -7,3 +7,7 @@
 ## 2024-05-18 - List View Standardisation: Empty States and Deletion Dialogs
 **Learning:** List views in this app often lack clear guidance when empty and confirmation steps for destructive actions, leading to potential user confusion or accidental data loss.
 **Action:** Always include a helpful empty state with a clear Call-To-Action (CTA) for empty lists, and implement a confirmation dialog (`Dialog` from MUI) for row-level delete operations to prevent accidental deletion and provide a standard UX.
+## 2024-06-25 - Added Empty State and Deletion Confirmation to DataSourceList
+
+**Learning:** When users manage lists of critical resources like data sources, having an empty state helps guide them on what to do next. Furthermore, providing a confirmation dialog for destructive actions (like deletion) is a crucial micro-UX enhancement to prevent accidental data loss, ensuring that users have a chance to back out of a potentially risky interaction.
+**Action:** Always include empty states for empty lists with a clear call to action, and ensure destructive row-level actions implement a confirmation dialog instead of immediate execution.

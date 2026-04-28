@@ -12,3 +12,7 @@
 ## 2024-04-27 - [Backend Data Service JSON.parse Cache]
 **Learning:** In scenarios where shared configuration objects are read frequently (e.g., config endpointsQueries in the `DataService`), repeating synchronous `JSON.parse` operations causes significant overhead.
 **Action:** Use a `WeakMap` keyed by the shared configuration object reference to cache the parsed output. This changes the complexity from O(n) parsing overhead to O(1) retrieval per configuration instance, avoiding repeated parsing while naturally preventing memory leaks when objects are garbage collected.
+
+## 2024-04-28 - [Backend Schema Service JSON.parse Cache]
+**Learning:** Parsing JSON from environment variables (like SCHEMA_API_HEADERS and ENUM_API_HEADERS) synchronously on every request to `SchemaService` methods (`getSchemas`, `getSchema`, `getEnum`, `getAllEnums`) causes significant O(n) CPU parsing overhead, which is unnecessary since environment variables do not change frequently during runtime.
+**Action:** Implemented caching for parsed environment variable headers using static properties on `SchemaService`. This converts repeated O(n) parsing operations into a single O(1) lookup after the first call.

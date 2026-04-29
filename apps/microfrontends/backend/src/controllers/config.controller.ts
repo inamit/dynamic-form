@@ -14,8 +14,9 @@ export class ConfigController {
             const configs = await this.configService.getAllConfigs();
             res.json(configs);
         } catch (error) {
-            console.error('Error in GET /api/config:', error);
-            res.status(500).json({ error: 'Failed to fetch configurations' });
+
+            console.error(error);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -40,8 +41,9 @@ export class ConfigController {
                 }))
             });
         } catch (error) {
-            console.error(`Error in GET /api/config/${req.params.name}:`, error);
-            res.status(500).json({ error: 'Failed to fetch configuration' });
+
+            console.error(error);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 }

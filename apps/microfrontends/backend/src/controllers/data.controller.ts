@@ -25,8 +25,9 @@ export class DataController {
             if (error.message === 'Entity not found') {
                 return res.status(404).json({ error: error.message });
             }
-            console.error(`Error in GET /api/data/${req.params.entity}:`, error.message);
-            res.status(500).json({ error: 'Failed to fetch data' });
+
+            console.error(error.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -50,8 +51,9 @@ export class DataController {
             if (error.message === 'Forbidden') {
                 return res.status(403).json({ error: error.message });
             }
-            console.error(`Error in GET /api/data/${req.params.entity}/${req.params.id}:`, error.message);
-            res.status(500).json({ error: 'Failed to fetch data' });
+
+            console.error(error.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -74,8 +76,9 @@ export class DataController {
             if (error.message === 'Forbidden') {
                 return res.status(403).json({ error: error.message });
             }
-            console.error(`Error in POST /api/data/${req.params.entity}:`, error.message);
-            res.status(500).json({ error: 'Failed to create data' });
+
+            console.error(error.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -99,8 +102,9 @@ export class DataController {
             if (error.message === 'Forbidden') {
                 return res.status(403).json({ error: error.message });
             }
-            console.error(`Error in PUT /api/data/${req.params.entity}/${req.params.id}:`, error.message);
-            res.status(500).json({ error: 'Failed to update data' });
+
+            console.error(error.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -124,8 +128,9 @@ export class DataController {
             if (error.message === 'Forbidden') {
                 return res.status(403).json({ error: error.message });
             }
-            console.error(`Error in DELETE /api/data/${req.params.entity}/${req.params.id}:`, error.message);
-            res.status(500).json({ error: 'Failed to delete data' });
+
+            console.error(error.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 }

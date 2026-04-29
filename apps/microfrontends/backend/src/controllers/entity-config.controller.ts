@@ -23,7 +23,8 @@ export class EntityConfigController {
             if (e.message === 'Config not found') {
                 return res.status(404).json({ error: 'Configuration not found' });
             }
-            res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
+            console.error(e);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -39,7 +40,8 @@ export class EntityConfigController {
                 }))
             });
         } catch (e: any) {
-            res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
+            console.error(e);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -55,7 +57,8 @@ export class EntityConfigController {
                 }))
             });
         } catch (e: any) {
-            res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
+            console.error(e);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -64,7 +67,8 @@ export class EntityConfigController {
             await this.configService.deleteConfig(parseInt(req.params.id as string));
             res.json({ success: true });
         } catch (e: any) {
-            res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
+            console.error(e);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 
@@ -76,7 +80,8 @@ export class EntityConfigController {
             if (e.message === 'Invalid URL format' || e.message.includes('Invalid URL')) {
                 return res.status(400).json({ error: 'Invalid URL format' });
             }
-            res.status(500).json({ error: e.response?.data?.errors ? JSON.stringify(e.response.data.errors) : e.message });
+            console.error(e);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 }

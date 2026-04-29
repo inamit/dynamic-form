@@ -25,7 +25,8 @@ export class AuthorizationController {
             if (error.message === 'Entity not found') {
                 return res.status(404).json({ error: error.message });
             }
-            res.status(500).json({ error: 'Failed to fetch abilities' });
+            console.error(error.message);
+            res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
 }

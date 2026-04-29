@@ -12,9 +12,7 @@ export class SchemaService {
     private static cachedEnumHeaders: any | null = null;
 
     // Cache the API responses themselves since they rarely change.
-    // Include a TTL (Time-To-Live) of 5 minutes so schema/enum updates aren't missed forever.
-    private static readonly CACHE_TTL_MS = 5 * 60 * 1000;
-
+    // Include a configurable TTL (Time-To-Live) so schema/enum updates aren't missed forever.
     private static cachedSchemas: { data: any, timestamp: number } | null = null;
     private static cachedSchemaByName: Map<string, { data: any, timestamp: number }> = new Map();
     private static cachedEnums: { data: any, timestamp: number } | null = null;
@@ -24,8 +22,13 @@ export class SchemaService {
         this.schemaClient = new SchemaClient();
     }
 
+    private getCacheTTLMs(): number {
+        const ttlMinutes = parseInt(process.env.SCHEMA_CACHE_TTL_MINUTES || '5', 10);
+        return ttlMinutes * 60 * 1000;
+    }
+
     private isCacheValid(timestamp: number): boolean {
-        return (Date.now() - timestamp) < SchemaService.CACHE_TTL_MS;
+        return (Date.now() - timestamp) < this.getCacheTTLMs();
     }
 
     private getSchemaHeaders() {

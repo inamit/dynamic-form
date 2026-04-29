@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from 'react';
 import { ApiService } from '../services/api.service';
 import type { EntityConfig } from '../types';
@@ -233,6 +233,27 @@ export function useEntityForm(
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleDelete = async () => {
+    if (!entity || !id) return false;
+    try {
+      await ApiService.deleteData(entity, id);
+      (postal as any).publish({
+        channel: CHANNEL_NAME,
+        topic: TOPICS.ENTITY_DELETED,
+        data: { entity, id }
+      });
+      return true;
+    } catch (err) {
+      console.error('Delete failed', err);
+      (postal as any).publish({
+        channel: CHANNEL_NAME,
+        topic: TOPICS.ENTITY_DELETE_ERROR,
+        data: { entity, id, error: err }
+      });
+      return false;
+    }
+  };
+
   const updateCoordinateFormat = (field: string, format: 'WGS84' | 'UTM') => {
     setCoordinateFormats(prev => ({ ...prev, [field]: format }));
   };
@@ -250,6 +271,7 @@ export function useEntityForm(
     enums,
     validationErrors,
     handleSubmit,
-    validateField
+    validateField,
+    handleDelete
   };
 }

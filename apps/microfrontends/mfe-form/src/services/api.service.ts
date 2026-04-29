@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 
 const API_BASE = 'http://localhost:3001/api';
@@ -41,6 +41,11 @@ export const ApiService = {
 
   updateData: async (entity: string, id: string, data: any) => {
     const res = await axios.put(`${API_BASE}/data/${entity}/${id}`, data);
+    return res.data;
+  },
+
+  deleteData: async (entity: string, id: string) => {
+    const res = await axios.delete(`${API_BASE}/data/${entity}/${id}`);
     return res.data;
   }
 };

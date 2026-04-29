@@ -27,6 +27,7 @@ interface Props {
 export default function PresetsManager({ fields, enums, presets, defaultPresetId, schemaRequired = [], onChange }: Props) {
   const [selectedTab, setSelectedTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
   const [presetName, setPresetName] = useState('');
 
@@ -88,9 +89,14 @@ export default function PresetsManager({ fields, enums, presets, defaultPresetId
         alert("At least one preset must exist.");
         return;
     }
+    setDeleteIndex(index);
+  };
 
-    const presetToDelete = presets[index];
-    const newPresets = presets.filter((_, i) => i !== index);
+  const confirmDelete = () => {
+    if (deleteIndex === null) return;
+
+    const presetToDelete = presets[deleteIndex];
+    const newPresets = presets.filter((_, i) => i !== deleteIndex);
 
     let newDefaultId = defaultPresetId;
     if (presetToDelete.id === defaultPresetId) {
@@ -102,6 +108,7 @@ export default function PresetsManager({ fields, enums, presets, defaultPresetId
     }
 
     onChange(newPresets, newDefaultId);
+    setDeleteIndex(null);
   };
 
   const handleSetDefault = (id: string | number, e: React.MouseEvent) => {
@@ -355,6 +362,17 @@ export default function PresetsManager({ fields, enums, presets, defaultPresetId
           )}
         </>
       )}
+
+      <Dialog open={deleteIndex !== null} onClose={() => setDeleteIndex(null)}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete the preset "{deleteIndex !== null && presets[deleteIndex]?.name}"? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteIndex(null)}>Cancel</Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">Delete</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={dialogOpen} onClose={handleCloseDialog}>
         <DialogTitle>{editingPresetIndex !== null ? 'Edit Preset Name' : 'New Preset'}</DialogTitle>

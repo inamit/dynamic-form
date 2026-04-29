@@ -11,3 +11,6 @@
 
 **Learning:** When users manage lists of critical resources like data sources, having an empty state helps guide them on what to do next. Furthermore, providing a confirmation dialog for destructive actions (like deletion) is a crucial micro-UX enhancement to prevent accidental data loss, ensuring that users have a chance to back out of a potentially risky interaction.
 **Action:** Always include empty states for empty lists with a clear call to action, and ensure destructive row-level actions implement a confirmation dialog instead of immediate execution.
+## 2024-05-25 - Added Deletion Confirmation Dialog to PresetsManager
+**Learning:** When users manage grid presets, providing a confirmation dialog for destructive actions (like deletion) is a crucial micro-UX enhancement to prevent accidental data loss.
+**Action:** Always ensure destructive row-level actions implement a confirmation dialog instead of immediate execution.

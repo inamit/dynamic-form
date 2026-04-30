@@ -23,7 +23,7 @@ export class EntityConfigController {
             if (e.message === 'Config not found') {
                 return res.status(404).json({ error: 'Configuration not found' });
             }
-            console.error(e);
+            console.error(`Error in GET /api/config/id/${req.params.id}:`, e.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -40,7 +40,7 @@ export class EntityConfigController {
                 }))
             });
         } catch (e: any) {
-            console.error(e);
+            console.error(`Error in POST /api/config/new:`, e.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -57,7 +57,7 @@ export class EntityConfigController {
                 }))
             });
         } catch (e: any) {
-            console.error(e);
+            console.error(`Error in PUT /api/config/${req.params.id}:`, e.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -67,7 +67,7 @@ export class EntityConfigController {
             await this.configService.deleteConfig(parseInt(req.params.id as string));
             res.json({ success: true });
         } catch (e: any) {
-            console.error(e);
+            console.error(`Error in DELETE /api/config/${req.params.id}:`, e.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -80,7 +80,7 @@ export class EntityConfigController {
             if (e.message === 'Invalid URL format' || e.message.includes('Invalid URL')) {
                 return res.status(400).json({ error: 'Invalid URL format' });
             }
-            console.error(e);
+            console.error(`Error in POST /api/introspect:`, e.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };

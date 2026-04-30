@@ -18,7 +18,7 @@ export class SchemaController {
                 return res.status(404).json({ error: error.message });
             }
 
-            console.error(error.message);
+            console.error(`Error in GET /api/schemas:`, error.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -37,7 +37,7 @@ export class SchemaController {
                 return res.status(404).json({ error: error.message });
             }
 
-            console.error(error.message);
+            console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -56,7 +56,7 @@ export class SchemaController {
                 return res.status(404).json({ error: error.message });
             }
 
-            console.error(error.message);
+            console.error(`Error in GET /api/enums/${req.params.enumName}:`, error.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -70,7 +70,7 @@ export class SchemaController {
                 return res.status(404).json({ error: error.message });
             }
 
-            console.error(error.message);
+            console.error(`Error in GET /api/enums:`, error.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     }

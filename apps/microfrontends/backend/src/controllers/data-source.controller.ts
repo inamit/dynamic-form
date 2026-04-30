@@ -13,7 +13,7 @@ export class DataSourceController {
             const ds = await this.dataSourceService.getDataSources();
             res.json(ds);
         } catch (e: any) {
-            console.error(e);
+            console.error(`Error in GET /api/data-sources:`, e.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -26,7 +26,7 @@ export class DataSourceController {
             if (e.message === 'Invalid URL format' || e.message.includes('Invalid URL')) {
                 return res.status(400).json({ error: 'Invalid URL format' });
             }
-            console.error(e);
+            console.error(`Error in POST /api/data-sources:`, e.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -39,7 +39,7 @@ export class DataSourceController {
             if (e.message === 'Invalid URL format' || e.message.includes('Invalid URL')) {
                 return res.status(400).json({ error: 'Invalid URL format' });
             }
-            console.error(e);
+            console.error(`Error in PUT /api/data-sources/${req.params.id}:`, e.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };
@@ -49,7 +49,7 @@ export class DataSourceController {
             await this.dataSourceService.deleteDataSource(parseInt(req.params.id as string));
             res.json({ success: true });
         } catch (e: any) {
-            console.error(e);
+            console.error(`Error in DELETE /api/data-sources/${req.params.id}:`, e.message);
             res.status(500).json({ error: 'An internal server error occurred' });
         }
     };

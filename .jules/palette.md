@@ -14,3 +14,6 @@
 ## 2024-05-25 - Added Deletion Confirmation Dialog to PresetsManager
 **Learning:** When users manage grid presets, providing a confirmation dialog for destructive actions (like deletion) is a crucial micro-UX enhancement to prevent accidental data loss.
 **Action:** Always ensure destructive row-level actions implement a confirmation dialog instead of immediate execution.
+## 2024-06-26 - Added Deletion Confirmation Dialog to FieldManager
+**Learning:** When adding a confirmation dialog for destructive actions (like field deletion), you must carefully trace all usages of the underlying delete logic. Internal programmatic removals, such as an "edit" flow that copies a item and then removes the original to wait for user to add again, should bypass the user confirmation step. Triggering the dialog during an "edit" flow causes a confusing UX, making the user think they are deleting the data instead of just modifying it.
+**Action:** Always verify if delete logic is used programmatically in other operations (e.g., Edit, Move). If so, separate the UI confirmation trigger from the core deletion execution, and ensure those programmatic operations call the execution directly without prompting the user.

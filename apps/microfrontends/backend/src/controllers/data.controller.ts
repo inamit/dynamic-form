@@ -27,10 +27,10 @@ export class DataController {
             }
 
             console.error(`Error in GET /api/data/${req.params.entity}:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to create data' });
+            res.status(500).json({ error: 'Failed to fetch data' });
         }
     };
-
     getDataById = async (req: Request, res: Response) => {
         try {
             const entity = req.params.entity as string;
@@ -53,7 +53,7 @@ export class DataController {
             }
 
             console.error(`Error in GET /api/data/${req.params.entity}/${req.params.id}:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to fetch data' });
         }
     };
 
@@ -78,7 +78,7 @@ export class DataController {
             }
 
             console.error(`Error in POST /api/data/${req.params.entity}:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to create data' });
         }
     };
 
@@ -104,7 +104,7 @@ export class DataController {
             }
 
             console.error(`Error in PUT /api/data/${req.params.entity}/${req.params.id}:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to update data' });
         }
     };
 
@@ -130,7 +130,7 @@ export class DataController {
             }
 
             console.error(`Error in DELETE /api/data/${req.params.entity}/${req.params.id}:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to delete data' });
         }
     };
 }

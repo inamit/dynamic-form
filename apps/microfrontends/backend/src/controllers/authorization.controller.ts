@@ -26,7 +26,7 @@ export class AuthorizationController {
                 return res.status(404).json({ error: error.message });
             }
             console.error(`Error in GET /api/data/${req.params.entity}/abilities:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to fetch abilities' });
         }
     };
 }

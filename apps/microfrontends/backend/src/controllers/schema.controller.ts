@@ -19,7 +19,7 @@ export class SchemaController {
             }
 
             console.error(`Error in GET /api/schemas:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to fetch schemas list' });
         }
     };
 
@@ -38,7 +38,7 @@ export class SchemaController {
             }
 
             console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to fetch schema' });
         }
     };
 
@@ -57,7 +57,7 @@ export class SchemaController {
             }
 
             console.error(`Error in GET /api/enums/${req.params.enumName}:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to fetch enum' });
         }
     };
 
@@ -71,7 +71,7 @@ export class SchemaController {
             }
 
             console.error(`Error in GET /api/enums:`, error.message);
-            res.status(500).json({ error: 'An internal server error occurred' });
+            res.status(500).json({ error: 'Failed to fetch enum' });
         }
     }
 }

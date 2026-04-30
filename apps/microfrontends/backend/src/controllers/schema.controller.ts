@@ -17,6 +17,7 @@ export class SchemaController {
             if (error.message === 'Schema configuration not found') {
                 return res.status(404).json({ error: error.message });
             }
+
             console.error(`Error in GET /api/schemas:`, error.message);
             res.status(500).json({ error: 'Failed to fetch schemas list' });
         }
@@ -35,6 +36,7 @@ export class SchemaController {
              if (error.message === 'Schema configuration not found') {
                 return res.status(404).json({ error: error.message });
             }
+
             console.error(`Error in GET /api/schema/${req.params.entityName}:`, error.message);
             res.status(500).json({ error: 'Failed to fetch schema' });
         }
@@ -53,6 +55,7 @@ export class SchemaController {
             if (error.message === 'Enum configuration not found') {
                 return res.status(404).json({ error: error.message });
             }
+
             console.error(`Error in GET /api/enums/${req.params.enumName}:`, error.message);
             res.status(500).json({ error: 'Failed to fetch enum' });
         }
@@ -66,6 +69,7 @@ export class SchemaController {
             if (error.message === 'Enum configuration not found') {
                 return res.status(404).json({ error: error.message });
             }
+
             console.error(`Error in GET /api/enums:`, error.message);
             res.status(500).json({ error: 'Failed to fetch enum' });
         }

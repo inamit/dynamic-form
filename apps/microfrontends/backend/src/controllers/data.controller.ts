@@ -25,11 +25,12 @@ export class DataController {
             if (error.message === 'Entity not found') {
                 return res.status(404).json({ error: error.message });
             }
+
             console.error(`Error in GET /api/data/${req.params.entity}:`, error.message);
+            res.status(500).json({ error: 'Failed to create data' });
             res.status(500).json({ error: 'Failed to fetch data' });
         }
     };
-
     getDataById = async (req: Request, res: Response) => {
         try {
             const entity = req.params.entity as string;
@@ -50,6 +51,7 @@ export class DataController {
             if (error.message === 'Forbidden') {
                 return res.status(403).json({ error: error.message });
             }
+
             console.error(`Error in GET /api/data/${req.params.entity}/${req.params.id}:`, error.message);
             res.status(500).json({ error: 'Failed to fetch data' });
         }
@@ -74,6 +76,7 @@ export class DataController {
             if (error.message === 'Forbidden') {
                 return res.status(403).json({ error: error.message });
             }
+
             console.error(`Error in POST /api/data/${req.params.entity}:`, error.message);
             res.status(500).json({ error: 'Failed to create data' });
         }
@@ -99,6 +102,7 @@ export class DataController {
             if (error.message === 'Forbidden') {
                 return res.status(403).json({ error: error.message });
             }
+
             console.error(`Error in PUT /api/data/${req.params.entity}/${req.params.id}:`, error.message);
             res.status(500).json({ error: 'Failed to update data' });
         }
@@ -124,6 +128,7 @@ export class DataController {
             if (error.message === 'Forbidden') {
                 return res.status(403).json({ error: error.message });
             }
+
             console.error(`Error in DELETE /api/data/${req.params.entity}/${req.params.id}:`, error.message);
             res.status(500).json({ error: 'Failed to delete data' });
         }

@@ -14,6 +14,7 @@ export class ConfigController {
             const configs = await this.configService.getAllConfigs();
             res.json(configs);
         } catch (error) {
+
             console.error('Error in GET /api/config:', error);
             res.status(500).json({ error: 'Failed to fetch configurations' });
         }
@@ -40,6 +41,7 @@ export class ConfigController {
                 }))
             });
         } catch (error) {
+
             console.error(`Error in GET /api/config/${req.params.name}:`, error);
             res.status(500).json({ error: 'Failed to fetch configuration' });
         }

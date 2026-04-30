@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import {
   Box, Button, Typography, TextField, MenuItem, Paper,
-  IconButton, Chip, Collapse, Tooltip
+  IconButton, Chip, Collapse, Tooltip, Dialog, DialogTitle,
+  DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -27,6 +28,7 @@ interface TreeField extends Field {
 export default function FieldManager({ fields, onFieldsChange }: Props) {
   const [newField, setNewField] = useState<Field>({ name: '', type: 'text', label: '', enumName: '', parentField: null });
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
 
   const handleAddField = () => {
     if (newField.name && newField.label) {
@@ -37,10 +39,14 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
 
   const listFields = fields.filter(f => f.type === 'list');
 
-  const handleRemoveField = (fieldName: string) => {
+  const executeRemoveField = (fieldName: string) => {
     // Remove the field and any of its children
     const newFields = fields.filter(f => f.name !== fieldName && f.parentField !== fieldName);
     onFieldsChange(newFields);
+  };
+
+  const handleRemoveField = (fieldName: string) => {
+    setFieldToDelete(fieldName);
   };
 
   const toggleExpand = (fieldName: string) => {
@@ -57,7 +63,7 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
     const fieldToEdit = fields.find(f => f.name === fieldName);
     if (fieldToEdit) {
       setNewField(fieldToEdit);
-      handleRemoveField(fieldName);
+      executeRemoveField(fieldName);
     }
   };
 
@@ -260,6 +266,35 @@ export default function FieldManager({ fields, onFieldsChange }: Props) {
           fieldTree.map(node => renderTreeField(node, 0))
         )}
       </Box>
+
+      <Dialog
+        open={fieldToDelete !== null}
+        onClose={() => setFieldToDelete(null)}
+        aria-labelledby="delete-field-dialog-title"
+        aria-describedby="delete-field-dialog-description"
+      >
+        <DialogTitle id="delete-field-dialog-title">Delete Field?</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-field-dialog-description">
+            Are you sure you want to delete the field "{fieldToDelete}"? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFieldToDelete(null)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              if (fieldToDelete) {
+                executeRemoveField(fieldToDelete);
+                setFieldToDelete(null);
+              }
+            }}
+            color="error"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

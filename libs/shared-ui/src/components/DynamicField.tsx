@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextField, Checkbox, FormControlLabel, Select, MenuItem, Typography, Box, IconButton } from '@mui/material';
+import { TextField, Checkbox, FormControlLabel, Select, MenuItem, Typography, Box, IconButton, Tooltip } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CloseIcon from '@mui/icons-material/Close';
 import { ListFieldGrid } from './ListFieldGrid';
@@ -98,33 +98,35 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({
             InputProps={{ sx: { height: '40px', color: 'inherit' } }}
           />
           {onSelectLocation && (
-            <IconButton
-              color={isSelectMode ? 'error' : 'primary'}
-              title={isSelectMode ? 'Cancel map selection' : 'Select location from map'}
-              onClick={() => onSelectLocation(field.name)}
-              sx={{
-                transition: 'all 0.3s ease',
-                transform: isSelectMode ? 'scale(1.05)' : 'scale(1)',
-                backgroundColor: isSelectMode ? 'rgba(211, 47, 47, 0.1)' : 'transparent',
-                border: '1px solid',
-                borderColor: isSelectMode ? 'rgba(211, 47, 47, 0.5)' : 'var(--border, #ccc)',
-                borderRadius: '6px',
-                padding: '8px',
-                color: isSelectMode ? 'inherit' : 'var(--text, inherit)'
-              }}
-            >
-              {isSelectMode ? (
-                <CloseIcon sx={{
-                  animation: 'spin 0.3s linear',
-                  '@keyframes spin': { '0%': { transform: 'rotate(-90deg)' }, '100%': { transform: 'rotate(0)' } }
-                }} />
-              ) : (
-                <LocationOnIcon sx={{
-                  animation: 'drop 0.3s ease-out',
-                  '@keyframes drop': { '0%': { transform: 'translateY(-10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }
-                }} />
-              )}
-            </IconButton>
+            <Tooltip title={isSelectMode ? 'Cancel map selection' : 'Select location from map'}>
+              <IconButton
+                color={isSelectMode ? 'error' : 'primary'}
+                aria-label={isSelectMode ? 'Cancel map selection' : 'Select location from map'}
+                onClick={() => onSelectLocation(field.name)}
+                sx={{
+                  transition: 'all 0.3s ease',
+                  transform: isSelectMode ? 'scale(1.05)' : 'scale(1)',
+                  backgroundColor: isSelectMode ? 'rgba(211, 47, 47, 0.1)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: isSelectMode ? 'rgba(211, 47, 47, 0.5)' : 'var(--border, #ccc)',
+                  borderRadius: '6px',
+                  padding: '8px',
+                  color: isSelectMode ? 'inherit' : 'var(--text, inherit)'
+                }}
+              >
+                {isSelectMode ? (
+                  <CloseIcon sx={{
+                    animation: 'spin 0.3s linear',
+                    '@keyframes spin': { '0%': { transform: 'rotate(-90deg)' }, '100%': { transform: 'rotate(0)' } }
+                  }} />
+                ) : (
+                  <LocationOnIcon sx={{
+                    animation: 'drop 0.3s ease-out',
+                    '@keyframes drop': { '0%': { transform: 'translateY(-10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }
+                  }} />
+                )}
+              </IconButton>
+            </Tooltip>
           )}
         </Box>
       ) : field.type === 'enum' ? (

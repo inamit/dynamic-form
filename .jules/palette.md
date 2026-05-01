@@ -17,3 +17,6 @@
 ## 2024-06-26 - Added Deletion Confirmation Dialog to FieldManager
 **Learning:** When adding a confirmation dialog for destructive actions (like field deletion), you must carefully trace all usages of the underlying delete logic. Internal programmatic removals, such as an "edit" flow that copies a item and then removes the original to wait for user to add again, should bypass the user confirmation step. Triggering the dialog during an "edit" flow causes a confusing UX, making the user think they are deleting the data instead of just modifying it.
 **Action:** Always verify if delete logic is used programmatically in other operations (e.g., Edit, Move). If so, separate the UI confirmation trigger from the core deletion execution, and ensure those programmatic operations call the execution directly without prompting the user.
+## 2026-05-01 - Add ARIA labels and Tooltips to DynamicField icon buttons
+**Learning:** Found that the location selection icon button (`IconButton`) in `libs/shared-ui/src/components/DynamicField.tsx` lacked a `Tooltip` and an `aria-label`. To ensure proper accessibility for icon-only buttons, they must have both a visible tooltip for mouse users and an ARIA label for screen readers.
+**Action:** Always wrap `IconButton` elements with `Tooltip` components and provide a mirroring `aria-label` attribute on the button itself.

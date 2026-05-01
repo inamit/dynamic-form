@@ -63,6 +63,10 @@ app.delete('/api/user-permissions/:id', async (req, res) => {
 
 // --- Authorizer API ---
 
+// ⚡ Bolt Optimization: Cache parsed constraints to prevent repetitive O(n) JSON.parse overhead
+// when evaluating the same permission rules across multiple rows in a list fetch.
+const parsedConstraintCache = new Map<string, any>();
+
 app.post('/api/check', async (req, res) => {
     const {origin, userId, entityName, ability, data} = req.body;
 
@@ -108,7 +112,13 @@ app.post('/api/check', async (req, res) => {
                 // Field value constraint logic
                 if (perm.fieldValue && matches) {
                     try {
-                        const parsedConstraint = JSON.parse(perm.fieldValue);
+                        let parsedConstraint;
+                        if (parsedConstraintCache.has(perm.fieldValue)) {
+                            parsedConstraint = parsedConstraintCache.get(perm.fieldValue);
+                        } else {
+                            parsedConstraint = JSON.parse(perm.fieldValue);
+                            parsedConstraintCache.set(perm.fieldValue, parsedConstraint);
+                        }
                         let fieldMatch = false;
                         for (const key of Object.keys(parsedConstraint)) {
                             if (data[key] === parsedConstraint[key]) {

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { EntityConfigService } from '../services/entity-config.service.js';
+import { cachedJsonParse } from '../utils.js';
 
 export class EntityConfigController {
     private configService: EntityConfigService;
@@ -15,8 +16,8 @@ export class EntityConfigController {
                 ...config,
                 presets: config.presets.map((p: any) => ({
                     ...p,
-                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined,
-                    listSubFields: p.listSubFields ? JSON.parse(p.listSubFields) : undefined
+                    defaultValues: p.defaultValues ? cachedJsonParse(p.defaultValues) : undefined,
+                    listSubFields: p.listSubFields ? cachedJsonParse(p.listSubFields) : undefined
                 }))
             });
         } catch (e: any) {
@@ -35,8 +36,8 @@ export class EntityConfigController {
                 ...config,
                 presets: config.presets.map((p: any) => ({
                     ...p,
-                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined,
-                    listSubFields: p.listSubFields ? JSON.parse(p.listSubFields) : undefined
+                    defaultValues: p.defaultValues ? cachedJsonParse(p.defaultValues) : undefined,
+                    listSubFields: p.listSubFields ? cachedJsonParse(p.listSubFields) : undefined
                 }))
             });
         } catch (e: any) {
@@ -52,8 +53,8 @@ export class EntityConfigController {
                 ...config,
                 presets: config.presets.map((p: any) => ({
                     ...p,
-                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined,
-                    listSubFields: p.listSubFields ? JSON.parse(p.listSubFields) : undefined
+                    defaultValues: p.defaultValues ? cachedJsonParse(p.defaultValues) : undefined,
+                    listSubFields: p.listSubFields ? cachedJsonParse(p.listSubFields) : undefined
                 }))
             });
         } catch (e: any) {

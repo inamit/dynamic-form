@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ConfigService } from '../services/config.service.js';
-import { isValidParam } from '../utils.js';
+import { isValidParam, cachedJsonParse } from '../utils.js';
 
 export class ConfigController {
     private configService: ConfigService;
@@ -36,8 +36,8 @@ export class ConfigController {
                 apiType: config.dataSource.apiType,
                 presets: config.presets?.map((p: any) => ({
                     ...p,
-                    defaultValues: p.defaultValues ? JSON.parse(p.defaultValues) : undefined,
-                    listSubFields: p.listSubFields ? JSON.parse(p.listSubFields) : undefined
+                    defaultValues: p.defaultValues ? cachedJsonParse(p.defaultValues) : undefined,
+                    listSubFields: p.listSubFields ? cachedJsonParse(p.listSubFields) : undefined
                 }))
             });
         } catch (error) {

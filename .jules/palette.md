@@ -20,3 +20,6 @@
 ## 2026-05-01 - Add ARIA labels and Tooltips to DynamicField icon buttons
 **Learning:** Found that the location selection icon button (`IconButton`) in `libs/shared-ui/src/components/DynamicField.tsx` lacked a `Tooltip` and an `aria-label`. To ensure proper accessibility for icon-only buttons, they must have both a visible tooltip for mouse users and an ARIA label for screen readers.
 **Action:** Always wrap `IconButton` elements with `Tooltip` components and provide a mirroring `aria-label` attribute on the button itself.
+## 2024-06-27 - Add empty states and delete confirmation to Site/User Permissions lists
+**Learning:** Found that the SitePermissions and UserPermissions lists in `apps/management-client/src/features/Permissions/` lacked empty states and allowed immediate deletion of permissions without confirmation. This risks accidental permission loss and confusing UX for new users when no items exist.
+**Action:** Always include a helpful empty state with a clear CTA for empty lists and implement a confirmation dialog (`Dialog` from `@mui/material`) for destructive actions like delete to prevent accidental data loss.

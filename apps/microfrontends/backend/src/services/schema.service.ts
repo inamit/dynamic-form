@@ -51,7 +51,7 @@ export class SchemaService {
 
     async getSchemas() {
         if (SchemaService.cachedSchemas && this.isCacheValid(SchemaService.cachedSchemas.timestamp)) {
-            return JSON.parse(JSON.stringify(SchemaService.cachedSchemas.data)); // Clone to prevent mutation
+            return structuredClone(SchemaService.cachedSchemas.data); // Clone to prevent mutation
         }
 
         const schemaApiUrl = process.env.SCHEMA_API_URL || 'http://localhost:4000/api/schemas';
@@ -59,13 +59,13 @@ export class SchemaService {
 
         const schemas = await this.schemaClient.fetchSchemas(schemaApiUrl, this.getSchemaHeaders());
         SchemaService.cachedSchemas = { data: schemas, timestamp: Date.now() };
-        return JSON.parse(JSON.stringify(schemas));
+        return structuredClone(schemas);
     }
 
     async getSchema(entityName: string) {
         const cached = SchemaService.cachedSchemaByName.get(entityName);
         if (cached && this.isCacheValid(cached.timestamp)) {
-            return JSON.parse(JSON.stringify(cached.data));
+            return structuredClone(cached.data);
         }
 
         const schemaApiUrl = process.env.SCHEMA_API_URL || 'http://localhost:4000/api/schema';
@@ -73,13 +73,13 @@ export class SchemaService {
 
         const schema = await this.schemaClient.fetchSchema(schemaApiUrl, this.getSchemaHeaders(), entityName);
         SchemaService.cachedSchemaByName.set(entityName, { data: schema, timestamp: Date.now() });
-        return JSON.parse(JSON.stringify(schema));
+        return structuredClone(schema);
     }
 
     async getEnum(enumName: string) {
         const cached = SchemaService.cachedEnumByName.get(enumName);
         if (cached && this.isCacheValid(cached.timestamp)) {
-            return JSON.parse(JSON.stringify(cached.data));
+            return structuredClone(cached.data);
         }
 
         const enumApiUrl = process.env.ENUM_API_URL || 'http://localhost:4000/api/enums';
@@ -87,12 +87,12 @@ export class SchemaService {
 
         const enumData = await this.schemaClient.fetchEnum(enumApiUrl, this.getEnumHeaders(), enumName);
         SchemaService.cachedEnumByName.set(enumName, { data: enumData, timestamp: Date.now() });
-        return JSON.parse(JSON.stringify(enumData));
+        return structuredClone(enumData);
     }
 
     async getAllEnums() {
         if (SchemaService.cachedEnums && this.isCacheValid(SchemaService.cachedEnums.timestamp)) {
-            return JSON.parse(JSON.stringify(SchemaService.cachedEnums.data));
+            return structuredClone(SchemaService.cachedEnums.data);
         }
 
         const enumApiUrl = process.env.ENUM_API_URL || 'http://localhost:4000/api/enums';
@@ -100,6 +100,6 @@ export class SchemaService {
 
         const enums = await this.schemaClient.fetchEnums(enumApiUrl, this.getEnumHeaders());
         SchemaService.cachedEnums = { data: enums, timestamp: Date.now() };
-        return JSON.parse(JSON.stringify(enums));
+        return structuredClone(enums);
     }
 }

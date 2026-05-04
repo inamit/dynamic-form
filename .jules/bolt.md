@@ -19,3 +19,7 @@
 ## 2024-05-01 - [Permissions Orchestrator] Cache repetitive JSON.parse in row-level checks
 **Learning:** In list views, checking permissions using `findMany` followed by `JSON.parse` on every permission constraint string creates an O(N * M) bottleneck, where N is the number of rows and M is the number of permissions. This causes significant, unnecessary CPU overhead because the constraint string for a specific permission doesn't change during the bulk evaluation.
 **Action:** Implemented a caching mechanism using a `Map<string, any>` keyed by the constraint string (`perm.fieldValue`). This changes the time complexity for parsing to O(1) per unique permission rule across all evaluated rows. Keys must be the exact string rather than a database row ID to ensure cache hits remain valid even across different rows referencing the same logical constraint string and to prevent staleness on potential permission updates.
+
+## 2024-05-10 - [SchemaService] Faster deep cloning
+**Learning:** Using `JSON.parse(JSON.stringify(data))` to clone cached API responses creates unnecessary CPU overhead by allocating and garbage collecting intermediate string representations.
+**Action:** Replaced `JSON.parse(JSON.stringify())` with Node's native `structuredClone()`, which is more performant for deep cloning plain objects without the serialization overhead.

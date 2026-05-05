@@ -20,3 +20,6 @@
 ## 2026-05-01 - Add ARIA labels and Tooltips to DynamicField icon buttons
 **Learning:** Found that the location selection icon button (`IconButton`) in `libs/shared-ui/src/components/DynamicField.tsx` lacked a `Tooltip` and an `aria-label`. To ensure proper accessibility for icon-only buttons, they must have both a visible tooltip for mouse users and an ARIA label for screen readers.
 **Action:** Always wrap `IconButton` elements with `Tooltip` components and provide a mirroring `aria-label` attribute on the button itself.
+## 2024-05-15 - Helpful Empty States and Destructive Action Confirmations
+**Learning:** Adding empty states to list pages with a clear Call-To-Action (CTA) and a friendly message improves usability when no data exists. For destructive operations (like deleting a permission), adding a confirmation dialog provides a crucial safety net and prevents accidental data loss.
+**Action:** When working on lists or tables, always verify if an empty state exists and implement one if it doesn't. When encountering delete buttons that directly trigger a removal action without warning, wrap the action in a confirmation dialog (e.g., using Material UI's `Dialog` component).

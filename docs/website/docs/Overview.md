@@ -1,3 +1,8 @@
+---
+slug: /
+sidebar_position: 1
+---
+
 # Overview
 
 Welcome to the documentation for the Dynamic Form Microfrontend. This guide provides detailed instructions on how to integrate the dynamic form components into your host applications.

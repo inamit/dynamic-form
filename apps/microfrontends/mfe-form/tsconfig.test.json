@@ -1,6 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@dynamic-form/shared-ui": ["../../../libs/shared-ui/src/index.ts"],
+      "@dynamic-form/geo-utils": ["../../../libs/geo-utils/src/index.ts"]
+    },
     "module": "ESNext",
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,

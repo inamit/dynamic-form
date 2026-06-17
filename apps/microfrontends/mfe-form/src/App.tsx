@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {useEffect} from 'react';
 import {BrowserRouter, Routes, Route, useParams, useNavigate} from 'react-router-dom';
 import 'postal';

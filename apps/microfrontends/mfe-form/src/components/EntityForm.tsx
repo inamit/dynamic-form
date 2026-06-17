@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import 'postal';
 const postal = (window as any).postal;
@@ -6,6 +6,12 @@ import { CHANNEL_NAME, TOPICS } from "../utils/topic.js";
 import { formatCoordinate } from '@dynamic-form/geo-utils';
 import { DynamicField } from '@dynamic-form/shared-ui';
 import { useEntityForm } from '../hooks/useEntityForm';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
 
 export default function EntityForm() {
   const [entity, setEntity] = useState<string | null>(null);
@@ -15,6 +21,7 @@ export default function EntityForm() {
   const [activePresetId, setActivePresetId] = useState<number | undefined>(undefined);
   const [hidePresetSelector, setHidePresetSelector] = useState<boolean>(false);
   const [selectModeField, setSelectModeField] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const [initialCoordinateFormats, setInitialCoordinateFormats] = useState<Record<string, 'WGS84' | 'UTM'>>({});
   const [initialDefaultValues, setInitialDefaultValues] = useState<Record<string, any>>({});
@@ -31,7 +38,8 @@ export default function EntityForm() {
     schema,
     enums,
     validationErrors,
-    handleSubmit
+    handleSubmit,
+    handleDelete
   } = useEntityForm(entity, id, initialCoordinateFormats, initialDefaultValues, injectedPresetId);
 
   useEffect(() => {
@@ -102,6 +110,11 @@ export default function EntityForm() {
       topic: TOPICS.ENTITY_SAVE_CANCEL,
       data: { entity }
     });
+  };
+
+  const confirmDelete = async () => {
+    setDeleteDialogOpen(false);
+    await handleDelete();
   };
 
   const handleCoordinateFormatChange = (field: string, format: 'WGS84' | 'UTM') => {
@@ -238,7 +251,7 @@ export default function EntityForm() {
           </div>
         )})}
 
-        <div style={{ display: 'flex', gap: '12px', marginTop: '10px', gridColumn: isGrid ? '1 / -1' : undefined, justifyContent: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '10px', gridColumn: isGrid ? '1 / -1' : undefined, justifyContent: 'flex-start', alignItems: 'center' }}>
           <button
             type="submit"
             style={{ padding: '10px 24px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}
@@ -252,8 +265,40 @@ export default function EntityForm() {
           >
             Cancel
           </button>
+          {id && abilities.canDelete && (
+            <button
+              type="button"
+              onClick={() => setDeleteDialogOpen(true)}
+              style={{ marginLeft: 'auto', padding: '10px 24px', background: '#d32f2f', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}
+            >
+              Delete
+            </button>
+          )}
         </div>
       </form>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {`Delete ${entity}?`}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete this item? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmDelete} color="error" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </div>
   );
 }

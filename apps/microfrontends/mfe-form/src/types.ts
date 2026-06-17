@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface EntityField {
   name: string;
   type: 'text' | 'number' | 'checkbox' | 'enum' | 'coordinate' | 'list';

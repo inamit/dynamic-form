@@ -13,9 +13,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@dynamic-form/geo-utils": "*",
+    "@myorg/observability": "^1.0.0",
     "@rapideditor/country-coder": "^5.6.1",
-    "proj4": "^2.20.6",
-    "@dynamic-form/geo-utils": "*"
+    "proj4": "^2.20.6"
   },
   "devDependencies": {
     "@types/proj4": "^2.5.6"

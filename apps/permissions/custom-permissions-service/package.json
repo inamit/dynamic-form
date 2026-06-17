@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@dynamic-form/geo-utils": "*",
+    "@myorg/observability": "^1.0.0",
     "@prisma/client": "^7.6.0",
     "dotenv": "^17.4.1",
     "mgrs": "^2.1.0",
